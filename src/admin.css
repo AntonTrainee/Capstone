@@ -1,0 +1,185 @@
+.dashbg {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  padding: 20px;
+  transition: margin-right 0.3s ease-in-out;
+}
+
+.dashbg.shifted {
+  margin-right: 250px;
+}
+
+.section-container {
+  max-width: 900px;
+  margin: 40px auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-container h2 {
+  font-size: 24px;
+  font-weight: bold;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+/* New styles for the search bar with icon inside */
+.search-container {
+  position: relative;
+  width: 300px;
+  margin-left: auto;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding-right: 35px; /* Adds space for the icon on the right */
+}
+
+.search-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
+}
+
+/* Styles for all traditional tables */
+.table-wrapper {
+  background-color: #e9e9e9;
+  border: 1px solid #ccc;
+  padding: 1px;
+}
+
+.manage-bookings-table,
+.sales-request-table,
+.customer-analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.manage-bookings-table th,
+.sales-request-table th,
+.customer-analytics-table th,
+.manage-bookings-table td,
+.sales-request-table td,
+.customer-analytics-table td {
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+/* Specific header colors for each table */
+.manage-bookings-table th {
+  font-weight: bold;
+  background-color: #289cbf;
+  color: #fff;
+}
+
+
+.sales-request-table th,
+.customer-analytics-table th {
+  font-weight: bold;
+  background-color: #289cbf;
+}
+
+.customer-analytics-table th {
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.view-more {
+  text-align: right;
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+  padding: 5px;
+}
+
+.view-more a {
+  text-decoration: none;
+  color: #666;
+  transition: color 0.2s ease-in-out;
+}
+
+.view-more a:hover {
+  color: #333;
+  text-decoration: underline;
+}
+
+/* Sidebar and Navbar Styles */
+.sidebar {
+  height: 100%;
+  width: 250px;
+  position: fixed;
+  top: 0;
+  right: -250px;
+  background-color: #142D54;
+  transition: transform 0.3s ease-in-out;
+  padding-top: 60px;
+  z-index: 1000;
+}
+
+.sidebar.open {
+  transform: translateX(-250px);
+}
+
+.sidebar .close-btn {
+  position: absolute;
+  top: 0;
+  left: 25px;
+  font-size: 36px;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.sidebar .sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin-top: 30px;
+}
+
+.sidebar .sidebar-nav li a {
+  padding: 15px 25px;
+  text-decoration: none;
+  font-size: 18px;
+  color: #f1f1f1;
+  display: block;
+  transition: 0.3s;
+  text-align: left;
+}
+
+.sidebar .sidebar-nav li a:hover {
+  background-color: #1c2125;
+}
+
+.my-navbar {
+  background-color: #289cbf;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.my-navbar .navbar-toggler {
+  border: none;
+  margin-left: auto;
+}
+
+.my-navbar .navbar-toggler:focus {
+  box-shadow: none;
+}
+
+.my-navbar .bi-list {
+  color: white;
+}

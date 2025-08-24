@@ -152,7 +152,7 @@ function Booksys() {
                 </div>
 
                 <div className="form-group mb-4">
-                  <label className="form-label">Date:</label>
+                  <label className="form-label">Desired Date:</label>
                   <input
                     type="date"
                     className="form-control booking-input"

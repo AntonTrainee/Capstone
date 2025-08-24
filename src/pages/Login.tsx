@@ -18,7 +18,6 @@ function Login() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Customer login
   const handleCustomerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

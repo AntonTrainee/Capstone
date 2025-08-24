@@ -57,7 +57,7 @@ function OtpPage() {
       setMessage(data.message);
 
       if (data.message === "OTP verified") {
-        navigate("/login");
+        navigate("/customerdashb");
       }
     } catch (error) {
       setMessage("Error verifying OTP.");

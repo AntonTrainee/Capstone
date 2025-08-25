@@ -159,14 +159,14 @@ function Admindashb() {
                   <td>General Cleaning</td>
                   <td>₱ 1,200</td>
                   <td>Paid</td>
-                  <td>Name of Employee</td>
+                  <td>Anton of Employee</td>
                 </tr>
                 <tr>
                   <td>12/14/24</td>
                   <td>General Cleaning</td>
                   <td>₱ 2,254</td>
                   <td>Paid</td>
-                  <td>Name of Employee</td>
+                  <td>Anton of Employee</td>
                 </tr>
               </tbody>
             </table>

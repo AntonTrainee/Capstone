@@ -1,5 +1,6 @@
 // Booksys.tsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: string;
@@ -18,6 +19,8 @@ function Booksys() {
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -44,7 +47,7 @@ function Booksys() {
     }
 
     const bookingData = {
-      userId: user.id, // We need to send the user ID to the backend
+      userId: user.id,
       service: service,
       date: bookingDate,
       address: address,
@@ -64,13 +67,22 @@ function Booksys() {
       const result = await response.text();
 
       if (response.ok) {
+        // 🔹 Re-save user info to localStorage to make sure CustomerDashb shows correct design
+        localStorage.setItem("user", JSON.stringify(user));
+
         setMessage(result); // "Booking successful"
+
         // Reset form fields
         setService("");
         setBookingDate("");
         setAddress("");
         setNotes("");
         setForAssessment(false);
+
+        // 🔹 Redirect after 5 seconds
+        setTimeout(() => {
+          navigate("/customerdashb");
+        }, 2000);
       } else {
         setMessage(result || "Booking failed. Please try again.");
       }

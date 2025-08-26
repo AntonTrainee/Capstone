@@ -9,11 +9,10 @@ function OtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Auto-send OTP when arriving from Register page
   useEffect(() => {
     if (location.state?.email) {
       setEmail(location.state.email);
-      handleSendOtp(location.state.email); // automatically trigger OTP
+      handleSendOtp(location.state.email);
     }
   }, [location]);
 
@@ -57,7 +56,15 @@ function OtpPage() {
       setMessage(data.message);
 
       if (data.message === "OTP verified") {
-        navigate("/customerdashb");
+        // 🔹 Save user info to localStorage so CustomerDashb renders correctly
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+
+        // 🔹 Redirect after 1 second
+        setTimeout(() => {
+          navigate("/customerdashb");
+        }, 1000);
       }
     } catch (error) {
       setMessage("Error verifying OTP.");

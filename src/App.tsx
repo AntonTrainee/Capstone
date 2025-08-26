@@ -11,7 +11,7 @@ import MGbook from "./pages/mgbook";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Admindashb />} />
+      <Route path="/" element={<Home />} />
       <Route path="/booksys" element={<Booksys />} />
       <Route path="/register" element={<Register />} />
       <Route path="/otp" element={<OtpPage />} />

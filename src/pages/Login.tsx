@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -18,6 +19,7 @@ function Login() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
+
   const handleCustomerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -30,7 +32,7 @@ function Login() {
       const data: LoginResponse = await res.json();
 
       if (res.ok) {
-        // 🔹 Save customer info
+      
         if (data.user) {
           localStorage.setItem("user", JSON.stringify(data.user));
         }

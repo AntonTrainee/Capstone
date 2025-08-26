@@ -1,11 +1,12 @@
 // server.js
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const { Pool } = require("pg");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
-const { sendOTP, verifyOTP } = require("./otpController.js"); // Assuming this file exists
+const { sendOTP, verifyOTP } = require("./otpController.js");
 
 const app = express();
 const PORT = 3007;
@@ -13,7 +14,7 @@ const PORT = 3007;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Initialize the PostgreSQL connection pool using the DATABASE_URL from .env
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -22,7 +23,7 @@ pool.connect()
   .then(() => console.log("✅ Connected to Supabase PostgreSQL"))
   .catch((err) => console.error("❌ Database error:", err));
 
-/** REGISTER */
+
 app.post("/register", async (req, res) => {
   const { firstName, lastName, phoneNumber, emailAdd, password } = req.body;
 
@@ -47,7 +48,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-/** LOGIN */
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -81,7 +82,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-/** BOOKING */
+
 app.post("/booking", async (req, res) => {
   const { userId, service, date, address, notes, forAssessment } = req.body;
 
@@ -99,8 +100,18 @@ app.post("/booking", async (req, res) => {
   }
 });
 
+
 app.post("/send-otp", sendOTP);
 app.post("/verify-otp", verifyOTP);
+
+
+app.use(express.static(path.join(__dirname, "../dist")));
+
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "../dist/index.html"));
+});
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

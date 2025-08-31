@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 
 function CustomerDashb() {
+  const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
+
   return (
     <>
-      <nav className="navbar navbar-expand-lg my-navbar sticky-top">
+      <nav className="navbar navbar-expand-lg my-navbar sticky-top">  
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
             GenClean
@@ -26,39 +29,79 @@ function CustomerDashb() {
         <div className="left-column-content">
           <div className="booked-services-column">
             <div className="booked-services-card">
-              <h1 className="booked-services-title" id="Bookings">
-                Booked Services
-              </h1>
+              {activeSection === "bookings" ? (
+                <>
+                  <h1 className="booked-services-title" id="Bookings">
+                    Booked Services
+                  </h1>
 
-              <div className="table-container">
-                <table className="bookings-table">
-                  <thead>
-                    <tr>
-                      <th>Service ID</th>
-                      <th>Service Type</th>
-                      <th>Address</th>
-                      <th>Date & Time</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>001</td>
-                      <td>Cleaning</td>
-                      <td>123 Main St</td>
-                      <td>2025-08-20 10:00 AM</td>
-                      <td>Completed</td>
-                    </tr>
-                    <tr>
-                      <td>002</td>
-                      <td>Maintenance</td>
-                      <td>45 Elm Ave</td>
-                      <td>2025-08-21 2:00 PM</td>
-                      <td>Pending</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                  <div className="table-container">
+                    <table className="bookings-table">
+                      <thead>
+                        <tr>
+                          <th>Service ID</th>
+                          <th>Service Type</th>
+                          <th>Address</th>
+                          <th>Date & Time</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>001</td>
+                          <td>Cleaning</td>
+                          <td>123 Main St</td>
+                          <td>2025-08-20 10:00 AM</td>
+                          <td>Completed</td>
+                        </tr>
+                        <tr>
+                          <td>002</td>
+                          <td>Maintenance</td>
+                          <td>45 Elm Ave</td>
+                          <td>2025-08-21 2:00 PM</td>
+                          <td>Pending</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 className="booked-services-title" id="History">
+                    History
+                  </h1>
+
+                  <div className="table-container">
+                    <table className="bookings-table">
+                      <thead>
+                        <tr>
+                          <th>Service ID</th>
+                          <th>Service Type</th>
+                          <th>Address</th>
+                          <th>Date & Time</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>0001</td>
+                          <td>Cleaning</td>
+                          <td>12 Oak St</td>
+                          <td>2025-07-15 9:00 AM</td>
+                          <td>Completed</td>
+                        </tr>
+                        <tr>
+                          <td>0002</td>
+                          <td>Pest Control</td>
+                          <td>77 Pine Rd</td>
+                          <td>2025-07-20 3:00 PM</td>
+                          <td>Completed</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
 
               <div className="change-section">
                 <p className="change-text-title">Need to change something?</p>
@@ -149,13 +192,23 @@ function CustomerDashb() {
               </svg>
             </div>
             <h2 className="client-name">Client's Name</h2>
-            <a href="#Bookings" className="profile-link">
+
+            <a
+              href="#Bookings"
+              className="profile-link"
+              onClick={() => setActiveSection("bookings")}
+            >
               Bookings
             </a>
 
-            <Link to="#" className="profile-link">
+            <a
+              href="#History"
+              className="profile-link"
+              onClick={() => setActiveSection("history")}
+            >
               History
-            </Link>
+            </a>
+
             <Link to="/booksys" className="profile-link">
               Book
             </Link>

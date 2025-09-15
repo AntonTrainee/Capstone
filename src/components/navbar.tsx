@@ -1,3 +1,5 @@
+
+import { Link } from "react-router-dom";
 function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg my-navbar sticky-top">
@@ -39,9 +41,9 @@ function Navbar() {
               </a>
             </li>
             <li className="nav-item">
-              <a
+              <Link to = "/services"
                 className="btn btn-link nav-link d-flex align-items-center gap-2"
-                href="#services"
+                
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -54,7 +56,7 @@ function Navbar() {
                   <path d="M0 3.5A.5.5 0 0 1 .5 3h15a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H.5a.5.5 0 0 1-.5-.5zm0 5A.5.5 0 0 1 .5 8h15a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H.5a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h15a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5" />
                 </svg>
                 Services
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
               <a
@@ -78,7 +80,7 @@ function Navbar() {
               </a>
             </li>
             <li className="nav-item">
-              <button className="btn btn-link nav-link d-flex align-items-center gap-2">
+              <Link to = "/aboutus" className="btn btn-link nav-link d-flex align-items-center gap-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -91,7 +93,7 @@ function Navbar() {
                   <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
                 </svg>
                 About Us
-              </button>
+              </Link>
             </li>
           </ul>
         </div>

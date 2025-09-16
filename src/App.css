@@ -127,6 +127,8 @@ h2 {
   background-color: #d9d9d9;
   padding: 20px 0;
   text-align: center;
+
+  margin-top: auto;
 }
 
 .reviews {
@@ -709,29 +711,4 @@ tr:nth-child(even) {
   margin-bottom: 10px;
   color: #000000;
   font-family: "Times New Roman", Times, serif;
-}
-
-/* Services Page Only */
-/* Services Carousel Page */
-.services-carousel-section {
-  width: 100%;
-  max-width: 100%;
-  padding: 40px 0;
-}
-
-.service-card {
-  background-color: #0b2a5b;
-  border-radius: 20px;
-  width: 800px;
-  /* bigger width */
-  padding: 30px;
-  color: white;
-}
-
-.service-img-placeholder {
-  width: 200px;
-  /* bigger image placeholder */
-  height: 200px;
-  background-color: #ccc;
-  border-radius: 15px;
 }

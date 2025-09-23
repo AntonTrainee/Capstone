@@ -712,3 +712,40 @@ tr:nth-child(even) {
   color: #000000;
   font-family: "Times New Roman", Times, serif;
 }
+
+.logout-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+.logout-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 300px;
+}
+
+.logout-modal-buttons {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.btn-logout {
+  background-color: #289CBF;
+  padding: 10px;
+  border: 0;
+  border-radius: 50px;
+
+  cursor: pointer;
+
+}

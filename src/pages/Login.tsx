@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 interface LoginResponse {
   message?: string;
+  token?: string;
   user?: {
     id: number;
     email: string;
@@ -32,17 +33,19 @@ function Login() {
       const data: LoginResponse = await res.json();
 
       if (res.ok) {
-      
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token); // save JWT
         }
-
+        if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user)); // optional
+        }
         setTimeout(() => {
-          navigate("/customerdashb");
+        navigate("/customerdashb");
         }, 1000);
       } else {
         setMessage(data.message || "Login failed. Please try again.");
       }
+
     } catch (error) {
       console.error(error);
       setMessage("Unexpected error. Please try again.");

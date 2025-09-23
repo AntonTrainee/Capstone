@@ -26,7 +26,7 @@
   margin-bottom: 20px;
 }
 
-/* New styles for the search bar with icon inside */
+
 .search-container {
   position: relative;
   width: 300px;
@@ -39,7 +39,8 @@
   padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 20px;
-  padding-right: 35px; /* Adds space for the icon on the right */
+  padding-right: 35px;
+  /* Adds space for the icon on the right */
 }
 
 .search-icon {

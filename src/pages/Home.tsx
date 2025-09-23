@@ -198,8 +198,8 @@ function Home() {
         </div>
       </div>
 
-      <div
-        id="contact"
+
+     <section id="contact"
         className="contactcontainer"
         style={{
           marginTop: "110px",
@@ -286,7 +286,9 @@ function Home() {
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         ></iframe>
-      </div>
+      </section>   
+
+      
 
       <footer className="gray-rectangle">
         <div>

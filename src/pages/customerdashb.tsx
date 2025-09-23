@@ -1,11 +1,21 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); 
+  const navigate = useNavigate(); 
+
+  // ✅ Check token when component loads
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      navigate("/"); // kick user back to home/login
+    }
+  }, [navigate]);
 
   return (
     <>
@@ -212,9 +222,42 @@ function CustomerDashb() {
             <Link to="/booksys" className="profile-link">
               Book
             </Link>
+
+            <button
+              className="profile-link btn-logout"
+              onClick={() => setShowLogoutConfirm(true)}
+            >
+              Log Out
+            </button>
           </div>
         </div>
       </div>
+
+      {showLogoutConfirm && (
+        <div className="logout-modal-backdrop">
+          <div className="logout-modal">
+            <h5>Are you sure you want to log out?</h5>
+            <div className="logout-modal-buttons">
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  localStorage.removeItem("auth_token"); // ✅ clear token
+                  setShowLogoutConfirm(false);
+                  navigate("/"); 
+                }}
+              >
+                Yes, I am
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

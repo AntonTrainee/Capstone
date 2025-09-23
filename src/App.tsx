@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import OtpPage from "./pages/OtpPage";
+import ProtectedRoute from "./ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -22,7 +23,9 @@ function App() {
       <Route path="/Home" element={<Home />} />
       <Route path="/aboutus" element={<About />} />
       <Route path="/admindashb" element={<Admindashb />} />
+      <Route element={<ProtectedRoute />}>
       <Route path="/customerdashb" element={<CustomerDashb />} />
+      </Route>
       <Route path="/mgbook" element={<MGbook />} />
     </Routes>
   );

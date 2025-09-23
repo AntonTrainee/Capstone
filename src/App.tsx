@@ -7,6 +7,9 @@ import CustomerDashb from "./pages/customerdashb";
 import Booksys from "./pages/booksys";
 import Admindashb from "./pages/admindashb";
 import MGbook from "./pages/mgbook";
+import Manageb from "./pages/manageb";
+import Salesandreq from "./pages/salesandreq";
+import Analytics from "./pages/analytics";
 
 function App() {
   return (
@@ -20,6 +23,9 @@ function App() {
       <Route path="/admindashb" element={<Admindashb />} />
       <Route path="/customerdashb" element={<CustomerDashb />} />
       <Route path="/mgbook" element={<MGbook />} />
+      <Route path="/manageb" element={<Manageb />} />
+      <Route path="/salesandreq" element={<Salesandreq />} />
+      <Route path="/analytics" element={<Analytics />} />
     </Routes>
   );
 }

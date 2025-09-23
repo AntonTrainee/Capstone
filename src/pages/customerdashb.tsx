@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";

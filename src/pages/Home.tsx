@@ -1,13 +1,58 @@
 import { Link } from "react-router-dom";
-import one from "../assets/one-piece.jpg";
-import slide1 from "../assets/download (1).jpg";
-import slide2 from "../assets/download (2).jpg";
+import { useState } from "react";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 import Navbar from "../components/navbar";
+import pesto from "../assets/pestcontro.jpg";
+import fact from "../assets/Factory.jpg";
+import clean from "../assets/cleaners.jpg";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import Footer from "../components/footer";
 
 function Home() {
+// --- state for form inputs ---
+const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  phone: "",
+  message: "",
+});
+
+const [status, setStatus] = useState("");
+
+// --- handle input changes ---
+const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+) => {
+  setFormData({ ...formData, [e.target.id]: e.target.value });
+};
+
+// --- handle submit ---
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setStatus("Sending...");
+
+  try {
+    const res = await fetch("http://localhost:3007/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    if (res.ok) {
+      setStatus("Message sent successfully!");
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } else {
+      setStatus("Failed to send. Please try again later.");
+    }
+  } catch (err) {
+    console.error(err);
+    setStatus("An error occurred.");
+  }
+};
+
+
   return (
     <>
       <Navbar />
@@ -38,13 +83,13 @@ function Home() {
           </div>
           <div className="carousel-inner">
             <div className="carousel-item active">
-              <img src={slide1} className="d-block w-100" alt="Slide 1" />
+              <img src={pesto} className="d-block w-100" alt="Slide 1" />
             </div>
             <div className="carousel-item">
-              <img src={slide2} className="d-block w-100" alt="Slide 2" />
+              <img src={fact} className="d-block w-100" alt="Slide 2" />
             </div>
             <div className="carousel-item">
-              <img src={one} className="d-block w-100" alt="Slide 3" />
+              <img src={clean} className="d-block w-100" alt="Slide 3" />
             </div>
           </div>
           <button
@@ -101,9 +146,9 @@ function Home() {
               />
               <div className="card-body">
                 <h5 className="card-title">General Maintenance</h5>
-                <a href="#" className="btn btn-primary">
-                  Learn
-                </a>
+                <Link to="/services" className="btn btn-primary">
+                  Learn more
+                </Link>
               </div>
             </div>
           </div>
@@ -117,9 +162,9 @@ function Home() {
               />
               <div className="card-body">
                 <h5 className="card-title">Janitorial and Cleaning Services</h5>
-                <a href="#" className="btn btn-primary">
+                <Link to="/services" className="btn btn-primary">
                   Learn more
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -129,16 +174,17 @@ function Home() {
               <img src={pest} className="card-img-top" alt="Pest Control" />
               <div className="card-body">
                 <h5 className="card-title">Pest Control</h5>
-                <a href="#" className="btn btn-primary">
+                <Link to="/services" className="btn btn-primary">
                   Learn more
-                </a>
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="reviews">
+      <div className="reviews"style={{ marginTop: "110px" }}>
+        <h2 className="text-center mb-4">Reviews and Testimonials</h2>
         <div
           id="reviewCarousel"
           className="carousel slide"
@@ -150,7 +196,6 @@ function Home() {
             marginBottom: "70px",
           }}
         >
-          <h2 className="text-center mb-4">Reviews and Testimonials</h2>
           <div className="carousel-inner text-center p-5 review-carousel rounded shadow">
             <div className="carousel-item active">
               <h5>⭐⭐⭐⭐⭐</h5>
@@ -198,106 +243,122 @@ function Home() {
         </div>
       </div>
 
+    <section
+      id="contact"
+      className="contactcontainer"
+      style={{
+        marginTop: "110px",
+        marginRight: "auto",
+        marginBottom: "70px",
+        marginLeft: "auto",
+        maxWidth: "900px",
+      }}
+    >
+      <h2 className="text-center section-title">Contact Us</h2>
 
-     <section id="contact"
-        className="contactcontainer"
-        style={{
-          marginTop: "110px",
-          marginRight: "auto",
-          marginBottom: "70px",
-          marginLeft: "auto",
-          maxWidth: "900px",
-        }}
-      >
-        <h2 className="text-center section-title">Contact Us</h2>
-        <form className="contact-form">
-          <div className="row mb-3">
-            <div className="col-md-6 mb-3">
-              <div className="form-floating">
-                <input
-                  type="text"
-                  className="form-control"
-                  id="floatingName"
-                  placeholder="Name"
-                />
-                <label htmlFor="floatingName">Name</label>
-              </div>
-            </div>
-            <div className="col-md-6 mb-3">
-              <div className="form-floating">
-                <input
-                  type="email"
-                  className="form-control"
-                  id="floatingEmail"
-                  placeholder="Email Address"
-                />
-                <label htmlFor="floatingEmail">Email address</label>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-3">
+      <form className="contact-form" onSubmit={handleSubmit}>
+        <div className="row mb-3">
+          <div className="col-md-6 mb-3">
             <div className="form-floating">
               <input
-                type="tel"
+                type="text"
                 className="form-control"
-                id="floatingPhone"
-                placeholder="Phone Number"
+                id="name"
+                placeholder="Name"
+                value={formData.name}
+                onChange={handleChange}
+                required
               />
-              <label htmlFor="floatingPhone">Phone number</label>
+              <label htmlFor="name">Name</label>
             </div>
           </div>
 
-          <div className="mb-3">
+          <div className="col-md-6 mb-3">
             <div className="form-floating">
-              <textarea
+              <input
+                type="email"
                 className="form-control"
-                placeholder="Message"
-                id="floatingMessage"
-                style={{ height: "150px" }}
-              ></textarea>
-              <label htmlFor="floatingMessage">Message</label>
+                id="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <label htmlFor="email">Email address</label>
             </div>
           </div>
+        </div>
 
-          <div className="text-center">
-            <button type="submit" className="btn submit-btn">
-              Submit
-            </button>
-          </div>
-        </form>
-
-        <div className="row justify-content-center mt-2">
-          <div className="col-sm-12 col-md-4">
-            <div className="info-card">Phone Number*</div>
-          </div>
-          <div className="col-sm-12 col-md-4">
-            <div className="info-card">Email address*</div>
-          </div>
-          <div className="col-sm-12 col-md-4">
-            <div className="info-card">Business Hour*</div>
+        <div className="mb-3">
+          <div className="form-floating">
+            <input
+              type="tel"
+              className="form-control"
+              id="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleChange}
+            />
+            <label htmlFor="phone">Phone number</label>
           </div>
         </div>
 
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.666613677575!2d121.04548157433027!3d14.561047678045377!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c858f512a25b%3A0x6be03b95b8998809!2s8296%20Dapitan%2C%20Makati%2C%201212%20Kalakhang%20Maynila!5e0!3m2!1sen!2sph!4v1750421780285!5m2!1sen!2sph"
-          style={{ border: 0, height: "400px", width: "100%" }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        ></iframe>
-      </section>   
-
-      
-
-      <footer className="gray-rectangle">
-        <div>
-          <p>Contacts*</p>
-          <p>Social Media links*</p>
+        <div className="mb-3">
+          <div className="form-floating">
+            <textarea
+              className="form-control"
+              placeholder="Message"
+              id="message"
+              style={{ height: "150px" }}
+              value={formData.message}
+              onChange={handleChange}
+              required
+            ></textarea>
+            <label htmlFor="message">Message</label>
+          </div>
         </div>
-      </footer>
-    </>
-  );
+
+        <div className="text-center">
+          <button type="submit" className="btn submit-btn">
+            Submit
+          </button>
+        </div>
+      </form>
+
+      {status && <p className="text-center mt-3">{status}</p>}
+
+      <div className="row mt-4">
+          <div className="col-md-8 mb-3">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.666613677575!2d121.04548157433027!3d14.561047678045377!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c858f512a25b%3A0x6be03b95b8998809!2s8296%20Dapitan%2C%20Makati%2C%201212%20Kalakhang%20Maynila!5e0!3m2!1sen!2sph!4v1750421780285!5m2!1sen!2sph"
+              style={{ border: 0, height: "400px", width: "100%" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+
+          <div className="col-md-4">
+            <div className="info-card h-100 d-flex flex-column justify-content-center">
+              <p className="bold">Business Hours:</p>
+              <p>Monday – Saturday, 9:00 AM – 6:00 PM</p>
+
+              <p className="bold mt-3">Address:</p>
+              <p>
+                Unit 114, 2nd Floor, Corinthian Executive Regency,
+                <br />
+                Ortigas Ave., San Antonio, Pasig City
+              </p>
+            </div>
+          </div>
+      </div>
+    </section>
+    <Footer />
+
+</>
+);
+
 }
 
 export default Home;
+

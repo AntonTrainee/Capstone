@@ -46,6 +46,28 @@ const Register = () => {
       });
   };
 
+  // Auto-format PH number: 09XX-XXX-XXXX
+  const handlePhoneInput = (value: string) => {
+    // Remove non-digit characters
+    let digits = value.replace(/\D/g, "");
+
+    // Force leading 09
+    if (!digits.startsWith("09")) digits = "09" + digits.slice(digits.startsWith("0") ? 1 : 0);
+
+    // Limit to 11 digits
+    if (digits.length > 11) digits = digits.slice(0, 11);
+
+    // Format as 09XX-XXX-XXXX
+    let formatted = digits;
+    if (digits.length > 4 && digits.length <= 7) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+    } else if (digits.length > 7) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4, 7) + "-" + digits.slice(7);
+    }
+
+    setPhoneNumber(formatted);
+  };
+
   return (
     <div className="colorscheme">
       <div className="blue-box">
@@ -87,7 +109,7 @@ const Register = () => {
                 className="form-control"
                 placeholder="Phone Number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => handlePhoneInput(e.target.value)}
               />
               <label>Phone Number</label>
             </div>

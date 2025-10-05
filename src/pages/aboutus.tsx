@@ -1,4 +1,8 @@
 import Navbar from "../components/navbar";
+import pasta from "../assets/pasta.jpg";
+import sheclean from "../assets/ohshecleaning.jpg";
+import eng from "../assets/engine.jpg";
+import Footer from "../components/footer";
 
 function AboutUs() {
   return (
@@ -11,7 +15,6 @@ function AboutUs() {
           <div className="divider" />
 
           <div className="about-flex">
-           
             <div className="about-text">
               <div className="about-block">
                 <h2>What we are</h2>
@@ -39,17 +42,31 @@ function AboutUs() {
             </div>
 
             <div className="about-images">
-              <div className="gray-rectangle big-rect">Big Image</div>
+              <div className="big-rect">
+                <img
+                  src={sheclean}
+                  alt="Cleaning service"
+                />
+              </div>
               <div className="small-images">
-                <div className="gray-rectangle small-rect">Small 1</div>
-                <div className="gray-rectangle small-rect">Small 2</div>
+                <div className="small-rect">
+                  <img
+                    src={pasta}
+                    alt="Broom and cleaning tools"
+                  />
+                </div>
+                <div className="small-rect">
+                  <img
+                    src={eng}
+                    alt="Maintenance engineer"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-     
       <section className="why-choose">
         <div className="why-content">
           <h2 className="why-title">Why Choose GenClean?</h2>
@@ -65,45 +82,14 @@ function AboutUs() {
               their skills.
             </p>
             <p>
-              <span className="bold">Unmatched Quality </span> — Every project is done with precision, care, 
-              and the highest industry standards.
+              <span className="bold">Unmatched Quality</span> — Every project is
+              done with precision, care, and the highest industry standards.
             </p>
           </div>
         </div>
       </section>
-      
-      <section className="contact-section">
-        <div className="contactcontainer">
-          <h2 className="contact-title">Contact Us</h2>
 
-          <div className="contact-grid">
-            <div>
-              <p>
-                <span className="bold">Email:</span> inquiries@genclean.com.ph
-              </p>
-              <p className="bold">Phone Numbers:</p>
-              <div className="phone-grid">
-                <ul>
-                  <li>82546323</li>
-                  <li>277385555</li>
-                </ul>
-                <ul>
-                  <li>09260193470</li>
-                  <li>09543174179</li>
-                </ul>
-              </div>
-            </div>
-            <div>
-              <p className="bold">Address:</p>
-              <p>
-                Unit 114, 2nd Floor, Corinthian Executive Regency,
-                <br />
-                Ortigas Ave., San Antonio, Pasig City
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Footer />
     </>
   );
 }

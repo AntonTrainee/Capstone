@@ -42,13 +42,13 @@ function Navbar() {
           <ul className="navbar-nav mb-2 mb-lg-0">
            
             <li className="nav-item">
-              <Link className="nav-link d-flex align-items-center gap-2" to="/">
+              <Link className="btn btn-link nav-link d-flex align-items-center gap-2" to="/">
                 <i className="bi bi-house-fill"></i>
                 Home
               </Link>
             </li>
 
-            
+  
             <li className="nav-item">
               <Link
                 to="/services"
@@ -58,6 +58,17 @@ function Navbar() {
                 Services
               </Link>
             </li>
+
+            <li className="nav-item">
+              <Link
+                to="/beforeandaftershowcase"
+                className="btn btn-link nav-link d-flex align-items-center gap-2"
+              >
+                <i className="bi bi-images"></i>
+                Before & After
+              </Link>
+            </li>
+
 
            
             <li className="nav-item">

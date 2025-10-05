@@ -3,17 +3,24 @@ import { useState, useEffect } from "react";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
+import Footer from "../components/footer";
 
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); 
+  const [user, setUser] = useState<{ firstName: string; lastName: string } | null>(null);
   const navigate = useNavigate(); 
 
-  // ✅ Check token when component loads
+ 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
-      navigate("/"); // kick user back to home/login
+      navigate("/"); 
+    }
+
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
   }, [navigate]);
 
@@ -39,6 +46,7 @@ function CustomerDashb() {
         <div className="left-column-content">
           <div className="booked-services-column">
             <div className="booked-services-card">
+
               {activeSection === "bookings" ? (
                 <>
                   <h1 className="booked-services-title" id="Bookings">
@@ -112,6 +120,7 @@ function CustomerDashb() {
                   </div>
                 </>
               )}
+             
 
               <div className="change-section">
                 <p className="change-text-title">Need to change something?</p>
@@ -124,9 +133,10 @@ function CustomerDashb() {
             </div>
           </div>
 
+      
           <div
             id="services"
-            className="container services-section"
+            className="container services-section dash-services"
             style={{ marginTop: "110px", marginBottom: "70px" }}
           >
             <h2 className="text-center mb-4">Services</h2>
@@ -140,9 +150,10 @@ function CustomerDashb() {
                   />
                   <div className="card-body">
                     <h5 className="card-title">General Maintenance</h5>
-                    <a href="#" className="btn btn-primary">
-                      Learn
-                    </a>
+                    <p className="card-text">
+                      We handle routine repairs, upkeep, and maintenance tasks to keep
+                      your property in top condition.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -155,12 +166,11 @@ function CustomerDashb() {
                     alt="Janitorial Services"
                   />
                   <div className="card-body">
-                    <h5 className="card-title">
-                      Janitorial and Cleaning Services
-                    </h5>
-                    <a href="#" className="btn btn-primary">
-                      Learn more
-                    </a>
+                    <h5 className="card-title">Janitorial and Cleaning Services</h5>
+                    <p className="card-text">
+                      Comprehensive cleaning services including offices, buildings, and
+                      commercial spaces to maintain hygiene and presentation.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -170,38 +180,25 @@ function CustomerDashb() {
                   <img src={pest} className="card-img-top" alt="Pest Control" />
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
-                    <a href="#" className="btn btn-primary">
-                      Learn more
-                    </a>
+                    <p className="card-text">
+                      Effective and safe pest management solutions to protect your
+                      property from unwanted infestations.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <footer className="gray-rectangle">
-            <div>
-              <p>Contacts*</p>
-              <p>Social Media links*</p>
-            </div>
-          </footer>
+
+
+        <Footer />
         </div>
 
         <div className="profile-column">
           <div className="profile-card">
-            <div className="profile-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 16 16"
-              >
-                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
-                <path
-                  fillRule="evenodd"
-                  d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"
-                />
-              </svg>
-            </div>
-            <h2 className="client-name">Client's Name</h2>
+            <h2 className="client-name">
+              {user ? `${user.firstName} ${user.lastName}` : "Client"}
+            </h2>
 
             <a
               href="#Bookings"
@@ -223,6 +220,10 @@ function CustomerDashb() {
               Book
             </Link>
 
+            <Link to="/Profile" className="profile-link">
+              Edit Profile
+            </Link>
+
             <button
               className="profile-link btn-logout"
               onClick={() => setShowLogoutConfirm(true)}
@@ -241,7 +242,7 @@ function CustomerDashb() {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  localStorage.removeItem("auth_token"); // ✅ clear token
+                  localStorage.removeItem("auth_token"); 
                   setShowLogoutConfirm(false);
                   navigate("/"); 
                 }}

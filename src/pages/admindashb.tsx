@@ -1,182 +1,235 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import "../admin.css";
 
 function Admindashb() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any[]>([]);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const bookingsRef = useRef<HTMLDivElement | null>(null);
+  const salesRef = useRef<HTMLDivElement | null>(null);
+  const analyticsRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const scrollToRef = (ref: typeof bookingsRef) => {
+    setIsSidebarOpen(false);
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // Fetch data
+  useEffect(() => {
+    fetch("http://localhost:3007/bookings")
+      .then((res) => res.json())
+      .then((data) => setBookings(data))
+      .catch((err) => console.error("Error fetching bookings:", err));
+
+    fetch("http://localhost:3007/sales")
+      .then((res) => res.json())
+      .then((data) => setSales(data))
+      .catch((err) => console.error("Error fetching sales:", err));
+
+    fetch("http://localhost:3007/analytics")
+      .then((res) => res.json())
+      .then((data) => setAnalytics(data))
+      .catch((err) => console.error("Error fetching analytics:", err));
+  }, []);
+
   return (
-    <>
-      <nav className="navbar my-navbar sticky-top">
-        <div className="container-fluid">
-          <a className="navbar-brand" href="#">
-            GenClean
+    <div className="app-container">
+      {/* Header */}
+      <header className="app-header">
+        <div className="header-inner">
+          <a href="#" className="logo">
+            <span>GenClean</span>
+            <span className="logo-sub">Admin</span>
           </a>
-          <button
-            className="navbar-toggler ms-auto"
-            type="button"
-            onClick={toggleSidebar}
-            aria-controls="sidebar"
-            aria-expanded={isSidebarOpen}
-            aria-label="Toggle navigation"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              className="bi bi-list"
-              viewBox="0 0 16 16"
-            >
-              <path
-                fillRule="evenodd"
-                d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"
-              />
-            </svg>
+          <button className="navbar-toggler" onClick={toggleSidebar}>
+            ☰
           </button>
         </div>
-      </nav>
+      </header>
 
+      {/* Sidebar */}
       <div className={`sidebar right-aligned ${isSidebarOpen ? "open" : ""}`}>
         <button className="close-btn" onClick={toggleSidebar}>
           &times;
         </button>
         <ul className="sidebar-nav">
           <li>
-            <a href="#">Manage Bookings</a>
+            <button onClick={() => scrollToRef(bookingsRef)}>
+              Manage Bookings
+            </button>
           </li>
           <li>
-            <a href="#">Sales and Request</a>
+            <button onClick={() => scrollToRef(salesRef)}>
+              Sales and Request
+            </button>
           </li>
           <li>
-            <a href="#">Customer Analytics</a>
+            <button onClick={() => scrollToRef(analyticsRef)}>
+              Customer Analytics
+            </button>
           </li>
           <li>
-            <a href="#">Sign out</a>
+            <Link to="/beforeafter">Before & After</Link>
+          </li>
+          <li>
+            <button>Sign out</button>
           </li>
         </ul>
       </div>
 
-      <div className={`dashbg ${isSidebarOpen ? "shifted" : ""}`}>
-        <div className="section-container">
+      {/* Main */}
+      <main className="app-main">
+        {/* Bookings */}
+        <div className="section-container" ref={bookingsRef}>
           <h2>Manage Bookings</h2>
           <div className="table-wrapper">
-            <table className="manage-bookings-table">
+            <table className="analytics-table">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Name</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>View</th>
+                  <th>User ID</th>
+                  <th>Service</th>
+                  <th>Booking Date</th>
+                  <th>Address</th>
+                  <th>Notes</th>
+                  <th>For Assessment</th>
+                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>123</td>
-                  <td>Jane Doe</td>
-                  <td>10/25/2026</td>
-                  <td>Pending</td>
-                  <td>View</td>
-                </tr>
-                <tr>
-                  <td>124</td>
-                  <td>John Smith</td>
-                  <td>10/26/2026</td>
-                  <td>Done</td>
-                  <td>View</td>
-                </tr>
-                <tr>
-                  <td>125</td>
-                  <td>Emily White</td>
-                  <td>10/27/2026</td>
-                  <td>Cancelled</td>
-                  <td>View</td>
-                </tr>
-                <tr>
-                  <td>126</td>
-                  <td>Michael Brown</td>
-                  <td>10/28/2026</td>
-                  <td>Pending</td>
-                  <td>View</td>
-                </tr>
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: "center" }}>
+                      No bookings found
+                    </td>
+                  </tr>
+                ) : (
+                  bookings.map((b) => (
+                    <tr key={b.id}>
+                      <td>{b.id}</td>
+                      <td>{b.user_id}</td>
+                      <td>{b.service}</td>
+                      <td>{new Date(b.booking_date).toLocaleDateString()}</td>
+                      <td>{b.address}</td>
+                      <td>{b.notes}</td>
+                      <td>{b.for_assessment ? "Yes" : "No"}</td>
+                      <td>
+                        {b.created_at
+                          ? new Date(b.created_at).toLocaleString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
           <div className="view-more">
-            <a href="#">View More &rarr;</a>
+            <Link to="/manageb">View More →</Link>
           </div>
         </div>
 
-        <div className="section-container">
+        {/* Sales */}
+        <div className="section-container" ref={salesRef}>
           <h2>Sales and Request</h2>
           <div className="table-wrapper">
-            <table className="sales-request-table">
+            <table className="analytics-table">
               <thead>
                 <tr>
+                  <th>ID</th>
                   <th>Customer</th>
                   <th>Service</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Date</th>
+                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>JANE</td>
-                  <td>General Cleaning</td>
-                  <td>₱ 1,250</td>
-                  <td>Done</td>
-                  <td>10/25/2026</td>
-                </tr>
+                {sales.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center" }}>
+                      No sales data yet
+                    </td>
+                  </tr>
+                ) : (
+                  sales.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.id}</td>
+                      <td>{s.customer}</td>
+                      <td>{s.service}</td>
+                      <td>{s.amount}</td>
+                      <td className="capitalize">{s.status}</td>
+                      <td>
+                        {s.created_at
+                          ? new Date(s.created_at).toLocaleString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
           <div className="view-more">
-            <a href="#">View More &rarr;</a>
+            <Link to="/salesandreq">View More →</Link>
           </div>
         </div>
 
-        <div className="section-container">
+        {/* Analytics */}
+        <div className="section-container" ref={analyticsRef}>
           <h2>Customer Analytics</h2>
           <div className="table-wrapper">
-            <table className="customer-analytics-table">
+            <table className="analytics-table">
               <thead>
                 <tr>
-                  <th>DATE</th>
-                  <th>SERVICES</th>
-                  <th>AMOUNT</th>
-                  <th>Status</th>
-                  <th>CLEANER/EMPLOYEE</th>
+                  <th>ID</th>
+                  <th>Customer</th>
+                  <th>Total Bookings</th>
+                  <th>Total Spent</th>
+                  <th>Last Booking</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>09/03/24</td>
-                  <td>General Cleaning</td>
-                  <td>₱ 1,200</td>
-                  <td>Paid</td>
-                  <td>Allen kopal of Employee</td>
-                </tr>
-                <tr>
-                  <td>12/14/24</td>
-                  <td>General Cleaning</td>
-                  <td>₱ 2,254</td>
-                  <td>Paid</td>
-                  <td>Name of Employee</td>
-                </tr>
+                {analytics.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center" }}>
+                      No analytics data yet
+                    </td>
+                  </tr>
+                ) : (
+                  analytics.map((a) => (
+                    <tr key={a.id}>
+                      <td>{a.id}</td>
+                      <td>{a.customer}</td>
+                      <td>{a.total_bookings}</td>
+                      <td>{a.total_spent}</td>
+                      <td>
+                        {a.last_booking
+                          ? new Date(a.last_booking).toLocaleDateString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
           <div className="view-more">
-            <a href="#">View More &rarr;</a>
+            <Link to="/analytics">View More →</Link>
           </div>
         </div>
-      </div>
-    </>
+      </main>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        &copy; {new Date().getFullYear()} GenClean Admin Dashboard
+      </footer>
+    </div>
   );
 }
 

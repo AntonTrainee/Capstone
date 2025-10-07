@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 const Register = () => {
   const [step, setStep] = useState(1);
@@ -71,8 +72,12 @@ const Register = () => {
   return (
     <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>
-          GenClean
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img
+            src={Genclean}
+            alt="GenClean Logo"
+            className="genclean-logo"
+          />
         </h1>
       </div>
 

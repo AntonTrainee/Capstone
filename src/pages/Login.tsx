@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 interface LoginResponse {
   message?: string;
@@ -56,7 +57,13 @@ function Login() {
   <>
    <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>Genclean</h1>
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img
+            src={Genclean}
+            alt="GenClean Logo"
+            className="genclean-logo"
+          />
+        </h1>
       </div>
       
       <div className="white-box d-flex flex-column align-items-center justify-content-center">

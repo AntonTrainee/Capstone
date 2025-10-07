@@ -34,7 +34,7 @@ function Services() {
 
       <h1
         className="text-center my-5"
-        style={{ fontSize: "2.5rem", textDecoration: "underline" }}
+        style={{ fontSize: "2.5rem", textDecoration: "underline",  }}
       >
         Our Services
       </h1>

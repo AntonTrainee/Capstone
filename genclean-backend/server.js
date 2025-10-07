@@ -123,7 +123,7 @@ app.post("/forgot-password", async (req, res) => {
     const resetToken = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: "15m" });
 
     // Create reset link (point this to your frontend Reset Password page)
-    const resetLink = `http://localhost:5173/resetpassword?token=${resetToken}`;
+    const resetLink = `http://localhost:3007/resetpassword?token=${resetToken}`;
 
     // Setup transporter
     const transporter = nodemailer.createTransport({

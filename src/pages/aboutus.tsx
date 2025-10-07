@@ -17,7 +17,7 @@ function AboutUs() {
           <div className="about-flex">
             <div className="about-text">
               <div className="about-block">
-                <h2>What we are</h2>
+                <h2 className="what">What we are</h2>
                 <p>
                   <span className="bold">GenClean Inc.</span> is a reputable and
                   reliable property maintenance contractor established in January
@@ -29,7 +29,7 @@ function AboutUs() {
               </div>
 
               <div className="about-block">
-                <h2>What we do</h2>
+                <h2 className="what">What we do</h2>
                 <p>
                   We specialize in delivering comprehensive property maintenance
                   solutions for homeowners, property managers, and businesses.

@@ -10,10 +10,10 @@ const Register = () => {
   const [emailAdd, setEmailAdd] = useState("");
   const [password, setPassword] = useState("");
   const [conpassword, setConpassword] = useState("");
-
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
+  // ================== HANDLE SUBMIT ==================
+  const handleSubmit = async () => {
     if (password !== conpassword) {
       alert("Passwords do not match");
       return;
@@ -23,42 +23,41 @@ const Register = () => {
       firstName,
       lastName,
       phoneNumber,
-      emailAdd,
+      email: emailAdd,
       password,
     };
 
-    fetch("http://localhost:3007/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    })
-      .then((res) => res.text())
-      .then((data) => {
-        alert(data);
-        localStorage.setItem("userData", JSON.stringify(userData));
+    try {
+      // 1️⃣ Save user data temporarily in localStorage
+      localStorage.setItem("pendingUser", JSON.stringify(userData));
 
-        navigate("/otp", { state: { email: emailAdd } });
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Registration failed");
+      // 2️⃣ Send OTP to email
+      const response = await fetch("http://localhost:3007/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAdd }),
       });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("OTP sent! Check your email.");
+        navigate("/otp", { state: { email: emailAdd } });
+      } else {
+        alert(data.message || "Failed to send OTP");
+      }
+    } catch (err) {
+      console.error("Error sending OTP:", err);
+      alert("Something went wrong while sending OTP");
+    }
   };
 
-  // Auto-format PH number: 09XX-XXX-XXXX
+  // ================== PHONE NUMBER FORMAT ==================
   const handlePhoneInput = (value: string) => {
-    // Remove non-digit characters
     let digits = value.replace(/\D/g, "");
-
-    // Force leading 09
     if (!digits.startsWith("09")) digits = "09" + digits.slice(digits.startsWith("0") ? 1 : 0);
-
-    // Limit to 11 digits
     if (digits.length > 11) digits = digits.slice(0, 11);
 
-    // Format as 09XX-XXX-XXXX
     let formatted = digits;
     if (digits.length > 4 && digits.length <= 7) {
       formatted = digits.slice(0, 4) + "-" + digits.slice(4);
@@ -69,15 +68,12 @@ const Register = () => {
     setPhoneNumber(formatted);
   };
 
+  // ================== UI ==================
   return (
     <div className="colorscheme">
       <div className="blue-box">
         <h1 className="navbar-brand" style={{ textAlign: "center" }}>
-          <img
-            src={Genclean}
-            alt="GenClean Logo"
-            className="genclean-logo"
-          />
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 

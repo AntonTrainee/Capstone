@@ -1,24 +1,22 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
-const { Pool } = require("pg");
 
+// Temporary store for OTPs
 const otpStore = {};
 
-// PostgreSQL pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
+// ================== SEND OTP ==================
 async function sendOTP(req, res) {
-  const userEmailInput = req.body.email;
+  const { email } = req.body;
 
-  if (!userEmailInput) {
-    return res.status(400).json({ message: "Email is required" });
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
   }
 
+  // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
-  otpStore[userEmailInput] = otp;
+  otpStore[email] = otp;
 
+  // Nodemailer transporter
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -30,50 +28,37 @@ async function sendOTP(req, res) {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL,
-      to: userEmailInput,
+      to: email,
       subject: "Your OTP Code",
       text: `Your OTP code is: ${otp}`,
     });
 
-    res.status(200).json({ message: "OTP sent successfully" });
+    console.log(`📩 OTP sent to ${email}: ${otp}`);
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (err) {
-    console.error("Error sending email:", err);
-    res.status(500).json({ message: "Failed to send OTP", error: err.message });
+    console.error("❌ Error sending OTP:", err);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
   }
 }
 
-async function verifyOTP(req, res) {
+// ================== VERIFY OTP ==================
+function verifyOTP(req, res) {
   const { email, otp } = req.body;
 
-  if (otpStore[email] && otpStore[email] == otp) {
-    delete otpStore[email];
-
-    try {
-      const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const user = result.rows[0];
-
-      // ✅ Return full user object
-      res.status(200).json({
-        message: "OTP verified",
-        user: {
-          id: user.id,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          email: user.email,
-          phoneNumber: user.phone_number,
-        },
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
-    }
-  } else {
-    res.status(400).json({ message: "Invalid OTP" });
+  if (!email || !otp) {
+    return res.status(400).json({ success: false, message: "Email and OTP are required" });
   }
+
+  // Check if OTP exists and matches
+  if (!otpStore[email] || otpStore[email] != otp) {
+    return res.status(400).json({ success: false, message: "Invalid OTP" });
+  }
+
+  // OTP is correct, remove it
+  delete otpStore[email];
+
+  console.log(`✅ OTP verified for ${email}`);
+  res.status(200).json({ success: true, message: "OTP verified successfully!" });
 }
 
 module.exports = { sendOTP, verifyOTP };

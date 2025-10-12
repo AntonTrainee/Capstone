@@ -46,15 +46,16 @@ function Booksys() {
     }
 
     const bookingData = {
-      userId: user.id,
+      user_id: user.id,
       service: service,
-      date: bookingDate,
+      booking_date: bookingDate,
       address: address,
       notes: notes,
       forAssessment: forAssessment,
     };
 
     try {
+      console.log("Sending booking data:", bookingData);
       const response = await fetch("http://localhost:3007/booking", {
         method: "POST",
         headers: {

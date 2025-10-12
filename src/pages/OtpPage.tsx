@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 function OtpPage() {
   const [email, setEmail] = useState("");
@@ -9,17 +10,16 @@ function OtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Grab email from navigation state
   useEffect(() => {
     if (location.state?.email) {
-      setEmail(location.state.email);
-      handleSendOtp(location.state.email);
+      setEmail(location.state.email.trim().toLowerCase());
     }
   }, [location]);
 
-  const handleSendOtp = async (passedEmail?: string) => {
-    const targetEmail = passedEmail || email;
-
-    if (!targetEmail) {
+  // ================== Resend OTP ==================
+  const handleSendOtp = async () => {
+    if (!email) {
       setMessage("Please enter an email first.");
       return;
     }
@@ -28,17 +28,18 @@ function OtpPage() {
       const res = await fetch("http://localhost:3007/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
-      setMessage(data.message);
+      setMessage(data.message || "OTP resent successfully");
     } catch (error) {
-      setMessage("Failed to send OTP.");
       console.error(error);
+      setMessage("Failed to resend OTP.");
     }
   };
 
+  // ================== Verify OTP ==================
   const handleVerifyOtp = async () => {
     if (!otp) {
       setMessage("Please enter the OTP.");
@@ -46,37 +47,64 @@ function OtpPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:3007/verify-otp", {
+      const verifyRes = await fetch("http://localhost:3007/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp: otp.toString().trim() }),
       });
 
-      const data = await res.json();
-      setMessage(data.message);
+      const verifyData = await verifyRes.json();
 
-      if (data.message === "OTP verified") {
-        // 🔹 Save user info to localStorage so CustomerDashb renders correctly
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
+      if (!verifyData.success) {
+        setMessage(verifyData.message || "Invalid or expired OTP");
+        return;
+      }
 
-        // 🔹 Redirect after 1 second
+      setMessage("✅ OTP verified successfully! Finalizing registration...");
+
+      // Step 2: Retrieve pending user data
+      const pendingUser = localStorage.getItem("pendingUser");
+      if (!pendingUser) {
+        setMessage("No user data found. Please register again.");
+        return;
+      }
+
+      const userData = JSON.parse(pendingUser);
+
+      // Step 3: Send to /register for final DB insert
+      const registerRes = await fetch("http://localhost:3007/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      const registerData = await registerRes.json();
+
+      if (registerData.success) {
+        setMessage("🎉 Registration complete! Redirecting...");
+        localStorage.removeItem("pendingUser");
+
+        // Store user info for dashboard session
+        localStorage.setItem("user", JSON.stringify(registerData.user));
+
         setTimeout(() => {
           navigate("/customerdashb");
-        }, 1000);
+        }, 1200);
+      } else {
+        setMessage(registerData.message || "Registration failed after OTP verification.");
       }
     } catch (error) {
-      setMessage("Error verifying OTP.");
-      console.error(error);
+      console.error("Error verifying OTP:", error);
+      setMessage("Something went wrong during OTP verification.");
     }
   };
 
+  // ================== UI ==================
   return (
     <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>
-          GenClean
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
@@ -97,10 +125,8 @@ function OtpPage() {
         <button className="btn crAct-btn mb-3 w-75" onClick={handleVerifyOtp}>
           Verify OTP
         </button>
-        <button
-          className="btn crAct-btn mb-3 w-75"
-          onClick={() => handleSendOtp()}
-        >
+
+        <button className="btn crAct-btn mb-3 w-75" onClick={handleSendOtp}>
           Resend OTP
         </button>
 

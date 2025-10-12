@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
@@ -7,52 +8,65 @@ import Footer from "../components/footer";
 
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [user, setUser] = useState<{ firstName: string; lastName: string } | null>(null);
-  const navigate = useNavigate(); 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
- 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) {
-      navigate("/"); 
-    }
+    if (!token) navigate("/");
 
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, [navigate]);
+
+  const handleLinkClick = (section: "bookings" | "history") => {
+    setActiveSection(section);
+    setIsDrawerOpen(false);
+  };
+
+  const handleBookLinkClick = () => {
+    setIsDrawerOpen(false);
+  };
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg my-navbar sticky-top">  
+      {/* NAVBAR — brand and new drawer toggle */}
+      <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
             GenClean
           </a>
+
+          {/* DRAWER TOGGLE BUTTON */}
           <button
-            className="navbar-toggler"
+            className="navbar-toggler profile-toggler"
             type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarSupportedContent"
+            aria-label="Toggle profile menu"
+            onClick={() => setIsDrawerOpen(!isDrawerOpen)}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
         </div>
       </nav>
 
+      {/* DRAWER BACKDROP */}
+      {isDrawerOpen && (
+        <div className="drawer-backdrop" onClick={() => setIsDrawerOpen(false)}></div>
+      )}
+
+      {/* MAIN DASHBOARD CONTENT */}
       <div className="dashboard-content">
         <div className="left-column-content">
           <div className="booked-services-column">
             <div className="booked-services-card">
-
               {activeSection === "bookings" ? (
                 <>
                   <h1 className="booked-services-title" id="Bookings">
                     Booked Services
                   </h1>
-
                   <div className="table-container">
                     <table className="bookings-table">
                       <thead>
@@ -88,7 +102,6 @@ function CustomerDashb() {
                   <h1 className="booked-services-title" id="History">
                     History
                   </h1>
-
                   <div className="table-container">
                     <table className="bookings-table">
                       <thead>
@@ -120,20 +133,9 @@ function CustomerDashb() {
                   </div>
                 </>
               )}
-             
-
-              <div className="change-section">
-                <p className="change-text-title">Need to change something?</p>
-                <p className="change-text-subtitle">
-                  For booking changes or cancellations, please contact our
-                  Support Team.
-                </p>
-                <button className="contact-support-btn">Contact Support</button>
-              </div>
             </div>
           </div>
 
-      
           <div
             id="services"
             className="container services-section dash-services"
@@ -143,16 +145,11 @@ function CustomerDashb() {
             <div className="row g-4">
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img
-                    src={genmain}
-                    className="card-img-top"
-                    alt="General Maintenance"
-                  />
+                  <img src={genmain} className="card-img-top" alt="General Maintenance" />
                   <div className="card-body">
                     <h5 className="card-title">General Maintenance</h5>
                     <p className="card-text">
-                      We handle routine repairs, upkeep, and maintenance tasks to keep
-                      your property in top condition.
+                      We handle routine repairs and upkeep to keep your property in top condition.
                     </p>
                   </div>
                 </div>
@@ -160,16 +157,11 @@ function CustomerDashb() {
 
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img
-                    src={janitor}
-                    className="card-img-top"
-                    alt="Janitorial Services"
-                  />
+                  <img src={janitor} className="card-img-top" alt="Janitorial Services" />
                   <div className="card-body">
                     <h5 className="card-title">Janitorial and Cleaning Services</h5>
                     <p className="card-text">
-                      Comprehensive cleaning services including offices, buildings, and
-                      commercial spaces to maintain hygiene and presentation.
+                      Comprehensive cleaning services including offices and commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -181,20 +173,18 @@ function CustomerDashb() {
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
                     <p className="card-text">
-                      Effective and safe pest management solutions to protect your
-                      property from unwanted infestations.
+                      Effective and safe pest management solutions to protect your property.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-
-        <Footer />
+          <Footer />
         </div>
 
-        <div className="profile-column">
+        {/* PROFILE SIDEBAR (Drawer) */}
+        <div className={`profile-column ${isDrawerOpen ? "open" : ""}`}>
           <div className="profile-card">
             <h2 className="client-name">
               {user ? `${user.firstName} ${user.lastName}` : "Client"}
@@ -203,7 +193,7 @@ function CustomerDashb() {
             <a
               href="#Bookings"
               className="profile-link"
-              onClick={() => setActiveSection("bookings")}
+              onClick={() => handleLinkClick("bookings")}
             >
               Bookings
             </a>
@@ -211,22 +201,25 @@ function CustomerDashb() {
             <a
               href="#History"
               className="profile-link"
-              onClick={() => setActiveSection("history")}
+              onClick={() => handleLinkClick("history")}
             >
               History
             </a>
 
-            <Link to="/booksys" className="profile-link">
+            <Link to="/booksys" className="profile-link" onClick={handleBookLinkClick}>
               Book
             </Link>
 
-            <Link to="/Profile" className="profile-link">
+            <Link to="/Profile" className="profile-link" onClick={handleBookLinkClick}>
               Edit Profile
             </Link>
 
             <button
               className="profile-link btn-logout"
-              onClick={() => setShowLogoutConfirm(true)}
+              onClick={() => {
+                setShowLogoutConfirm(true);
+                setIsDrawerOpen(false);
+              }}
             >
               Log Out
             </button>
@@ -234,6 +227,7 @@ function CustomerDashb() {
         </div>
       </div>
 
+      {/* LOGOUT CONFIRM MODAL */}
       {showLogoutConfirm && (
         <div className="logout-modal-backdrop">
           <div className="logout-modal">
@@ -242,9 +236,9 @@ function CustomerDashb() {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  localStorage.removeItem("auth_token"); 
+                  localStorage.removeItem("auth_token");
                   setShowLogoutConfirm(false);
-                  navigate("/"); 
+                  navigate("/");
                 }}
               >
                 Yes, I am

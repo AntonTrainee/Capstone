@@ -7,7 +7,7 @@ import Register from "./pages/Register";
 import CustomerDashb from "./pages/customerdashb";
 import Booksys from "./pages/booksys";
 import Admindashb from "./pages/admindashb";
-import MGbook from "./pages/mgbook";
+
 import About from "./pages/aboutus";
 import Services from "./pages/services";
 import Manageb from "./pages/manageb";
@@ -53,7 +53,7 @@ function App() {
 
       <Route path="/beforeafter" element={<BeforeAfter />} />
       <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
-      <Route path="/mgbook" element={<MGbook />} />
+      
       <Route path="/manageb" element={<Manageb />} />
       <Route path="/salesandreq" element={<Salesandreq />} />
       <Route path="/analytics" element={<Analytics />} />

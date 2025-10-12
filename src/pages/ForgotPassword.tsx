@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -30,8 +31,12 @@ function ForgotPassword() {
   return (
     <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>
-          Genclean
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img
+            src={Genclean}
+            alt="GenClean Logo"
+            className="genclean-logo"
+          />
         </h1>
       </div>
 

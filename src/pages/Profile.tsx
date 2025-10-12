@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
+
 
 interface User {
   id: number;
@@ -69,7 +71,13 @@ function Profile() {
   return (
     <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>Genclean</h1>
+       <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img
+            src={Genclean}
+            alt="GenClean Logo"
+            className="genclean-logo"
+          />
+        </h1>
       </div>
 
       <div className="white-box d-flex flex-column align-items-center justify-content-center">

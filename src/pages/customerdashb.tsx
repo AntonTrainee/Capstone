@@ -1,26 +1,61 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 import Footer from "../components/footer";
 
+interface Booking {
+  booking_id: string;
+  service: string;
+  address: string;
+  booking_date: string;
+  status: string;
+}
+
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [user, setUser] = useState<{ firstName: string; lastName: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(
+    null
+  );
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [history, setHistory] = useState<Booking[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) navigate("/");
+    if (!token) {
+      navigate("/");
+      return;
+    }
 
     const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchBookings(parsedUser.id);
+    }
   }, [navigate]);
+
+  const fetchBookings = async (userId: string) => {
+    try {
+      const response = await axios.get<Booking[]>(`http://localhost:3007/bookings/user/${userId}`);
+      const allBookings = response.data;
+
+      const activeBookings = allBookings.filter((b) => b.status.toLowerCase() !== "completed");
+      const completedBookings = allBookings.filter((b) => b.status.toLowerCase() === "completed");
+
+      setBookings(activeBookings);
+      setHistory(completedBookings);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+    }
+  };
 
   const handleLinkClick = (section: "bookings" | "history") => {
     setActiveSection(section);
@@ -33,7 +68,7 @@ function CustomerDashb() {
 
   return (
     <>
-      {/* NAVBAR — brand and new drawer toggle */}
+      {/* NAVBAR — Brand + Drawer Button */}
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
@@ -52,7 +87,7 @@ function CustomerDashb() {
         </div>
       </nav>
 
-      {/* DRAWER BACKDROP */}
+      {/* DRAWER BACKDROP (for mobile overlay effect) */}
       {isDrawerOpen && (
         <div className="drawer-backdrop" onClick={() => setIsDrawerOpen(false)}></div>
       )}
@@ -60,6 +95,7 @@ function CustomerDashb() {
       {/* MAIN DASHBOARD CONTENT */}
       <div className="dashboard-content">
         <div className="left-column-content">
+          {/* BOOKINGS / HISTORY TABLES */}
           <div className="booked-services-column">
             <div className="booked-services-card">
               {activeSection === "bookings" ? (
@@ -71,28 +107,27 @@ function CustomerDashb() {
                     <table className="bookings-table">
                       <thead>
                         <tr>
-                          <th>Service ID</th>
-                          <th>Service Type</th>
+                          <th>Service</th>
                           <th>Address</th>
-                          <th>Date & Time</th>
+                          <th>Booking Date</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td>001</td>
-                          <td>Cleaning</td>
-                          <td>123 Main St</td>
-                          <td>2025-08-20 10:00 AM</td>
-                          <td>Completed</td>
-                        </tr>
-                        <tr>
-                          <td>002</td>
-                          <td>Maintenance</td>
-                          <td>45 Elm Ave</td>
-                          <td>2025-08-21 2:00 PM</td>
-                          <td>Pending</td>
-                        </tr>
+                        {bookings.length > 0 ? (
+                          bookings.map((b) => (
+                            <tr key={b.booking_id}>
+                              <td>{b.service}</td>
+                              <td>{b.address}</td>
+                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>{b.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4}>No current bookings.</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -106,28 +141,27 @@ function CustomerDashb() {
                     <table className="bookings-table">
                       <thead>
                         <tr>
-                          <th>Service ID</th>
-                          <th>Service Type</th>
+                          <th>Service</th>
                           <th>Address</th>
-                          <th>Date & Time</th>
+                          <th>Booking Date</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td>0001</td>
-                          <td>Cleaning</td>
-                          <td>12 Oak St</td>
-                          <td>2025-07-15 9:00 AM</td>
-                          <td>Completed</td>
-                        </tr>
-                        <tr>
-                          <td>0002</td>
-                          <td>Pest Control</td>
-                          <td>77 Pine Rd</td>
-                          <td>2025-07-20 3:00 PM</td>
-                          <td>Completed</td>
-                        </tr>
+                        {history.length > 0 ? (
+                          history.map((b) => (
+                            <tr key={b.booking_id}>
+                              <td>{b.service}</td>
+                              <td>{b.address}</td>
+                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>{b.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4}>No completed bookings yet.</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -136,6 +170,7 @@ function CustomerDashb() {
             </div>
           </div>
 
+          {/* SERVICES SECTION */}
           <div
             id="services"
             className="container services-section dash-services"
@@ -180,29 +215,22 @@ function CustomerDashb() {
               </div>
             </div>
           </div>
+
           <Footer />
         </div>
 
-        {/* PROFILE SIDEBAR (Drawer) */}
+        {/* PROFILE SIDEBAR (DRAWER) */}
         <div className={`profile-column ${isDrawerOpen ? "open" : ""}`}>
           <div className="profile-card">
             <h2 className="client-name">
               {user ? `${user.firstName} ${user.lastName}` : "Client"}
             </h2>
 
-            <a
-              href="#Bookings"
-              className="profile-link"
-              onClick={() => handleLinkClick("bookings")}
-            >
+            <a href="#Bookings" className="profile-link" onClick={() => handleLinkClick("bookings")}>
               Bookings
             </a>
 
-            <a
-              href="#History"
-              className="profile-link"
-              onClick={() => handleLinkClick("history")}
-            >
+            <a href="#History" className="profile-link" onClick={() => handleLinkClick("history")}>
               History
             </a>
 
@@ -243,10 +271,7 @@ function CustomerDashb() {
               >
                 Yes, I am
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowLogoutConfirm(false)}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowLogoutConfirm(false)}>
                 Cancel
               </button>
             </div>

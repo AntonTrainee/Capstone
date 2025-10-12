@@ -1,7 +1,7 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
-// Temporary store for OTPs
+// Temporary store for OTPs (in-memory)
 const otpStore = {};
 
 // ================== SEND OTP ==================
@@ -14,7 +14,7 @@ async function sendOTP(req, res) {
 
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
-  otpStore[email] = otp;
+  otpStore[email.trim().toLowerCase()] = otp; // normalize email
 
   // Nodemailer transporter
   const transporter = nodemailer.createTransport({
@@ -49,13 +49,17 @@ function verifyOTP(req, res) {
     return res.status(400).json({ success: false, message: "Email and OTP are required" });
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.toString().trim();
+
   // Check if OTP exists and matches
-  if (!otpStore[email] || otpStore[email] != otp) {
+  if (!otpStore[normalizedEmail] || otpStore[normalizedEmail].toString() !== cleanOtp) {
+    console.log(`❌ Invalid OTP attempt for ${email}: entered ${otp}, expected ${otpStore[normalizedEmail]}`);
     return res.status(400).json({ success: false, message: "Invalid OTP" });
   }
 
   // OTP is correct, remove it
-  delete otpStore[email];
+  delete otpStore[normalizedEmail];
 
   console.log(`✅ OTP verified for ${email}`);
   res.status(200).json({ success: true, message: "OTP verified successfully!" });

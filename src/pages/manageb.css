@@ -213,3 +213,29 @@
   background: #f1f5f9;
   margin-top: auto;
 }
+
+/* Wider inputs for better visibility */
+.wide-input {
+  width: 180px !important;
+  min-width: 160px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.payment-input {
+  width: 120px !important;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+/* Expandable textarea for notes */
+.textarea-expand {
+  width: 220px;
+  min-height: 70px;
+  resize: vertical;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}

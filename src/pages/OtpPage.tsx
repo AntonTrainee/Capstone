@@ -88,7 +88,7 @@ function OtpPage() {
         localStorage.setItem("user", JSON.stringify(registerData.user));
 
         setTimeout(() => {
-          navigate("/customerdashb");
+          navigate("/Login");
         }, 1200);
       } else {
         setMessage(registerData.message || "Registration failed after OTP verification.");

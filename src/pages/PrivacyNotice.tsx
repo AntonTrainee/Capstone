@@ -8,10 +8,9 @@ export default function PrivacyNotice() {
 
       <h2>1. Introduction</h2>
       <p>
-        GenClean (“we”, “our”, or “us”) respects your privacy. This Privacy
-        Notice explains what personal data we collect, why we collect it, how
-        long we keep it, who we share it with, and your rights regarding that
-        data.
+        GenClean (“we”, “our”, or “us”) respects your privacy. This Privacy Notice
+        explains what personal data we collect, why we collect it, how long we
+        keep it, who we share it with, and your rights regarding that data.
       </p>
 
       <h2>2. Who we are</h2>
@@ -43,6 +42,14 @@ export default function PrivacyNotice() {
         record payments, communicate with customers, meet legal obligations,
         detect and prevent fraud, and for marketing where you’ve consented.
       </p>
+      <ul>
+        <li>provide and improve services,</li>
+        <li>process and record payments,</li>
+        <li>communicate with customers,</li>
+        <li>meet legal and tax obligations,</li>
+        <li>detect and prevent fraud, and</li>
+        <li>conduct marketing where you’ve consented.</li>
+      </ul>
 
       <h2>5. Legal bases (Philippines)</h2>
       <p>
@@ -105,14 +112,14 @@ export default function PrivacyNotice() {
 
       <h2>10. Cookies &amp; tracking</h2>
       <p>
-        We use cookies for site functionality and analytics. Marketing cookies
-        are only set with your consent.
+        We use cookies for site functionality and analytics. Marketing cookies are
+        only set with your consent.
       </p>
 
       <h2>11. Changes</h2>
       <p>
-        We may update this Privacy Notice. If changes are material, we will
-        notify you via the site or email.
+        We may update this Privacy Notice. If changes are material, we will notify
+        you via the site or email.
       </p>
 
       <h2>12. Contact &amp; complaints</h2>

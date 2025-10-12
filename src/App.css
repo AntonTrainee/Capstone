@@ -789,6 +789,27 @@ tr:nth-child(even) {
   gap: 20px;
 }
 
+
+
+.booking-form {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.booking-box {
+  width: 95%;
+  max-width: 1000px;
+  padding: 40px 30px;
+  margin-top: 40px;
+}
+
+.customer-details {
+  background-color: #f9f9f9;
+  padding: 25px;
+  border-radius: 8px;
+  height: fit-content;
+}
+
 @media (max-width: 768px) {
   .services-page.container.services-container {
     display: flex !important;
@@ -986,7 +1007,36 @@ tr:nth-child(even) {
     flex-direction: column;
     align-items: center;
   }
+
+  .booking-title {
+    font-size: 2rem;
+    text-align: center;
+  }
+
+  .booking-box {
+    padding: 30px 20px;
+  }
+
+  .form-column,
+  .customer-details {
+    flex: 100%;
+    max-width: 100%;
+  }
+
+  .form-column {
+    margin-bottom: 30px;
+  }
+
+  .customer-details {
+    text-align: left;
+  }
+
 }
+
+
+
+
+
 
 @media (min-width: 993px) {
   .profile-column {
@@ -1051,6 +1101,32 @@ footer {
   .profile-link {
     font-size: 1rem;
   }
+
+  .booking-title {
+    font-size: 1.75rem;
+  }
+
+  .book-now-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+  }
+
+  .booking-input,
+  textarea,
+  select {
+    font-size: 1rem;
+  }
+
+  .booking-box {
+    padding: 25px 15px;
+  }
+
+  .detail-item {
+    font-size: 0.9rem;
+  }
+
+
 }
 
 .navbar .navbar-brand {
@@ -1100,4 +1176,99 @@ footer {
 
 .profile-column {
   box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .booking-box {
+    padding: 30px;
+    width: 95%;
+  }
+
+  .booking-title {
+    font-size: 2rem;
+  }
+
+  .book-now-btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content-container {
+    padding: 20px;
+    align-items: center;
+  }
+
+  .booking-box {
+    padding: 25px;
+    width: 100%;
+  }
+
+  .booking-title {
+    text-align: center;
+    font-size: 1.8rem;
+  }
+
+  .row.g-5 {
+    gap: 1.5rem !important;
+    flex-direction: column !important;
+  }
+
+  .form-column,
+  .customer-details {
+    width: 100% !important;
+  }
+
+  .customer-details {
+    margin-top: 20px;
+    padding: 20px;
+  }
+
+  .book-now-btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-box {
+    padding: 20px;
+  }
+
+  .booking-title {
+    font-size: 1.5rem;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+  }
+
+  .booking-input {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .detail-label,
+  .detail-value {
+    font-size: 0.9rem;
+  }
+
+  .book-now-btn {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  .customer-details {
+    padding: 15px;
+  }
+
+  .navbar {
+    padding-inline: 0.5rem;
+  }
 }

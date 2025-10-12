@@ -31,7 +31,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/services" element={<Services />} />
-      <Route path="/booksys" element={<Booksys />} />
+      
       <Route path="/register" element={<Register />} />
       <Route path="/otp" element={<OtpPage />} />
       <Route path="/login" element={<Login />} />
@@ -49,6 +49,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/customerdashb" element={<CustomerDashb />} />
         <Route path="/Profile" element={<Profile />} />
+        <Route path="/booksys" element={<Booksys />} />
       </Route>
 
       <Route path="/beforeafter" element={<BeforeAfter />} />

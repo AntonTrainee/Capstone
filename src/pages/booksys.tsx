@@ -51,7 +51,7 @@ function Booksys() {
       booking_date: bookingDate,
       address: address,
       notes: notes,
-      for_assessment: forAssessment, // ✅ fixed field name
+      for_assessment: forAssessment,
       status: "pending",
       payment: "0",
       created_at: new Date().toISOString(),
@@ -59,7 +59,6 @@ function Booksys() {
     };
 
     try {
-      console.log("Sending booking data:", bookingData);
       const response = await fetch("http://localhost:3007/booking", {
         method: "POST",
         headers: {
@@ -71,26 +70,19 @@ function Booksys() {
       const resultText = await response.text();
 
       if (response.ok) {
-        // ✅ Ensure user stays synced
         localStorage.setItem("user", JSON.stringify(user));
-
         setMessage("✅ Booking successful! Redirecting...");
-        // Reset form
         setService("");
         setBookingDate("");
         setAddress("");
         setNotes("");
         setForAssessment(false);
-
-        // Redirect after short delay
-        setTimeout(() => {
-          navigate("/customerdashb");
-        }, 2000);
+        setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
         setMessage(resultText || "❌ Booking failed. Please try again.");
       }
     } catch (error) {
-      console.error("An unexpected error occurred:", error);
+      console.error("Error:", error);
       setMessage("⚠️ An unexpected error occurred while booking.");
     } finally {
       setIsSubmitting(false);
@@ -117,8 +109,7 @@ function Booksys() {
         <div className="booking-box">
           <h2 className="booking-title">Book for Quotation!</h2>
           <form onSubmit={handleSubmit}>
-            <div className="row g-5">
-              {/* Left column */}
+            <div className="row g-4 booking-form">
               <div className="col-md-6 form-column">
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
@@ -167,8 +158,8 @@ function Booksys() {
                   ></textarea>
                 </div>
 
-                <div className="form-check d-flex align-items-center mb-4">
-                  <label className="form-check-label me-4">For Assessment:</label>
+                <div className="form-check mb-4 d-flex align-items-center">
+                  <label className="form-check-label me-3">For Assessment:</label>
                   <input
                     type="checkbox"
                     className="form-check-input"
@@ -178,7 +169,6 @@ function Booksys() {
                 </div>
               </div>
 
-              {/* Right column - user info */}
               <div className="col-md-6 customer-details">
                 <h5 className="details-title">Customer Details:</h5>
                 {user ? (

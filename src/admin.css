@@ -184,3 +184,29 @@
 .view-more a:hover {
   text-decoration: underline;
 }
+
+/* === Dual Tables Layout === */
+.dual-table-container {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.table-box {
+  flex: 1;
+  min-width: 450px;
+  background: #ffffff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.table-box h3 {
+  margin-bottom: 0.8rem;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}

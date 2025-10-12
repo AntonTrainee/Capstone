@@ -93,7 +93,7 @@ app.post("/login", async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user.id,
+        id: user.user_id,
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
@@ -364,59 +364,97 @@ app.put("/update-profile", requireAuth, async (req, res) => {
 });
 
 
-// ======================= BOOKING =======================
+/* ======================= BOOKING ROUTES ======================= */
+
+// ✅ Create Booking
+// ✅ Create Booking (FIXED)
+// … other imports remain …
+
 app.post("/booking", async (req, res) => {
-  const { userId, service, date, address, notes, forAssessment } = req.body;
-
   try {
-    await pool.query(
-      `INSERT INTO bookings (user_id, service, booking_date, address, notes, for_assessment)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, service, date, address, notes, forAssessment]
-    );
+    const { user_id, service, booking_date, address, notes, forAssessment } = req.body;
 
-    res.status(200).send("Booking successful");
+    if (!user_id || !service || !booking_date || !address) {
+      return res.status(400).send("Missing required booking fields.");
+    }
+
+    const insertQuery = `
+      INSERT INTO bookings
+        (user_id, service, booking_date, address, notes, for_assessment, payment, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *;
+    `;
+
+    const values = [
+      user_id,
+      service,
+      booking_date,
+      address,
+      notes || "",
+      forAssessment || false,
+      0,      // default payment
+      "pending",  // **lowercase** status
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    const newBooking = result.rows[0];
+
+    // Optionally respond with the new booking object
+    res.status(201).json(newBooking);
+
   } catch (err) {
-    console.error("Error inserting booking:", err);
-    res.status(500).send("Error booking service");
+    console.error("❌ Error booking service:", err);
+    res.status(500).send("Error booking service: " + err.message);
   }
 });
 
-/** BOOKING (READ - GET ALL) */
+
+
+// ✅ Update Booking
+app.put("/bookings/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, address, notes, for_assessment, payment, status } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE bookings SET name=$1, address=$2, notes=$3, for_assessment=$4, payment=$5, status=$6
+       WHERE booking_id=$7 RETURNING *`,
+      [name, address, notes, for_assessment, payment, status, id]
+    );
+    if (result.rows.length === 0) return res.status(404).send("Booking not found");
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating booking:", err);
+    res.status(500).send("Error updating booking");
+  }
+});
+
+
+// ✅ Fetch All Bookings
 app.get("/bookings", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM bookings ORDER BY booking_date DESC");
+    const result = await pool.query(`SELECT * FROM bookings ORDER BY created_at DESC`);
     res.json(result.rows);
   } catch (err) {
-    console.error("Error fetching bookings:", err);
+    console.error("Error fetching bookings:", err.message);
     res.status(500).send("Error fetching bookings");
   }
 });
 
-/** BOOKING (UPDATE) */
-app.put("/bookings/:id", async (req, res) => {
-  const { id } = req.params;
-  const { service, booking_date, address, notes } = req.body;
-
+// ✅ Fetch Bookings for Specific User
+app.get("/bookings/user/:userId", async (req, res) => {
   try {
+    const { userId } = req.params;
     const result = await pool.query(
-      `UPDATE bookings 
-       SET service=$1, booking_date=$2, address=$3, notes=$4
-       WHERE id=$5
-       RETURNING *`,
-      [service, booking_date, address, notes, id]
+      `SELECT * FROM bookings WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).send("Booking not found");
-    }
-
-    res.status(200).json(result.rows[0]);
+    res.json(result.rows);
   } catch (err) {
-    console.error("Error updating booking:", err);
-    res.status(500).send(`Error updating booking: ${err.message}`);
+    console.error("Error fetching user bookings:", err.message);
+    res.status(500).send("Error fetching user bookings");
   }
 });
+
 
 // ======================= CONTACT FORM =======================
 const nodemailer = require("nodemailer");
@@ -459,21 +497,49 @@ app.post("/contact", async (req, res) => {
 
 
 
-/** CUSTOMER ANALYTICS (READ - GET ALL) */
-app.get("/analytics", async (req, res) => {
+/** ANALYTICS SUMMARY (READ - FILTER BY MONTH) */
+app.get("/analytics_summary", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM customer_analytics ORDER BY last_booking DESC");
-    res.json(result.rows);
+    // Extract month filter from query string (?month=10)
+    const month = parseInt(req.query.month);
+
+    // ✅ Validate month (1–12)
+    if (isNaN(month) || month < 1 || month > 12) {
+      return res.status(400).json({ error: "Invalid month value" });
+    }
+
+    // ✅ Fetch only completed sales within the selected month
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        service,
+        COUNT(*) AS total_bookings,
+        SUM(payment) AS total_amount,
+        MAX(completed_at) AS completed_at
+      FROM sales
+      WHERE status = 'completed'
+        AND EXTRACT(MONTH FROM completed_at) = $1
+      GROUP BY service
+      ORDER BY total_amount DESC;
+      `,
+      [month]
+    );
+
+    console.log("Fetched Analytics Summary:", rows);
+    res.json(rows);
   } catch (err) {
-    console.error("Error fetching analytics:", err);
-    res.status(500).send("Error fetching customer analytics");
+    console.error("Error fetching analytics summary:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-/** SALES AND REQUEST (READ - GET ALL) */
+
+
+/** SALES (READ - GET ALL) */
 app.get("/sales", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM sales_request ORDER BY created_at DESC");
+    const result = await pool.query("SELECT * FROM sales ORDER BY created_at DESC");
+    console.log("Fetched Sales:", result.rows);
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching sales:", err);
@@ -481,8 +547,15 @@ app.get("/sales", async (req, res) => {
   }
 });
 
-app.post("/send-otp", sendOTP);
-app.post("/verify-otp", verifyOTP);
+/** REQUEST (READ - GET ALL) */
+app.get("/requests", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM bookings WHERE status != 'completed' ORDER BY created_at DESC"
+  );
+  res.json(result.rows);
+});
+
+
 
 
 // ======================= FRONTEND SERVE =======================

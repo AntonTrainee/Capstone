@@ -13,9 +13,30 @@ const Register = () => {
 
   const navigate = useNavigate();
 
+  // ✅ Validation functions
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPhoneNumber = (phone: string) => {
+    const phRegex = /^09\d{2}-\d{3}-\d{4}$/; // Format: 09XX-XXX-XXXX
+    return phRegex.test(phone);
+  };
+
   const handleSubmit = () => {
     if (password !== conpassword) {
       alert("Passwords do not match");
+      return;
+    }
+
+    if (!isValidEmail(emailAdd)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      alert("Please enter a valid Philippine phone number (e.g., 0912-345-6789)");
       return;
     }
 
@@ -29,16 +50,13 @@ const Register = () => {
 
     fetch("http://localhost:3007/register", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     })
       .then((res) => res.text())
       .then((data) => {
         alert(data);
         localStorage.setItem("userData", JSON.stringify(userData));
-
         navigate("/otp", { state: { email: emailAdd } });
       })
       .catch((err) => {
@@ -47,18 +65,13 @@ const Register = () => {
       });
   };
 
-  // Auto-format PH number: 09XX-XXX-XXXX
+  // ✅ Auto-format PH number: 09XX-XXX-XXXX
   const handlePhoneInput = (value: string) => {
-    // Remove non-digit characters
     let digits = value.replace(/\D/g, "");
 
-    // Force leading 09
     if (!digits.startsWith("09")) digits = "09" + digits.slice(digits.startsWith("0") ? 1 : 0);
-
-    // Limit to 11 digits
     if (digits.length > 11) digits = digits.slice(0, 11);
 
-    // Format as 09XX-XXX-XXXX
     let formatted = digits;
     if (digits.length > 4 && digits.length <= 7) {
       formatted = digits.slice(0, 4) + "-" + digits.slice(4);
@@ -73,11 +86,7 @@ const Register = () => {
     <div className="colorscheme">
       <div className="blue-box">
         <h1 className="navbar-brand" style={{ textAlign: "center" }}>
-          <img
-            src={Genclean}
-            alt="GenClean Logo"
-            className="genclean-logo"
-          />
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
@@ -93,6 +102,7 @@ const Register = () => {
                 placeholder="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                required
               />
               <label>First Name</label>
             </div>
@@ -104,6 +114,7 @@ const Register = () => {
                 placeholder="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                required
               />
               <label>Last Name</label>
             </div>
@@ -115,6 +126,7 @@ const Register = () => {
                 placeholder="Phone Number"
                 value={phoneNumber}
                 onChange={(e) => handlePhoneInput(e.target.value)}
+                required
               />
               <label>Phone Number</label>
             </div>
@@ -129,8 +141,17 @@ const Register = () => {
 
             <button
               className="btn crAct-btn"
-              onClick={() => setStep(2)}
-              disabled={!firstName || !lastName || !phoneNumber}
+              onClick={() => {
+                if (!firstName || !lastName || !phoneNumber) {
+                  alert("Please fill out all fields.");
+                  return;
+                }
+                if (!isValidPhoneNumber(phoneNumber)) {
+                  alert("Please enter a valid Philippine phone number (09XX-XXX-XXXX).");
+                  return;
+                }
+                setStep(2);
+              }}
             >
               Next
             </button>
@@ -146,6 +167,7 @@ const Register = () => {
                 placeholder="Email Address"
                 value={emailAdd}
                 onChange={(e) => setEmailAdd(e.target.value)}
+                required
               />
               <label>Email Address</label>
             </div>
@@ -157,6 +179,7 @@ const Register = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
               <label>Password</label>
             </div>
@@ -168,6 +191,7 @@ const Register = () => {
                 placeholder="Confirm Password"
                 value={conpassword}
                 onChange={(e) => setConpassword(e.target.value)}
+                required
               />
               <label>Confirm Password</label>
             </div>

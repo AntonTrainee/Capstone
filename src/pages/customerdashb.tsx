@@ -4,29 +4,57 @@ import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 import Footer from "../components/footer";
+import axios from "axios";
+
+interface Booking {
+  booking_id: string;
+  service: string;
+  address: string;
+  booking_date: string;
+  status: string;
+}
 
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); 
-  const [user, setUser] = useState<{ firstName: string; lastName: string } | null>(null);
-  const navigate = useNavigate(); 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [history, setHistory] = useState<Booking[]>([]);
+  const navigate = useNavigate();
 
- 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
-      navigate("/"); 
+      navigate("/");
+      return;
     }
 
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchBookings(parsedUser.id);
     }
   }, [navigate]);
 
+  const fetchBookings = async (userId: string) => {
+    try {
+      const response = await axios.get<Booking[]>(`http://localhost:3007/bookings/user/${userId}`);
+      const allBookings = response.data;
+
+      const activeBookings = allBookings.filter((b) => b.status !== "completed");
+      const completedBookings = allBookings.filter((b) => b.status === "completed");
+
+      setBookings(activeBookings);
+      setHistory(completedBookings);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+    }
+  };
+
   return (
     <>
-      <nav className="navbar navbar-expand-lg my-navbar sticky-top">  
+      <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
             GenClean
@@ -46,39 +74,36 @@ function CustomerDashb() {
         <div className="left-column-content">
           <div className="booked-services-column">
             <div className="booked-services-card">
-
               {activeSection === "bookings" ? (
                 <>
                   <h1 className="booked-services-title" id="Bookings">
                     Booked Services
                   </h1>
-
                   <div className="table-container">
                     <table className="bookings-table">
                       <thead>
                         <tr>
-                          <th>Service ID</th>
-                          <th>Service Type</th>
+                          <th>Service</th>
                           <th>Address</th>
-                          <th>Date & Time</th>
+                          <th>Booking Date</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td>001</td>
-                          <td>Cleaning</td>
-                          <td>123 Main St</td>
-                          <td>2025-08-20 10:00 AM</td>
-                          <td>Completed</td>
-                        </tr>
-                        <tr>
-                          <td>002</td>
-                          <td>Maintenance</td>
-                          <td>45 Elm Ave</td>
-                          <td>2025-08-21 2:00 PM</td>
-                          <td>Pending</td>
-                        </tr>
+                        {bookings.length > 0 ? (
+                          bookings.map((b) => (
+                            <tr key={b.booking_id}>
+                              <td>{b.service}</td>
+                              <td>{b.address}</td>
+                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>{b.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4}>No current bookings.</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -88,52 +113,40 @@ function CustomerDashb() {
                   <h1 className="booked-services-title" id="History">
                     History
                   </h1>
-
                   <div className="table-container">
                     <table className="bookings-table">
                       <thead>
                         <tr>
-                          <th>Service ID</th>
-                          <th>Service Type</th>
+                          <th>Service</th>
                           <th>Address</th>
-                          <th>Date & Time</th>
+                          <th>Booking Date</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td>0001</td>
-                          <td>Cleaning</td>
-                          <td>12 Oak St</td>
-                          <td>2025-07-15 9:00 AM</td>
-                          <td>Completed</td>
-                        </tr>
-                        <tr>
-                          <td>0002</td>
-                          <td>Pest Control</td>
-                          <td>77 Pine Rd</td>
-                          <td>2025-07-20 3:00 PM</td>
-                          <td>Completed</td>
-                        </tr>
+                        {history.length > 0 ? (
+                          history.map((b) => (
+                            <tr key={b.booking_id}>
+                              <td>{b.service}</td>
+                              <td>{b.address}</td>
+                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>{b.status}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4}>No completed bookings yet.</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
                 </>
               )}
-             
-
-              <div className="change-section">
-                <p className="change-text-title">Need to change something?</p>
-                <p className="change-text-subtitle">
-                  For booking changes or cancellations, please contact our
-                  Support Team.
-                </p>
-                <button className="contact-support-btn">Contact Support</button>
-              </div>
             </div>
           </div>
 
-      
+          {/* Services Section */}
           <div
             id="services"
             className="container services-section dash-services"
@@ -143,16 +156,11 @@ function CustomerDashb() {
             <div className="row g-4">
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img
-                    src={genmain}
-                    className="card-img-top"
-                    alt="General Maintenance"
-                  />
+                  <img src={genmain} className="card-img-top" alt="General Maintenance" />
                   <div className="card-body">
                     <h5 className="card-title">General Maintenance</h5>
                     <p className="card-text">
-                      We handle routine repairs, upkeep, and maintenance tasks to keep
-                      your property in top condition.
+                      We handle routine repairs, upkeep, and maintenance tasks to keep your property in top condition.
                     </p>
                   </div>
                 </div>
@@ -160,16 +168,12 @@ function CustomerDashb() {
 
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img
-                    src={janitor}
-                    className="card-img-top"
-                    alt="Janitorial Services"
-                  />
+                  <img src={janitor} className="card-img-top" alt="Janitorial Services" />
                   <div className="card-body">
                     <h5 className="card-title">Janitorial and Cleaning Services</h5>
                     <p className="card-text">
-                      Comprehensive cleaning services including offices, buildings, and
-                      commercial spaces to maintain hygiene and presentation.
+                      Comprehensive cleaning services including offices, buildings, and commercial spaces to maintain
+                      hygiene and presentation.
                     </p>
                   </div>
                 </div>
@@ -181,8 +185,7 @@ function CustomerDashb() {
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
                     <p className="card-text">
-                      Effective and safe pest management solutions to protect your
-                      property from unwanted infestations.
+                      Effective and safe pest management solutions to protect your property from unwanted infestations.
                     </p>
                   </div>
                 </div>
@@ -190,44 +193,28 @@ function CustomerDashb() {
             </div>
           </div>
 
-
-        <Footer />
+          <Footer />
         </div>
 
+        {/* Profile Column */}
         <div className="profile-column">
           <div className="profile-card">
             <h2 className="client-name">
               {user ? `${user.firstName} ${user.lastName}` : "Client"}
             </h2>
 
-            <a
-              href="#Bookings"
-              className="profile-link"
-              onClick={() => setActiveSection("bookings")}
-            >
+            <a href="#Bookings" className="profile-link" onClick={() => setActiveSection("bookings")}>
               Bookings
             </a>
 
-            <a
-              href="#History"
-              className="profile-link"
-              onClick={() => setActiveSection("history")}
-            >
+            <a href="#History" className="profile-link" onClick={() => setActiveSection("history")}>
               History
             </a>
 
-            <Link to="/booksys" className="profile-link">
-              Book
-            </Link>
+            <Link to="/booksys" className="profile-link">Book</Link>
+            <Link to="/Profile" className="profile-link">Edit Profile</Link>
 
-            <Link to="/Profile" className="profile-link">
-              Edit Profile
-            </Link>
-
-            <button
-              className="profile-link btn-logout"
-              onClick={() => setShowLogoutConfirm(true)}
-            >
+            <button className="profile-link btn-logout" onClick={() => setShowLogoutConfirm(true)}>
               Log Out
             </button>
           </div>
@@ -242,17 +229,14 @@ function CustomerDashb() {
               <button
                 className="btn btn-danger"
                 onClick={() => {
-                  localStorage.removeItem("auth_token"); 
+                  localStorage.removeItem("auth_token");
                   setShowLogoutConfirm(false);
-                  navigate("/"); 
+                  navigate("/");
                 }}
               >
                 Yes, I am
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowLogoutConfirm(false)}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowLogoutConfirm(false)}>
                 Cancel
               </button>
             </div>

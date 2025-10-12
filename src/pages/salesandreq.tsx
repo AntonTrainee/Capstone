@@ -10,19 +10,29 @@ type ServiceType =
 
 interface RecordItem {
   id: string;
-  customer: string;
-  service: ServiceType;
-  date: string;
-  type: ReportType;
-  notes?: string;
-  total: number;
+  user_id?: string;
+  service: string;
+  payment?: number;
+  status?: string;
+  completed_at?: string;
+  created_at?: string;
+  booking_id?: string;
+  address?: string;
+  booking_date?: string;
+}
+
+interface AnalyticsItem {
+  analytics_id: number;
+  service: string;
+  total_customers: number;
+  total_amount: number;
 }
 
 interface Filters {
+  reportType: ReportType;
+  service?: ServiceType | "All";
   from?: string;
   to?: string;
-  service?: ServiceType | "All";
-  reportType: ReportType;
   search?: string;
 }
 
@@ -32,83 +42,152 @@ export default function SalesAndRequest() {
     service: "All",
     search: "",
   });
-  const [data, setData] = useState<RecordItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  const [data, setData] = useState<RecordItem[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ✅ Fetch sales or requests
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
+
+      const endpoint =
+        filters.reportType === "sales"
+          ? "http://localhost:3007/sales"
+          : "http://localhost:3007/requests";
+
       try {
-        const res = await fetch("http://localhost:3007/sales");
+        const res = await fetch(endpoint);
+        if (!res.ok)
+          throw new Error(`Failed to fetch ${filters.reportType}: ${res.statusText}`);
         const rows = await res.json();
 
-        const mapped: RecordItem[] = (rows || []).map((item: any) => ({
-          id: String(item.id),
-          customer: item.customer,
-          service: item.service,
-          date: item.created_at || item.createdat,
-          type: item.status === "sales" ? "sales" : "request",
-          notes: item.notes ?? "",
-          total: Number(item.amount) || 0,
-        }));
+        const mapped: RecordItem[] =
+          filters.reportType === "sales"
+            ? rows.map((item: any) => ({
+                id: item.sale_id ?? "N/A",
+                user_id: item.user_id ?? "N/A",
+                service: item.service ?? "N/A",
+                payment: parseFloat(item.payment ?? 0),
+                status: item.status ?? "N/A",
+                completed_at: item.completed_at ?? "N/A",
+                created_at: item.created_at ?? "N/A",
+              }))
+            : rows.map((item: any) => ({
+                id: item.request_id ?? "N/A",
+                booking_id: item.booking_id ?? "N/A",
+                user_id: item.user_id ?? "N/A",
+                service: item.service ?? "N/A",
+                address: item.address ?? "N/A",
+                status: item.status ?? "N/A",
+                created_at: item.created_at ?? "N/A",
+                booking_date: item.booking_date ?? "N/A",
+              }));
 
         setData(mapped);
-      } catch (err) {
-        console.error("❌ Error fetching sales_request:", err);
+      } catch (err: any) {
+        console.error(`❌ Error fetching ${filters.reportType}:`, err);
+        setError(err.message);
+        setData([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchData();
+  }, [filters.reportType]);
+
+  // ✅ Fetch analytics (sales summary)
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch("http://localhost:3007/analytics");
+        if (!res.ok) throw new Error(`Failed to fetch analytics: ${res.statusText}`);
+        const rows = await res.json();
+        setAnalytics(rows);
+      } catch (err: any) {
+        console.error("❌ Error fetching analytics:", err);
+      }
+    };
+    fetchAnalytics();
   }, []);
 
-  function filterRows(rows: RecordItem[], filters: Filters) {
-    return rows.filter((r) => {
-      if (filters.reportType && r.type !== filters.reportType) return false;
-      if (filters.service && filters.service !== "All" && r.service !== filters.service) return false;
-      if (filters.from && new Date(r.date) < new Date(filters.from)) return false;
-      if (filters.to && new Date(r.date) > new Date(filters.to)) return false;
-      if (filters.search && !r.customer.toLowerCase().includes(filters.search.toLowerCase())) return false;
+  // ✅ Filters
+  const filteredRows = useMemo(() => {
+    return data.filter((r) => {
+      if (filters.service && filters.service !== "All" && r.service !== filters.service)
+        return false;
+      if (filters.from && new Date(r.created_at ?? "") < new Date(filters.from))
+        return false;
+      if (filters.to && new Date(r.created_at ?? "") > new Date(filters.to))
+        return false;
+      if (
+        filters.search &&
+        !r.service.toLowerCase().includes(filters.search.toLowerCase())
+      )
+        return false;
       return true;
     });
-  }
+  }, [data, filters]);
 
-  const rows = useMemo(() => filterRows(data, filters), [data, filters]);
+  // ✅ CSV Download
+  const handleDownload = () => {
+    if (filteredRows.length === 0) return alert("No data to download");
 
-  // === Download Function ===
-  function handleDownload() {
-    if (rows.length === 0) {
-      alert("No data to download");
-      return;
-    }
+    const headers =
+      filters.reportType === "sales"
+        ? ["Sale ID", "User ID", "Service", "Payment", "Status", "Completed At", "Created At"]
+        : [
+            "Request ID",
+            "Booking ID",
+            "User ID",
+            "Service",
+            "Address",
+            "Status",
+            "Created At",
+            "Booking Date",
+          ];
 
-    const header = ["Customer", "Service", "Date", "Notes", "Total"];
     const csvContent = [
-      header.join(","),
-      ...rows.map((r) =>
-        [
-          `"${r.customer}"`,
-          `"${r.service}"`,
-          `"${new Date(r.date).toLocaleDateString()}"`,
-          `"${r.notes ?? ""}"`,
-          `"₱${r.total.toFixed(2)}"`,
-        ].join(",")
+      headers.join(","),
+      ...filteredRows.map((r) =>
+        filters.reportType === "sales"
+          ? [
+              r.id,
+              r.user_id,
+              r.service,
+              r.payment,
+              r.status,
+              r.completed_at,
+              r.created_at,
+            ].join(",")
+          : [
+              r.id,
+              r.booking_id,
+              r.user_id,
+              r.service,
+              r.address,
+              r.status,
+              r.created_at,
+              r.booking_date,
+            ].join(",")
       ),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.setAttribute("download", "report.csv");
+    a.href = URL.createObjectURL(blob);
+    a.setAttribute("download", `${filters.reportType}_full_report.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-  }
+  };
 
   return (
     <div className="app-container">
-      {/* Header */}
       <header className="app-header">
         <div className="header-inner">
           <div className="logo">
@@ -119,12 +198,13 @@ export default function SalesAndRequest() {
       </header>
 
       <main className="app-main">
-        {/* Filters Banner */}
         <section className="analytics-hero">
           <div>
             <h1>Sales and Request Reports</h1>
-            <p>Filter and track customer requests and completed sales.</p>
+            <p>Switch between reports using the options below.</p>
+            {error && <p style={{ color: "red" }}>Error: {error}</p>}
           </div>
+
           <div className="filter-controls">
             <select
               value={filters.service}
@@ -141,7 +221,7 @@ export default function SalesAndRequest() {
           </div>
         </section>
 
-        {/* Advanced Filters */}
+        {/* Filter Controls */}
         <div className="metrics-grid">
           <div className="metric-card">
             <label>From</label>
@@ -184,15 +264,15 @@ export default function SalesAndRequest() {
                   checked={filters.reportType === "request"}
                   onChange={() => setFilters({ ...filters, reportType: "request" })}
                 />
-                Request
+                Requests
               </label>
             </div>
           </div>
           <div className="metric-card">
-            <label>Search Customer</label>
+            <label>Search</label>
             <input
               type="text"
-              placeholder="Search by customer name"
+              placeholder="Search by service..."
               value={filters.search ?? ""}
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
@@ -201,10 +281,14 @@ export default function SalesAndRequest() {
           </div>
         </div>
 
-        {/* Table Section */}
+        {/* Table */}
         <section>
           <div className="table-header">
-            <h2>Report Preview</h2>
+            <h2>
+              {filters.reportType === "sales"
+                ? "Sales Report (All Columns)"
+                : "Requests Report (All Columns)"}
+            </h2>
             <button className="download-btn" onClick={handleDownload}>
               ⬇ Download Report
             </button>
@@ -216,29 +300,60 @@ export default function SalesAndRequest() {
             <div className="table-wrapper">
               <table className="salesreq-table">
                 <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Service</th>
-                    <th>Date</th>
-                    <th>Notes</th>
-                    <th className="text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length === 0 ? (
+                  {filters.reportType === "sales" ? (
                     <tr>
-                      <td colSpan={5} style={{ textAlign: "center" }}>
-                        No records available
-                      </td>
+                      <th>Sale ID</th>
+                      <th>User ID</th>
+                      <th>Service</th>
+                      <th>Payment</th>
+                      <th>Status</th>
+                      <th>Completed At</th>
+                      <th>Created At</th>
                     </tr>
                   ) : (
-                    rows.map((r) => (
+                    <tr>
+                      <th>Request ID</th>
+                      <th>Booking ID</th>
+                      <th>User ID</th>
+                      <th>Service</th>
+                      <th>Address</th>
+                      <th>Status</th>
+                      <th>Created At</th>
+                      <th>Booking Date</th>
+                    </tr>
+                  )}
+                </thead>
+
+                <tbody>
+                  {filteredRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: "center" }}>
+                        No records found
+                      </td>
+                    </tr>
+                  ) : filters.reportType === "sales" ? (
+                    filteredRows.map((r) => (
                       <tr key={r.id}>
-                        <td className="capitalize">{r.customer}</td>
+                        <td>{r.id}</td>
+                        <td>{r.user_id}</td>
                         <td>{r.service}</td>
-                        <td>{new Date(r.date).toLocaleDateString()}</td>
-                        <td>{r.notes ?? ""}</td>
-                        <td className="text-right">₱{r.total.toFixed(2)}</td>
+                        <td>₱{r.payment?.toFixed(2)}</td>
+                        <td>{r.status}</td>
+                        <td>{r.completed_at}</td>
+                        <td>{r.created_at}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    filteredRows.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.booking_id}</td>
+                        <td>{r.user_id}</td>
+                        <td>{r.service}</td>
+                        <td>{r.address}</td>
+                        <td>{r.status}</td>
+                        <td>{r.created_at}</td>
+                        <td>{r.booking_date}</td>
                       </tr>
                     ))
                   )}
@@ -246,6 +361,33 @@ export default function SalesAndRequest() {
               </table>
             </div>
           )}
+
+          {/* ✅ Analytics Section */}
+          <section style={{ marginTop: "2rem" }}>
+            <h2>Customer Analytics</h2>
+            {analytics.length === 0 ? (
+              <p>No analytics data found</p>
+            ) : (
+              <table className="salesreq-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Total Customers</th>
+                    <th>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.map((a) => (
+                    <tr key={a.analytics_id}>
+                      <td>{a.service}</td>
+                      <td>{a.total_customers}</td>
+                      <td>₱{a.total_amount.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </section>
       </main>
 

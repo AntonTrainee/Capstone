@@ -46,15 +46,21 @@ function Booksys() {
     }
 
     const bookingData = {
-      userId: user.id,
+      user_id: user.id,
       service: service,
-      date: bookingDate,
+      booking_date: bookingDate,
       address: address,
       notes: notes,
-      forAssessment: forAssessment,
+      for_assessment: forAssessment, // ✅ fixed field name
+      status: "pending",
+      payment: "0",
+      created_at: new Date().toISOString(),
+      name: `${user.firstName} ${user.lastName}`,
     };
 
     try {
+      console.log("📤 Sending booking data:", bookingData);
+
       const response = await fetch("http://localhost:3007/booking", {
         method: "POST",
         headers: {
@@ -63,31 +69,30 @@ function Booksys() {
         body: JSON.stringify(bookingData),
       });
 
-      const result = await response.text();
+      const resultText = await response.text();
 
       if (response.ok) {
-        // 🔹 Re-save user info to localStorage to make sure CustomerDashb shows correct design
+        // ✅ Ensure user stays synced
         localStorage.setItem("user", JSON.stringify(user));
 
-        setMessage(result); // "Booking successful"
-
-        // Reset form fields
+        setMessage("✅ Booking successful! Redirecting...");
+        // Reset form
         setService("");
         setBookingDate("");
         setAddress("");
         setNotes("");
         setForAssessment(false);
 
-        // 🔹 Redirect after 5 seconds
+        // Redirect after short delay
         setTimeout(() => {
           navigate("/customerdashb");
         }, 2000);
       } else {
-        setMessage(result || "Booking failed. Please try again.");
+        setMessage(resultText || "❌ Booking failed. Please try again.");
       }
     } catch (error) {
       console.error("An unexpected error occurred:", error);
-      setMessage("An unexpected error occurred.");
+      setMessage("⚠️ An unexpected error occurred while booking.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,9 +102,7 @@ function Booksys() {
     <>
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
-          <a className="navbar-brand" href="#">
-            GenClean
-          </a>
+          <a className="navbar-brand" href="#">GenClean</a>
           <button
             className="navbar-toggler"
             type="button"
@@ -114,21 +117,9 @@ function Booksys() {
             id="navbarSupportedContent"
           >
             <ul className="navbar-nav mb-2 mb-lg-0">
-              <li className="nav-item">
-                <a className="nav-link" href="#home">
-                  Home
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#services">
-                  Services
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#contact">
-                  Contact Us
-                </a>
-              </li>
+              <li className="nav-item"><a className="nav-link" href="#home">Home</a></li>
+              <li className="nav-item"><a className="nav-link" href="#services">Services</a></li>
+              <li className="nav-item"><a className="nav-link" href="#contact">Contact Us</a></li>
               <li className="nav-item">
                 <button className="btn btn-link nav-link">About Us</button>
               </li>
@@ -142,6 +133,7 @@ function Booksys() {
           <h2 className="booking-title">Book for Quotation!</h2>
           <form onSubmit={handleSubmit}>
             <div className="row g-5">
+              {/* Left column */}
               <div className="col-md-6 form-column">
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
@@ -152,12 +144,8 @@ function Booksys() {
                     required
                   >
                     <option value="">Select a service</option>
-                    <option value="General Maintenance">
-                      General Maintenance
-                    </option>
-                    <option value="Janitorial and Cleaning Services">
-                      Janitorial and Cleaning Services
-                    </option>
+                    <option value="General Maintenance">General Maintenance</option>
+                    <option value="Janitorial and Cleaning Services">Janitorial and Cleaning Services</option>
                     <option value="Pest Control">Pest Control</option>
                   </select>
                 </div>
@@ -178,7 +166,6 @@ function Booksys() {
                   <textarea
                     className="form-control booking-input"
                     rows={2}
-                    placeholder=""
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     required
@@ -190,16 +177,13 @@ function Booksys() {
                   <textarea
                     className="form-control booking-input"
                     rows={3}
-                    placeholder=""
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   ></textarea>
                 </div>
 
                 <div className="form-check d-flex align-items-center mb-4">
-                  <label className="form-check-label me-4">
-                    For Assessment:
-                  </label>
+                  <label className="form-check-label me-4">For Assessment:</label>
                   <input
                     type="checkbox"
                     className="form-check-input"
@@ -209,6 +193,7 @@ function Booksys() {
                 </div>
               </div>
 
+              {/* Right column - user info */}
               <div className="col-md-6 customer-details">
                 <h5 className="details-title">Customer Details:</h5>
                 {user ? (
@@ -244,6 +229,7 @@ function Booksys() {
               </button>
             </div>
           </form>
+
           {message && <div className="mt-3 text-center">{message}</div>}
         </div>
       </div>

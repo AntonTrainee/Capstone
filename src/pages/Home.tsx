@@ -186,61 +186,78 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div className="reviews"style={{ marginTop: "110px" }}>
         <h2 className="text-center mb-4">Reviews and Testimonials</h2>
         <div
-          id="reviewCarousel"
-          className="carousel slide"
-          data-bs-ride="carousel"
-          data-bs-interval="4000"
-          style={{
-            width: "100vw",
-            marginTop: "110px",
-            marginBottom: "70px",
-          }}
-        >
-          <div className="carousel-inner text-center p-5 review-carousel rounded shadow">
-            <div className="carousel-item active">
-              <h5>⭐⭐⭐⭐⭐</h5>
-              <p className="mb-1">
-                <strong>
-                  "The team was incredibly professional and thorough."
-                </strong>
-              </p>
-              <p className="text-muted">— Maria L., Quezon City</p>
-            </div>
-            <div className="carousel-item">
-              <h5>⭐⭐⭐⭐⭐</h5>
-              <p className="mb-1">
-                <strong>
-                  "Super easy to book and they actually show up on time."
-                </strong>
-              </p>
-              <p className="text-muted">— Kevin R., Taguig</p>
-            </div>
-            <div className="carousel-item">
-              <h5>⭐⭐⭐⭐☆</h5>
-              <p className="mb-1">
-                <strong>
-                  "Great pest control service. Just a bit of smell after, but it
-                  cleared out fast."
-                </strong>
-              </p>
-              <p className="text-muted">— Angela M., Pasig City</p>
-            </div>
-            <div className="carousel-item">
-              <h5>⭐⭐⭐⭐⭐</h5>
-              <p className="mb-1">
-                <strong>"Worth every peso."</strong>
-              </p>
-              <p className="text-muted">— Joshua C., Makati</p>
-            </div>
-            <div className="carousel-item">
-              <h5>⭐⭐⭐⭐☆</h5>
-              <p className="mb-1">
-                <strong>"Friendly staff, responsive support."</strong>
-              </p>
-              <p className="text-muted">— Diana F., Caloocan</p>
-            </div>
-          </div>
-        </div>
+  id="reviewCarousel"
+  className="carousel slide"
+  data-bs-ride="carousel"
+  data-bs-interval="4000"
+  style={{
+    width: "100vw",
+    marginTop: "110px",
+    marginBottom: "70px",
+  }}
+>
+  <div className="carousel-inner text-center p-5 review-carousel rounded shadow">
+    <div className="carousel-item active">
+      <h5>⭐⭐⭐⭐⭐</h5>
+      <p className="mb-1">
+        <strong>"The team was incredibly professional and thorough."</strong>
+      </p>
+      <p className="text-muted">— Maria L., Quezon City</p>
+    </div>
+
+    <div className="carousel-item" data-bs-interval="4000">
+      <h5>⭐⭐⭐⭐⭐</h5>
+      <p className="mb-1">
+        <strong>"Super easy to book and they actually show up on time."</strong>
+      </p>
+      <p className="text-muted">— Kevin R., Taguig</p>
+    </div>
+
+    <div className="carousel-item" data-bs-interval="4000">
+      <h5>⭐⭐⭐⭐</h5>
+      <p className="mb-1">
+        <strong>
+          "Great pest control service. Just a bit of smell after, but it cleared out fast."
+        </strong>
+      </p>
+      <p className="text-muted">— Angela M., Pasig City</p>
+    </div>
+
+    <div className="carousel-item" data-bs-interval="4000">
+      <h5>⭐⭐⭐⭐⭐</h5>
+      <p className="mb-1">
+        <strong>"Worth every peso."</strong>
+      </p>
+      <p className="text-muted">— Joshua C., Makati</p>
+    </div>
+
+    <div className="carousel-item" data-bs-interval="4000">
+      <h5>⭐⭐⭐⭐☆</h5>
+      <p className="mb-1">
+        <strong>"Friendly staff, responsive support."</strong>
+      </p>
+      <p className="text-muted">— Diana F., Caloocan</p>
+    </div>
+  </div>
+
+  {/* Optional Controls (adds manual nav) */}
+  <button
+    className="carousel-control-prev"
+    type="button"
+    data-bs-target="#reviewCarousel"
+    data-bs-slide="prev"
+  >
+    <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+  </button>
+  <button
+    className="carousel-control-next"
+    type="button"
+    data-bs-target="#reviewCarousel"
+    data-bs-slide="next"
+  >
+    <span className="carousel-control-next-icon" aria-hidden="true"></span>
+  </button>
+</div>
       </div>
 
     <section

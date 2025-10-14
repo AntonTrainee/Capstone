@@ -20,8 +20,8 @@ export default function ManageBookingsPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Booking>>({});
   const [search, setSearch] = useState("");
-  const [viewing, setViewing] = useState<Booking | null>(null);
 
+  // Fetch all bookings
   useEffect(() => {
     fetch("http://localhost:3007/bookings")
       .then((res) => res.json())
@@ -29,11 +29,14 @@ export default function ManageBookingsPage() {
       .catch((err) => console.error("Error fetching bookings:", err));
   }, []);
 
+  // Start editing
   const startEdit = (booking: Booking) => {
+    if (booking.status === "completed") return;
     setEditing(booking.booking_id);
     setFormData(booking);
   };
 
+  // Save edit
   const saveEdit = async () => {
     if (!editing) return;
     if (!window.confirm("Are you sure you want to save changes?")) return;
@@ -61,9 +64,44 @@ export default function ManageBookingsPage() {
     }
   };
 
+  // Mark as completed (lowercase)
+  const markAsCompleted = async (booking_id: string) => {
+    if (!window.confirm("Are you sure the cleaning is done?")) return;
+
+    try {
+      const bookingToUpdate = bookings.find(
+        (b) => b.booking_id === booking_id
+      );
+      if (!bookingToUpdate) return;
+
+      const updatedData = { ...bookingToUpdate, status: "completed" };
+
+      const res = await fetch(`http://localhost:3007/bookings/${booking_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (res.ok) {
+        const updatedBooking = await res.json();
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.booking_id === booking_id ? updatedBooking : b
+          )
+        );
+        alert("✅ Booking marked as completed!");
+      } else {
+        alert("❌ Failed to complete booking.");
+      }
+    } catch (err) {
+      console.error("Error completing booking:", err);
+    }
+  };
+
+  // Filter search
   const filtered = bookings.filter((b) =>
-    [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some((v) =>
-      v?.toLowerCase().includes(search.toLowerCase())
+    [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some(
+      (v) => v?.toLowerCase().includes(search.toLowerCase())
     )
   );
 
@@ -101,15 +139,14 @@ export default function ManageBookingsPage() {
             <table className="analytics-table">
               <thead>
                 <tr>
-                  <th>Booking ID</th>
+                  <th>ID</th>
                   <th>User ID</th>
                   <th>Name</th>
                   <th>Service</th>
-                  <th>Booking Date</th>
+                  <th>Date</th>
                   <th>Address</th>
                   <th>Notes</th>
-                  <th>For Assessment</th>
-                  <th>Created At</th>
+                  <th>Assessment</th>
                   <th>Payment</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -119,7 +156,7 @@ export default function ManageBookingsPage() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={12} style={{ textAlign: "center" }}>
+                    <td colSpan={11} style={{ textAlign: "center" }}>
                       No bookings found
                     </td>
                   </tr>
@@ -128,15 +165,31 @@ export default function ManageBookingsPage() {
                     <tr key={b.booking_id}>
                       <td>{b.booking_id}</td>
                       <td>{b.user_id}</td>
-                      <td>{b.name || "—"}</td>
+                      <td>
+                        {editing === b.booking_id ? (
+                          <input
+                            value={formData.name || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                        ) : (
+                          b.name || "—"
+                        )}
+                      </td>
 
                       <td>
                         {editing === b.booking_id ? (
                           <input
-                            className="wide-input"
                             value={formData.service || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, service: e.target.value })
+                              setFormData({
+                                ...formData,
+                                service: e.target.value,
+                              })
                             }
                           />
                         ) : (
@@ -148,7 +201,6 @@ export default function ManageBookingsPage() {
                         {editing === b.booking_id ? (
                           <input
                             type="date"
-                            className="wide-input"
                             value={formData.booking_date?.slice(0, 10) || ""}
                             onChange={(e) =>
                               setFormData({
@@ -165,10 +217,12 @@ export default function ManageBookingsPage() {
                       <td>
                         {editing === b.booking_id ? (
                           <input
-                            className="wide-input"
                             value={formData.address || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, address: e.target.value })
+                              setFormData({
+                                ...formData,
+                                address: e.target.value,
+                              })
                             }
                           />
                         ) : (
@@ -179,11 +233,13 @@ export default function ManageBookingsPage() {
                       <td>
                         {editing === b.booking_id ? (
                           <textarea
-                            className="textarea-expand"
-                            rows={3}
+                            rows={2}
                             value={formData.notes || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, notes: e.target.value })
+                              setFormData({
+                                ...formData,
+                                notes: e.target.value,
+                              })
                             }
                           />
                         ) : (
@@ -191,23 +247,18 @@ export default function ManageBookingsPage() {
                         )}
                       </td>
 
-                      <td>{b.for_assessment ? "✅ Yes" : "❌ No"}</td>
-
-                      <td>
-                        {b.created_at
-                          ? new Date(b.created_at).toLocaleString()
-                          : "—"}
-                      </td>
+                      <td>{b.for_assessment ? "✅" : "❌"}</td>
 
                       <td>
                         {editing === b.booking_id ? (
                           <input
                             type="number"
-                            className="payment-input"
-                            placeholder="Enter amount"
                             value={formData.payment || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, payment: e.target.value })
+                              setFormData({
+                                ...formData,
+                                payment: e.target.value,
+                              })
                             }
                           />
                         ) : b.payment ? (
@@ -217,52 +268,47 @@ export default function ManageBookingsPage() {
                         )}
                       </td>
 
-                      {/* UPDATED STATUS COLUMN */}
                       <td>
-                        {editing === b.booking_id ? (
-                          <select
-                            className="wide-input"
-                            value={formData.status || "pending"}
-                            onChange={(e) =>
-                              setFormData({ ...formData, status: e.target.value })
-                            }
-                          >
-                            <option value="pending">pending</option>
-                            <option value="completed">completed</option>
-                          </select>
-                        ) : (
-                          b.status || "—"
-                        )}
+                        {b.status === "completed"
+                          ? "completed ✅"
+                          : "pending ⏳"}
                       </td>
 
                       <td className="actions">
-                        {editing === b.booking_id ? (
-                          <>
-                            <button onClick={saveEdit} className="btn btn--save">
-                              💾 Save
-                            </button>
-                            <button
-                              onClick={() => setEditing(null)}
-                              className="btn btn--cancel"
-                            >
-                              ✖ Cancel
-                            </button>
-                          </>
+                        {b.status === "pending" ? (
+                          editing === b.booking_id ? (
+                            <>
+                              <button
+                                onClick={saveEdit}
+                                className="btn btn--save"
+                              >
+                                💾 Save
+                              </button>
+                              <button
+                                onClick={() => setEditing(null)}
+                                className="btn btn--cancel"
+                              >
+                                ✖ Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => startEdit(b)}
+                                className="btn btn--edit"
+                              >
+                                ✏ Edit
+                              </button>
+                              <button
+                                onClick={() => markAsCompleted(b.booking_id)}
+                                className="btn btn--complete"
+                              >
+                                ✅ Complete
+                              </button>
+                            </>
+                          )
                         ) : (
-                          <>
-                            <button
-                              onClick={() => startEdit(b)}
-                              className="btn btn--edit"
-                            >
-                              ✏ Edit
-                            </button>
-                            <button
-                              onClick={() => setViewing(b)}
-                              className="btn btn--view"
-                            >
-                              👁 View
-                            </button>
-                          </>
+                          "—"
                         )}
                       </td>
                     </tr>
@@ -272,54 +318,6 @@ export default function ManageBookingsPage() {
             </table>
           </div>
         </section>
-
-        {viewing && (
-          <div className="card details-card">
-            <h2>Booking Details</h2>
-            <p>
-              <strong>Booking ID:</strong> {viewing.booking_id}
-            </p>
-            <p>
-              <strong>User ID:</strong> {viewing.user_id}
-            </p>
-            <p>
-              <strong>Name:</strong> {viewing.name || "—"}
-            </p>
-            <p>
-              <strong>Service:</strong> {viewing.service}
-            </p>
-            <p>
-              <strong>Date:</strong>{" "}
-              {new Date(viewing.booking_date).toLocaleString()}
-            </p>
-            <p>
-              <strong>Address:</strong> {viewing.address}
-            </p>
-            <p>
-              <strong>Notes:</strong> {viewing.notes || "—"}
-            </p>
-            <p>
-              <strong>Assessment:</strong>{" "}
-              {viewing.for_assessment ? "Yes" : "No"}
-            </p>
-            <p>
-              <strong>Created At:</strong>{" "}
-              {viewing.created_at
-                ? new Date(viewing.created_at).toLocaleString()
-                : "N/A"}
-            </p>
-            <p>
-              <strong>Payment:</strong>{" "}
-              {viewing.payment ? `₱${viewing.payment}` : "Not Set"}
-            </p>
-            <p>
-              <strong>Status:</strong> {viewing.status || "pending"}
-            </p>
-            <button onClick={() => setViewing(null)} className="btn btn--close">
-              Close
-            </button>
-          </div>
-        )}
       </main>
 
       <footer className="app-footer">

@@ -363,31 +363,7 @@ export default function SalesAndRequest() {
           )}
 
           {/* ✅ Analytics Section */}
-          <section style={{ marginTop: "2rem" }}>
-            <h2>Customer Analytics</h2>
-            {analytics.length === 0 ? (
-              <p>No analytics data found</p>
-            ) : (
-              <table className="salesreq-table">
-                <thead>
-                  <tr>
-                    <th>Service</th>
-                    <th>Total Customers</th>
-                    <th>Total Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.map((a) => (
-                    <tr key={a.analytics_id}>
-                      <td>{a.service}</td>
-                      <td>{a.total_customers}</td>
-                      <td>₱{a.total_amount.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
+          
         </section>
       </main>
 

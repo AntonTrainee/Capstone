@@ -24,65 +24,61 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  console.log("Selected role before request:", role); // ✅ check this
 
-    try {
-      const endpoint =
-        role === "admin"
-          ? "http://localhost:3007/admin-login"
-          : "http://localhost:3007/login";
+  try {
+    const endpoint =
+      role === "admin"
+        ? "http://localhost:3007/admin-login"
+        : "http://localhost:3007/login";
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data: LoginResponse = await res.json();
+    const data: LoginResponse = await res.json();
 
-      if (!res.ok) {
-        setMessage(data.message || "Login failed.");
-        return;
-      }
-
-      // Save token (for customer only)
-      if (role === "customer") {
-        localStorage.setItem("auth_token", data.token || "");
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Redirect based on role
-      if (role === "admin") {
-        navigate("/admindashb");
-      } else {
-        navigate("/customerdashb");
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage("Unexpected error. Please try again.");
+    if (!res.ok) {
+      setMessage(data.message || "Login failed.");
+      return;
     }
-  };
+
+    // Save token and user info
+    if (data.token && data.user) {
+      const userWithRole = { ...data.user, role };
+      console.log("Saving user data:", userWithRole); // ✅ check this
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("user", JSON.stringify(userWithRole));
+    }
+
+    // Redirect based on role
+    if (role === "admin") {
+      navigate("/admindashb");
+    } else {
+      navigate("/customerdashb");
+    }
+  } catch (err) {
+    console.error(err);
+    setMessage("Unexpected error. Please try again.");
+  }
+};
+
 
   return (
     <div className="colorscheme">
-      {/* Top Blue Section with Logo */}
       <div className="blue-box">
         <h1 className="navbar-brand" style={{ textAlign: "center" }}>
-          <img
-            src={Genclean}
-            alt="GenClean Logo"
-            className="genclean-logo"
-          />
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
-      {/* White Login Box */}
       <div className="white-box d-flex flex-column align-items-center justify-content-center">
         <h1 className="createAcc mb-4">Login</h1>
 
         <form className="w-75" onSubmit={handleLogin}>
-          {/* Email */}
           <div className="form-floating mb-3">
             <input
               type="email"
@@ -95,7 +91,6 @@ function Login() {
             <label>Email Address</label>
           </div>
 
-          {/* Password */}
           <div className="form-floating mb-1 position-relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -121,7 +116,6 @@ function Login() {
             </span>
           </div>
 
-          {/* Forgot Password */}
           <p
             style={{
               textAlign: "right",
@@ -129,15 +123,11 @@ function Login() {
               marginBottom: "20px",
             }}
           >
-            <a
-              href="/forgotpassword"
-              style={{ textDecoration: "none", color: "#007bff" }}
-            >
+            <a href="/forgotpassword" style={{ textDecoration: "none", color: "#007bff" }}>
               Forgot Password?
             </a>
           </p>
 
-          {/* Role Selection */}
           <div className="mb-3 text-center">
             <label className="me-3">
               <input
@@ -161,7 +151,6 @@ function Login() {
             </label>
           </div>
 
-          {/* Login Button */}
           <button type="submit" className="btn crAct-btn mx-auto d-block">
             Login
           </button>

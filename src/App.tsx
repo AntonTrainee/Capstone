@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import OtpPage from "./pages/OtpPage";
 import ProtectedRoute from "./ProtectedRoute";
+import AdminProtectedRoute from "./AdminProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -37,7 +38,6 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/home" element={<Home />} />
       <Route path="/aboutus" element={<About />} />
-      <Route path="/admindashb" element={<Admindashb />} />
       <Route path="/beforeandaftershowcase" element={<BeforeAndAfterShowcase />} />
       <Route path="/privacy-notice" element={<PrivacyNotice />} />
       <Route path="/cookies" element={<Cookies />} />
@@ -46,18 +46,22 @@ function App() {
       <Route path="/forgotpassword" element={<ForgotPassword />} />
       <Route path="/resetpassword" element={<ResetPassword />} />
 
-      <Route element={<ProtectedRoute />}>
+     <Route element={<ProtectedRoute />}>
         <Route path="/customerdashb" element={<CustomerDashb />} />
         <Route path="/Profile" element={<Profile />} />
         <Route path="/booksys" element={<Booksys />} />
       </Route>
 
-      <Route path="/beforeafter" element={<BeforeAfter />} />
-      <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
+      <Route element={<AdminProtectedRoute />}>
+        <Route path="/admindashb" element={<Admindashb />} />
+        <Route path="/manageb" element={<Manageb />} />
+        <Route path="/salesandreq" element={<Salesandreq />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/beforeafter" element={<BeforeAfter />} />
+        <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
+      </Route>
+
       
-      <Route path="/manageb" element={<Manageb />} />
-      <Route path="/salesandreq" element={<Salesandreq />} />
-      <Route path="/analytics" element={<Analytics />} />
     </Routes>
 
     <CookieBanner />

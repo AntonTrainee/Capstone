@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../admin.css";
 
 function Admindashb() {
@@ -7,48 +7,64 @@ function Admindashb() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   const bookingsRef = useRef<HTMLDivElement | null>(null);
   const salesRef = useRef<HTMLDivElement | null>(null);
   const analyticsRef = useRef<HTMLDivElement | null>(null);
 
+  const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const scrollToRef = (ref: typeof bookingsRef) => {
     setIsSidebarOpen(false);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Fetch data from backend (REALTIME REFRESH)
+  const handleSignOut = () => {
+    const confirmSignOut = window.confirm("Are you sure you want to sign out?");
+    if (confirmSignOut) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("auth_token");
+      sessionStorage.removeItem("user");
+      navigate("/login", { replace: true });
+    }
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        // Requests (Bookings)
+        // Fetch bookings
         const bookingsRes = await fetch("http://localhost:3007/bookings");
         const bookingsData = await bookingsRes.json();
-        setBookings(bookingsData);
+        setBookings(Array.isArray(bookingsData) ? bookingsData : []);
 
-        // Sales
+        // Fetch sales
         const salesRes = await fetch("http://localhost:3007/sales");
         const salesData = await salesRes.json();
-        setSales(salesData);
+        setSales(Array.isArray(salesData) ? salesData : []);
 
-        // Analytics
+        // Fetch analytics summary (same table as analytics.tsx)
+        setLoadingAnalytics(true);
         const analyticsRes = await fetch(
-          `http://localhost:3007/analytics_summary?month=${selectedMonth}&year=${selectedYear}`
+          `http://localhost:3007/analytics_summary?month=${new Date().getMonth() + 1}`
         );
         const analyticsData = await analyticsRes.json();
-        setAnalytics(analyticsData);
+        setAnalytics(Array.isArray(analyticsData) ? analyticsData : []);
       } catch (err) {
-        console.error("❌ Error fetching dashboard data:", err);
+        console.error(err);
+        setBookings([]);
+        setSales([]);
+        setAnalytics([]);
+      } finally {
+        setLoadingAnalytics(false);
       }
     };
 
     fetchAllData();
     const interval = setInterval(fetchAllData, 5000);
     return () => clearInterval(interval);
-  }, [selectedMonth, selectedYear]);
+  }, []);
 
   return (
     <div className="app-container">
@@ -66,32 +82,34 @@ function Admindashb() {
       </header>
 
       {/* Sidebar */}
-      <div className={`sidebar right-aligned ${isSidebarOpen ? "open" : ""}`}>
-        <button className="close-btn" onClick={toggleSidebar}>
-          &times;
-        </button>
-        <ul className="sidebar-nav">
-          <li>
-            <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
-          </li>
-          <li>
-            <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
-          </li>
-          <li>
-            <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
-          </li>
-          <li>
-            <Link to="/beforeafter">Before & After</Link>
-          </li>
-          <li>
-            <button>Sign out</button>
-          </li>
-        </ul>
-      </div>
+<div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+  <button className="close-btn" onClick={toggleSidebar}>
+    &times;
+  </button>
+  <ul className="sidebar-nav">
+    <li>
+      <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
+    </li>
+    <li>
+      <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
+    </li>
+    <li>
+      <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
+    </li>
+    <li>
+      <Link to="/beforeafter">Before & After</Link>
+    </li>
+    <li>
+      <button className="btn-logout" onClick={handleSignOut}>
+        Sign out
+      </button>
+    </li>
+  </ul>
+</div>
 
       {/* Main Content */}
       <main className="app-main">
-        {/* Manage Bookings Section */}
+        {/* Manage Bookings */}
         <div className="section-container" ref={bookingsRef}>
           <h2>Manage Bookings</h2>
           <div className="table-wrapper">
@@ -125,11 +143,19 @@ function Admindashb() {
                       <td>{b.user_id}</td>
                       <td>{b.name || "—"}</td>
                       <td>{b.service}</td>
-                      <td>{b.booking_date ? new Date(b.booking_date).toLocaleDateString() : "N/A"}</td>
+                      <td>
+                        {b.booking_date
+                          ? new Date(b.booking_date).toLocaleDateString()
+                          : "N/A"}
+                      </td>
                       <td>{b.address}</td>
                       <td>{b.notes || "—"}</td>
                       <td>{b.for_assessment ? "✅" : "❌"}</td>
-                      <td>{b.created_at ? new Date(b.created_at).toLocaleString() : "N/A"}</td>
+                      <td>
+                        {b.created_at
+                          ? new Date(b.created_at).toLocaleString()
+                          : "N/A"}
+                      </td>
                       <td>{b.payment ? `₱${b.payment}` : "—"}</td>
                       <td>{b.status || "Pending"}</td>
                     </tr>
@@ -143,11 +169,10 @@ function Admindashb() {
           </div>
         </div>
 
-        {/* Sales and Request Section */}
+        {/* Sales and Request */}
         <div className="section-container" ref={salesRef}>
           <h2>Sales and Request</h2>
           <div className="dual-table-container">
-            {/* Sales Table */}
             <div className="table-box">
               <h3>Sales</h3>
               <div className="table-wrapper">
@@ -178,8 +203,16 @@ function Admindashb() {
                           <td>{s.service}</td>
                           <td>{s.payment ? `₱${s.payment}` : "—"}</td>
                           <td className="capitalize">{s.status}</td>
-                          <td>{s.completed_at ? new Date(s.completed_at).toLocaleString() : "N/A"}</td>
-                          <td>{s.created_at ? new Date(s.created_at).toLocaleString() : "N/A"}</td>
+                          <td>
+                            {s.completed_at
+                              ? new Date(s.completed_at).toLocaleString()
+                              : "N/A"}
+                          </td>
+                          <td>
+                            {s.created_at
+                              ? new Date(s.created_at).toLocaleString()
+                              : "N/A"}
+                          </td>
                         </tr>
                       ))
                     )}
@@ -188,7 +221,6 @@ function Admindashb() {
               </div>
             </div>
 
-            {/* Requests Table */}
             <div className="table-box">
               <h3>Requests</h3>
               <div className="table-wrapper">
@@ -206,7 +238,7 @@ function Admindashb() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.filter(b => b.status !== "completed").length === 0 ? (
+                    {bookings.filter((b) => b.status !== "completed").length === 0 ? (
                       <tr>
                         <td colSpan={8} style={{ textAlign: "center" }}>
                           No requests found
@@ -214,7 +246,7 @@ function Admindashb() {
                       </tr>
                     ) : (
                       bookings
-                        .filter(b => b.status !== "completed")
+                        .filter((b) => b.status !== "completed")
                         .map((r) => (
                           <tr key={r.request_id || r.booking_id}>
                             <td>{r.request_id || "—"}</td>
@@ -222,9 +254,19 @@ function Admindashb() {
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">{r.status || "Pending"}</td>
-                            <td>{r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}</td>
-                            <td>{r.booking_date ? new Date(r.booking_date).toLocaleDateString() : "N/A"}</td>
+                            <td className="capitalize">
+                              {r.status || "Pending"}
+                            </td>
+                            <td>
+                              {r.created_at
+                                ? new Date(r.created_at).toLocaleString()
+                                : "N/A"}
+                            </td>
+                            <td>
+                              {r.booking_date
+                                ? new Date(r.booking_date).toLocaleDateString()
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))
                     )}
@@ -239,72 +281,47 @@ function Admindashb() {
           </div>
         </div>
 
-        {/* Customer Analytics Section */}
+        {/* ✅ Customer Analytics (Same Table as analytics.tsx) */}
         <div className="section-container" ref={analyticsRef}>
-          <h2>Customer Analytics</h2>
-
-          {/* Month & Year Filter */}
-          <div style={{ display: "flex", gap: "20px", marginBottom: "15px", alignItems: "center" }}>
-            <div>
-              <label htmlFor="monthSelect"><strong>Select Month:</strong> </label>
-              <select
-                id="monthSelect"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(0, i).toLocaleString("default", { month: "long" })}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="yearInput"><strong>Enter Year:</strong> </label>
-              <input
-                type="number"
-                id="yearInput"
-                value={selectedYear}
-                min="2000"
-                max="2100"
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                style={{ width: "100px", textAlign: "center" }}
-              />
-            </div>
-          </div>
-
-          <div className="table-wrapper">
-            <table className="analytics-table">
-              <thead>
-                <tr>
-                  <th>Service</th>
-                  <th>Total Bookings</th>
-                  <th>Total Amount (₱)</th>
-                  <th>Completed At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analytics.length === 0 ? (
+          <h2>Customer Analytics Summary</h2>
+          {loadingAnalytics ? (
+            <p>Loading table data...</p>
+          ) : (
+            <div className="table-wrapper">
+              <table className="analytics-table">
+                <thead>
                   <tr>
-                    <td colSpan={4} style={{ textAlign: "center" }}>
-                      No analytics summary data yet
-                    </td>
+                    <th>Service</th>
+                    <th>Total Bookings</th>
+                    <th>Total Amount (₱)</th>
+                    <th>Completed At</th>
                   </tr>
-                ) : (
-                  analytics.map((a, index) => (
-                    <tr key={index}>
-                      <td>{a.service}</td>
-                      <td>{a.total_bookings}</td>
-                      <td>₱{Number(a.total_amount).toLocaleString()}</td>
-                      <td>{a.completed_at ? new Date(a.completed_at).toLocaleDateString() : "N/A"}</td>
+                </thead>
+                <tbody>
+                  {analytics.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: "center" }}>
+                        No summary data available
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
+                  ) : (
+                    analytics.map((row, index) => (
+                      <tr key={index}>
+                        <td>{row.service}</td>
+                        <td>{row.total_bookings}</td>
+                        <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                        <td>
+                          {row.completed_at
+                            ? new Date(row.completed_at).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="view-more">
             <Link to="/analytics">View More →</Link>
           </div>

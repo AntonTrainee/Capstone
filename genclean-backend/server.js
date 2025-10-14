@@ -95,7 +95,8 @@ app.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid password" });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { user_id: user.user_id, email: user.email, role: "customer" }
+      ,
       process.env.JWT_SECRET || "yoursecret",
       { expiresIn: "1h" }
     );
@@ -128,7 +129,12 @@ app.post("/forgot-password", async (req, res) => {
     }
 
     const user = result.rows[0];
-    const resetToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || "yoursecret", { expiresIn: "15m" });
+    const resetToken = jwt.sign(
+      { user_id: user.user_id, email: user.email },
+      process.env.JWT_SECRET || "yoursecret",
+      { expiresIn: "15m" }
+    );
+
     const resetLink = `http://localhost:${PORT}/resetpassword?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
@@ -156,7 +162,9 @@ app.post("/reset-password", async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "yoursecret");
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, decoded.id]);
+    await pool.query("UPDATE users SET password = $1 WHERE user_id = $2", [hashedPassword, decoded.user_id]);
+
+
 
     res.status(200).json({ success: true, message: "Password reset successful!" });
   } catch (err) {
@@ -171,6 +179,7 @@ app.post("/admin-login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Fetch admin by email
     const result = await pool.query(`SELECT * FROM "Admins" WHERE email = $1`, [email]);
 
     if (result.rows.length === 0) {
@@ -178,19 +187,30 @@ app.post("/admin-login", async (req, res) => {
     }
 
     const admin = result.rows[0];
-    const isMatch = await bcrypt.compare(password, admin.password_hash);
 
+    // Compare password with hashed password
+    const isMatch = await bcrypt.compare(password, admin.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
+    // Generate JWT token for admin
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, role: "admin" },
+      process.env.JWT_SECRET || "yoursecret",
+      { expiresIn: "1h" }
+    );
+
+    // Return success with token and admin info
     res.status(200).json({
       message: "Admin login successful",
+      token, // <-- important for frontend
       user: {
         id: admin.id,
         email: admin.email,
         username: admin.user_name,
         createdAt: admin.created_at,
+        role: "admin",
       },
     });
   } catch (err) {
@@ -198,6 +218,7 @@ app.post("/admin-login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
@@ -306,8 +327,8 @@ app.delete("/beforeafter/:id", async (req, res) => {
 
 // ======================= UPDATE PROFILE =======================
 app.put("/update-profile", requireAuth, async (req, res) => {
-  const { firstName, lastName, password } = req.body;
-  const userId = req.user.id; // from requireAuth
+  const { firstName, lastName, phoneNumber, password } = req.body;
+  const userId = req.user.user_id;
 
   try {
     let query, params;
@@ -316,26 +337,24 @@ app.put("/update-profile", requireAuth, async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       query = `
         UPDATE users 
-        SET first_name=$1, last_name=$2, password=$3 
-        WHERE id=$4 
-        RETURNING id, first_name, last_name, email, phone_number
+        SET first_name=$1, last_name=$2, phone_number=$3, password=$4 
+        WHERE user_id=$5 
+        RETURNING user_id, first_name, last_name, email, phone_number
       `;
-      params = [firstName, lastName, hashedPassword, userId];
+      params = [firstName, lastName, phoneNumber, hashedPassword, userId];
     } else {
       query = `
         UPDATE users 
-        SET first_name=$1, last_name=$2 
-        WHERE id=$3 
-        RETURNING id, first_name, last_name, email, phone_number
+        SET first_name=$1, last_name=$2, phone_number=$3
+        WHERE user_id=$4 
+        RETURNING user_id, first_name, last_name, email, phone_number
       `;
-      params = [firstName, lastName, userId];
+      params = [firstName, lastName, phoneNumber, userId];
     }
 
     const result = await pool.query(query, params);
-
-    // Convert snake_case to camelCase for frontend
     const updatedUser = {
-      id: result.rows[0].id,
+      id: result.rows[0].user_id,
       firstName: result.rows[0].first_name,
       lastName: result.rows[0].last_name,
       email: result.rows[0].email,
@@ -348,7 +367,6 @@ app.put("/update-profile", requireAuth, async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 /* ======================= BOOKING ROUTES ======================= */
 

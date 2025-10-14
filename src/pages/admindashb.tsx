@@ -44,7 +44,7 @@ function Admindashb() {
         const salesData = await salesRes.json();
         setSales(Array.isArray(salesData) ? salesData : []);
 
-        // Fetch analytics summary (same table as analytics.tsx)
+        // Fetch analytics summary
         setLoadingAnalytics(true);
         const analyticsRes = await fetch(
           `http://localhost:3007/analytics_summary?month=${new Date().getMonth() + 1}`
@@ -82,30 +82,30 @@ function Admindashb() {
       </header>
 
       {/* Sidebar */}
-<div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
-  <button className="close-btn" onClick={toggleSidebar}>
-    &times;
-  </button>
-  <ul className="sidebar-nav">
-    <li>
-      <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
-    </li>
-    <li>
-      <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
-    </li>
-    <li>
-      <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
-    </li>
-    <li>
-      <Link to="/beforeafter">Before & After</Link>
-    </li>
-    <li>
-      <button className="btn-logout" onClick={handleSignOut}>
-        Sign out
-      </button>
-    </li>
-  </ul>
-</div>
+      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <button className="close-btn" onClick={toggleSidebar}>
+          &times;
+        </button>
+        <ul className="sidebar-nav">
+          <li>
+            <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
+          </li>
+          <li>
+            <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
+          </li>
+          <li>
+            <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
+          </li>
+          <li>
+            <Link to="/beforeafter">Before & After</Link>
+          </li>
+          <li>
+            <button className="btn-logout" onClick={handleSignOut}>
+              Sign out
+            </button>
+          </li>
+        </ul>
+      </div>
 
       {/* Main Content */}
       <main className="app-main">
@@ -120,7 +120,7 @@ function Admindashb() {
                   <th>User ID</th>
                   <th>Name</th>
                   <th>Service</th>
-                  <th>Booking Date</th>
+                  <th>Booking Date & Time</th>
                   <th>Address</th>
                   <th>Notes</th>
                   <th>For Assessment</th>
@@ -145,7 +145,7 @@ function Admindashb() {
                       <td>{b.service}</td>
                       <td>
                         {b.booking_date
-                          ? new Date(b.booking_date).toLocaleDateString()
+                          ? new Date(b.booking_date).toLocaleString()
                           : "N/A"}
                       </td>
                       <td>{b.address}</td>
@@ -227,20 +227,19 @@ function Admindashb() {
                 <table className="analytics-table">
                   <thead>
                     <tr>
-                      <th>Request ID</th>
                       <th>Booking ID</th>
                       <th>User ID</th>
                       <th>Service</th>
                       <th>Address</th>
                       <th>Status</th>
                       <th>Created At</th>
-                      <th>Booking Date</th>
+                      <th>Booking Date & Time</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bookings.filter((b) => b.status !== "completed").length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: "center" }}>
+                        <td colSpan={7} style={{ textAlign: "center" }}>
                           No requests found
                         </td>
                       </tr>
@@ -248,25 +247,14 @@ function Admindashb() {
                       bookings
                         .filter((b) => b.status !== "completed")
                         .map((r) => (
-                          <tr key={r.request_id || r.booking_id}>
-                            <td>{r.request_id || "—"}</td>
+                          <tr key={r.booking_id}>
                             <td>{r.booking_id}</td>
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">
-                              {r.status || "Pending"}
-                            </td>
-                            <td>
-                              {r.created_at
-                                ? new Date(r.created_at).toLocaleString()
-                                : "N/A"}
-                            </td>
-                            <td>
-                              {r.booking_date
-                                ? new Date(r.booking_date).toLocaleDateString()
-                                : "N/A"}
-                            </td>
+                            <td className="capitalize">{r.status || "Pending"}</td>
+                            <td>{r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}</td>
+                            <td>{r.booking_date ? new Date(r.booking_date).toLocaleString() : "N/A"}</td>
                           </tr>
                         ))
                     )}
@@ -281,7 +269,7 @@ function Admindashb() {
           </div>
         </div>
 
-        {/* ✅ Customer Analytics (Same Table as analytics.tsx) */}
+        {/* Customer Analytics */}
         <div className="section-container" ref={analyticsRef}>
           <h2>Customer Analytics Summary</h2>
           {loadingAnalytics ? (
@@ -310,11 +298,7 @@ function Admindashb() {
                         <td>{row.service}</td>
                         <td>{row.total_bookings}</td>
                         <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                        <td>
-                          {row.completed_at
-                            ? new Date(row.completed_at).toLocaleDateString()
-                            : "N/A"}
-                        </td>
+                        <td>{row.completed_at ? new Date(row.completed_at).toLocaleString() : "N/A"}</td>
                       </tr>
                     ))
                   )}

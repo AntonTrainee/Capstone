@@ -13,6 +13,7 @@ function Booksys() {
   const [user, setUser] = useState<User | null>(null);
   const [service, setService] = useState("");
   const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
@@ -23,9 +24,7 @@ function Booksys() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,41 +44,41 @@ function Booksys() {
       return;
     }
 
+    // Combine date + time into ISO string
+    const bookingDateTime = bookingTime
+      ? new Date(`${bookingDate}T${bookingTime}`).toISOString()
+      : new Date(bookingDate).toISOString();
+
     const bookingData = {
       user_id: user.id,
       service: service,
-      booking_date: bookingDate,
+      booking_date: bookingDateTime,
       address: address,
       notes: notes,
       for_assessment: forAssessment,
-      status: "pending",
-      payment: "0",
-      created_at: new Date().toISOString(),
-      name: `${user.firstName} ${user.lastName}`,
     };
 
     try {
       const response = await fetch("http://localhost:3007/booking", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookingData),
       });
 
-      const resultText = await response.text();
+      const result = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(user));
         setMessage("✅ Booking successful! Redirecting...");
         setService("");
         setBookingDate("");
+        setBookingTime("");
         setAddress("");
         setNotes("");
         setForAssessment(false);
+
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
-        setMessage(resultText || "❌ Booking failed. Please try again.");
+        setMessage(result.message || "❌ Booking failed. Please try again.");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -134,6 +133,16 @@ function Booksys() {
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
                     required
+                  />
+                </div>
+
+                <div className="form-group mb-4">
+                  <label className="form-label">Desired Time:</label>
+                  <input
+                    type="time"
+                    className="form-control booking-input"
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
                   />
                 </div>
 

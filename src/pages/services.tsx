@@ -32,14 +32,22 @@ function Services() {
     <>
       <Navbar />
 
-      <h1
-        className="text-center my-5"
-        style={{ fontSize: "2.5rem", textDecoration: "underline",  }}
-      >
-        Our Services
-      </h1>
+      {/* Heading + Divider */}
+      <div className="services-header text-center my-5">
+        <h1 style={{ fontSize: "2.5rem", marginBottom: "15px" }}>Our Services</h1>
+        <div
+          className="divider"
+          style={{
+            width: "100px",
+            height: "3px",
+            margin: "0 auto",
+          }}
+        />
+      </div>
 
-      <div className="services-page container services-container">
+      {/* Services Section */}
+      <div className="services-page container services-container d-flex gap-4">
+        {/* Sidebar */}
         <div
           className="p-3 services-sidebar"
           style={{
@@ -68,23 +76,24 @@ function Services() {
           </ul>
         </div>
 
+        {/* Details */}
         <div
-          className="p-4 ms-4 services-details"
+          className="p-4 services-details flex-grow-1"
           style={{
-            flex: 1,
             backgroundColor: "#13294B",
             borderRadius: "12px",
             color: "white",
           }}
         >
-          <div className="d-flex gap-4">
-            {/* Image box */}
+          <div className="d-flex gap-4 flex-wrap">
+            {/* Image */}
             <div
               style={{
                 width: "200px",
                 height: "200px",
                 borderRadius: "10px",
                 overflow: "hidden",
+                flexShrink: 0,
               }}
             >
               <img
@@ -94,7 +103,7 @@ function Services() {
               />
             </div>
 
-            {/* Text details */}
+            {/* Text */}
             <div>
               <h3>{selectedService.title}</h3>
               <h5>Details:</h5>
@@ -104,7 +113,8 @@ function Services() {
         </div>
       </div>
 
-      <section className="contact-section" style={{marginTop:"220px"}}>
+      {/* Contact Section */}
+      <section className="contact-section" style={{ marginTop: "220px" }}>
         <div className="contactcontainer">
           <h2 className="contact-title">Contact Us</h2>
 

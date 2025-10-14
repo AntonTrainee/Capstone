@@ -347,7 +347,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div className="row mt-4">
           <div className="col-md-8 mb-3">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.666613677575!2d121.04548157433027!3d14.561047678045377!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c858f512a25b%3A0x6be03b95b8998809!2s8296%20Dapitan%2C%20Makati%2C%201212%20Kalakhang%20Maynila!5e0!3m2!1sen!2sph!4v1750421780285!5m2!1sen!2sph"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.1607937920303!2d121.05910737433089!3d14.589911877339839!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c8198c943bdb%3A0xf92bf96244ed9ae8!2sCorinthian%20Executive%20Regency%2C%20Ortigas%20Ave%2C%20Ortigas%20Center%2C%20Pasig%2C%20Metro%20Manila!5e0!3m2!1sen!2sph!4v1760433345917!5m2!1sen!2sph"
               style={{ border: 0, height: "400px", width: "100%" }}
               allowFullScreen
               loading="lazy"

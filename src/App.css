@@ -586,6 +586,8 @@ tr:nth-child(even) {
   height: 3px;
   background-color: #000;
   margin: 0 auto 40px;
+  position: relative;
+  z-index: 10;
 }
 
 .about-flex {
@@ -608,13 +610,8 @@ tr:nth-child(even) {
 }
 
 .about-block p {
-  font-style: italic;
   line-height: 1.6;
   color: #333;
-}
-
-.what {
-  font-family: "Times New Roman", Times, serif;
 }
 
 .about-images {
@@ -641,7 +638,7 @@ tr:nth-child(even) {
   background-color: #77cce6;
   padding: 60px 20px;
   margin-bottom: 0;
-  padding-bottom: 20px;
+  padding-bottom: 60px;
 }
 
 .why-content {
@@ -658,7 +655,6 @@ tr:nth-child(even) {
   font-weight: bold;
   color: #142d54;
   flex: 1;
-  font-family: "Times New Roman", Times, serif;
 }
 
 .why-text {
@@ -670,9 +666,9 @@ tr:nth-child(even) {
 
 .contact-section {
   background-color: #142d54;
-  color: white;
+  color: azure;
   padding: 60px 20px;
-  font-family: "Times New Roman", Times, serif;
+
   height: 100%;
   min-height: calc(100vh - 80px - 200px);
 }
@@ -684,7 +680,8 @@ tr:nth-child(even) {
   border-bottom: 2px solid white;
   display: inline-block;
   padding-bottom: 5px;
-  font-family: "Times New Roman", Times, serif;
+  color: azure;
+
 }
 
 .contact-grid {
@@ -706,7 +703,7 @@ tr:nth-child(even) {
   margin-top: 0;
   margin-bottom: 10px;
   color: #000000;
-  font-family: "Times New Roman", Times, serif;
+
 }
 
 .logout-modal-backdrop {

@@ -5,7 +5,7 @@ interface Booking {
   booking_id: string;
   user_id: string;
   service: string;
-  booking_date: string;
+  booking_date: string; // ISO datetime
   address: string;
   notes?: string;
   for_assessment: boolean;
@@ -29,14 +29,12 @@ export default function ManageBookingsPage() {
       .catch((err) => console.error("Error fetching bookings:", err));
   }, []);
 
-  // Start editing
   const startEdit = (booking: Booking) => {
     if (booking.status === "completed") return;
     setEditing(booking.booking_id);
     setFormData(booking);
   };
 
-  // Save edit
   const saveEdit = async () => {
     if (!editing) return;
     if (!window.confirm("Are you sure you want to save changes?")) return;
@@ -64,14 +62,11 @@ export default function ManageBookingsPage() {
     }
   };
 
-  // Mark as completed (lowercase)
   const markAsCompleted = async (booking_id: string) => {
     if (!window.confirm("Are you sure the cleaning is done?")) return;
 
     try {
-      const bookingToUpdate = bookings.find(
-        (b) => b.booking_id === booking_id
-      );
+      const bookingToUpdate = bookings.find((b) => b.booking_id === booking_id);
       if (!bookingToUpdate) return;
 
       const updatedData = { ...bookingToUpdate, status: "completed" };
@@ -85,9 +80,7 @@ export default function ManageBookingsPage() {
       if (res.ok) {
         const updatedBooking = await res.json();
         setBookings((prev) =>
-          prev.map((b) =>
-            b.booking_id === booking_id ? updatedBooking : b
-          )
+          prev.map((b) => (b.booking_id === booking_id ? updatedBooking : b))
         );
         alert("✅ Booking marked as completed!");
       } else {
@@ -98,7 +91,6 @@ export default function ManageBookingsPage() {
     }
   };
 
-  // Filter search
   const filtered = bookings.filter((b) =>
     [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some(
       (v) => v?.toLowerCase().includes(search.toLowerCase())
@@ -143,7 +135,7 @@ export default function ManageBookingsPage() {
                   <th>User ID</th>
                   <th>Name</th>
                   <th>Service</th>
-                  <th>Date</th>
+                  <th>Date & Time</th>
                   <th>Address</th>
                   <th>Notes</th>
                   <th>Assessment</th>
@@ -170,10 +162,7 @@ export default function ManageBookingsPage() {
                           <input
                             value={formData.name || ""}
                             onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                name: e.target.value,
-                              })
+                              setFormData({ ...formData, name: e.target.value })
                             }
                           />
                         ) : (
@@ -186,10 +175,7 @@ export default function ManageBookingsPage() {
                           <input
                             value={formData.service || ""}
                             onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                service: e.target.value,
-                              })
+                              setFormData({ ...formData, service: e.target.value })
                             }
                           />
                         ) : (
@@ -199,18 +185,38 @@ export default function ManageBookingsPage() {
 
                       <td>
                         {editing === b.booking_id ? (
-                          <input
-                            type="date"
-                            value={formData.booking_date?.slice(0, 10) || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                booking_date: e.target.value,
-                              })
-                            }
-                          />
+                          <>
+                            <input
+                              type="date"
+                              value={formData.booking_date?.slice(0, 10) || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  booking_date: e.target.value + 
+                                    (formData.booking_date?.slice(10) || "T00:00"),
+                                })
+                              }
+                            />
+                            <input
+                              type="time"
+                              value={
+                                formData.booking_date
+                                  ? formData.booking_date.slice(11, 16)
+                                  : "00:00"
+                              }
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  booking_date:
+                                    (formData.booking_date?.slice(0, 10) || "1970-01-01") +
+                                    "T" +
+                                    e.target.value,
+                                })
+                              }
+                            />
+                          </>
                         ) : (
-                          new Date(b.booking_date).toLocaleDateString()
+                          new Date(b.booking_date).toLocaleString()
                         )}
                       </td>
 
@@ -219,10 +225,7 @@ export default function ManageBookingsPage() {
                           <input
                             value={formData.address || ""}
                             onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                address: e.target.value,
-                              })
+                              setFormData({ ...formData, address: e.target.value })
                             }
                           />
                         ) : (
@@ -236,10 +239,7 @@ export default function ManageBookingsPage() {
                             rows={2}
                             value={formData.notes || ""}
                             onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                notes: e.target.value,
-                              })
+                              setFormData({ ...formData, notes: e.target.value })
                             }
                           />
                         ) : (
@@ -255,10 +255,7 @@ export default function ManageBookingsPage() {
                             type="number"
                             value={formData.payment || ""}
                             onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                payment: e.target.value,
-                              })
+                              setFormData({ ...formData, payment: e.target.value })
                             }
                           />
                         ) : b.payment ? (

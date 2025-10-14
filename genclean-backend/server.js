@@ -376,39 +376,47 @@ app.put("/update-profile", requireAuth, async (req, res) => {
 
 app.post("/booking", async (req, res) => {
   try {
-    const { user_id, service, booking_date, address, notes, forAssessment } = req.body;
+    const { user_id, service, booking_date, booking_time, address, notes, forAssessment } = req.body;
 
+    // Validate required fields
     if (!user_id || !service || !booking_date || !address) {
-      return res.status(400).send("Missing required booking fields.");
+      return res.status(400).json({ success: false, message: "Missing required booking fields." });
+    }
+
+    // Combine date + time into a single timestamp
+    let bookingDateTime = booking_date;
+    if (booking_time) {
+      // Combine into ISO string
+      bookingDateTime = new Date(`${booking_date}T${booking_time}`);
+    } else {
+      bookingDateTime = new Date(booking_date);
     }
 
     const insertQuery = `
       INSERT INTO bookings
-        (user_id, service, booking_date, address, notes, for_assessment, payment, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (user_id, service, booking_date, address, notes, for_assessment, payment, status, name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `;
 
     const values = [
       user_id,
       service,
-      booking_date,
+      bookingDateTime,
       address,
       notes || "",
       forAssessment || false,
-      0,      // default payment
-      "pending",  // **lowercase** status
+      0,             // default payment
+      "pending",     // default status
+      null           // name will be set by trigger if needed
     ];
 
     const result = await pool.query(insertQuery, values);
-    const newBooking = result.rows[0];
-
-    // Optionally respond with the new booking object
-    res.status(201).json(newBooking);
+    res.status(201).json({ success: true, booking: result.rows[0] });
 
   } catch (err) {
     console.error("❌ Error booking service:", err);
-    res.status(500).send("Error booking service: " + err.message);
+    res.status(500).json({ success: false, message: "Error booking service." });
   }
 });
 
@@ -458,7 +466,6 @@ app.get("/bookings/user/:userId", async (req, res) => {
     res.status(500).send("Error fetching user bookings");
   }
 });
-
 
 // ======================= CONTACT FORM =======================
 

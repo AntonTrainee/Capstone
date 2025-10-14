@@ -111,24 +111,6 @@
   background: #f9fafb;
 }
 
-/* Table Inputs */
-.analytics-table input,
-.analytics-table textarea {
-  width: 100%;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  margin: 0.2rem 0;
-}
-
-.analytics-table input:focus,
-.analytics-table textarea:focus {
-  border-color: #2563eb;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
-}
-
 /* Buttons */
 .btn {
   border: none;
@@ -188,25 +170,59 @@
   background: #d97706;
 }
 
-/* Details card */
-.details-card {
+/* Side panel for editing/viewing */
+.details-panel {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  width: 340px;
-  max-height: 80vh;
-  overflow-y: auto;
-  border-left: 4px solid #2563eb;
-  animation: slideUp 0.3s ease-out;
-  border-radius: 12px;
+  top: 0;
+  right: -400px;
+  width: 380px;
+  height: 100%;
   background: white;
-  padding: 1rem 1.2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+  padding: 1.5rem;
+  overflow-y: auto;
+  transition: right 0.3s ease;
+  z-index: 20;
+  border-left: 4px solid #2563eb;
+  border-radius: 0 0 0 12px;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+.details-panel.open {
+  right: 0;
+}
+
+.details-panel h3 {
+  margin-bottom: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.details-panel label {
+  display: block;
+  font-weight: 500;
+  margin-top: 0.8rem;
+  margin-bottom: 0.3rem;
+  color: #334155;
+}
+
+.details-panel input,
+.details-panel textarea {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.details-panel textarea {
+  resize: vertical;
+}
+
+.details-panel input:focus,
+.details-panel textarea:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
 }
 
 /* Footer */
@@ -221,12 +237,6 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1200px) {
-  .wide-input, .payment-input, .textarea-expand {
-    width: 140px;
-  }
-}
-
 @media (max-width: 768px) {
   .analytics-table th, .analytics-table td {
     padding: 0.5rem 0.4rem;
@@ -242,5 +252,9 @@
   .filter-controls {
     justify-content: center;
     margin-bottom: 1.5rem;
+  }
+
+  .details-panel {
+    width: 95%;
   }
 }

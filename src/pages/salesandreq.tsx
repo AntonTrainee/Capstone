@@ -21,13 +21,6 @@ interface RecordItem {
   booking_date?: string;
 }
 
-interface AnalyticsItem {
-  analytics_id: number;
-  service: string;
-  total_customers: number;
-  total_amount: number;
-}
-
 interface Filters {
   reportType: ReportType;
   service?: ServiceType | "All";
@@ -44,7 +37,6 @@ export default function SalesAndRequest() {
   });
 
   const [data, setData] = useState<RecordItem[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +54,9 @@ export default function SalesAndRequest() {
       try {
         const res = await fetch(endpoint);
         if (!res.ok)
-          throw new Error(`Failed to fetch ${filters.reportType}: ${res.statusText}`);
+          throw new Error(
+            `Failed to fetch ${filters.reportType}: ${res.statusText}`
+          );
         const rows = await res.json();
 
         const mapped: RecordItem[] =
@@ -77,15 +71,16 @@ export default function SalesAndRequest() {
                 created_at: item.created_at ?? "N/A",
               }))
             : rows.map((item: any) => ({
-                id: item.request_id ?? "N/A",
-                booking_id: item.booking_id ?? "N/A",
-                user_id: item.user_id ?? "N/A",
-                service: item.service ?? "N/A",
-                address: item.address ?? "N/A",
-                status: item.status ?? "N/A",
-                created_at: item.created_at ?? "N/A",
-                booking_date: item.booking_date ?? "N/A",
-              }));
+    id: item.booking_id ?? "N/A", // <-- use booking_id here
+    booking_id: item.booking_id ?? "N/A",
+    user_id: item.user_id ?? "N/A",
+    service: item.service ?? "N/A",
+    address: item.address ?? "N/A",
+    status: item.status ?? "N/A",
+    created_at: item.created_at ?? "N/A",
+    booking_date: item.booking_date ?? "N/A",
+}));
+
 
         setData(mapped);
       } catch (err: any) {
@@ -99,21 +94,6 @@ export default function SalesAndRequest() {
 
     fetchData();
   }, [filters.reportType]);
-
-  // ✅ Fetch analytics (sales summary)
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const res = await fetch("http://localhost:3007/analytics");
-        if (!res.ok) throw new Error(`Failed to fetch analytics: ${res.statusText}`);
-        const rows = await res.json();
-        setAnalytics(rows);
-      } catch (err: any) {
-        console.error("❌ Error fetching analytics:", err);
-      }
-    };
-    fetchAnalytics();
-  }, []);
 
   // ✅ Filters
   const filteredRows = useMemo(() => {
@@ -361,9 +341,6 @@ export default function SalesAndRequest() {
               </table>
             </div>
           )}
-
-          {/* ✅ Analytics Section */}
-          
         </section>
       </main>
 

@@ -1,5 +1,9 @@
+// otpController.js
 require("dotenv").config();
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+// ================== RESEND SETUP ==================
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Temporary store for OTPs (in-memory)
 const otpStore = {};
@@ -12,25 +16,24 @@ async function sendOTP(req, res) {
     return res.status(400).json({ success: false, message: "Email is required" });
   }
 
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  otpStore[email.trim().toLowerCase()] = otp; // normalize email
-
-  // Nodemailer transporter
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL,
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    otpStore[email.trim().toLowerCase()] = otp; // store normalized email
+
+    // Send email using Resend
+    await resend.emails.send({
+      from: "GenClean <noreply@genclean.com>",
       to: email,
       subject: "Your OTP Code",
-      text: `Your OTP code is: ${otp}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <h2>GenClean Verification</h2>
+          <p>Your OTP code is:</p>
+          <h1 style="color: #007BFF;">${otp}</h1>
+          <p>This code will expire soon. Please do not share it with anyone.</p>
+        </div>
+      `,
     });
 
     console.log(`📩 OTP sent to ${email}: ${otp}`);

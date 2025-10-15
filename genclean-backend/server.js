@@ -261,18 +261,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
-// ======================= Before and After =======================
-// Get all before/after posts
-app.get("/beforeafter", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM before_after ORDER BY created_at DESC");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching before/after posts:", err);
-    res.status(500).json({ error: "Failed to fetch posts" });
-  }
-});
-
 // ======================= Before and After Add (WITH MULTER) =======================
 app.post(
   "/beforeafter",

@@ -261,6 +261,18 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
+// ======================= Before and After =======================
+// Get all before/after posts
+app.get("/beforeafter", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM before_after ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching before/after posts:", err);
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
+});
+
 // ======================= Before and After Add (WITH MULTER) =======================
 app.post(
   "/beforeafter",
@@ -483,31 +495,6 @@ app.post("/contact", async (req, res) => {
   }
 });
 
-// ================== BEFORE & AFTER UPLOADS ==================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-
-app.post("/beforeafter", upload.fields([{ name: "before" }, { name: "after" }]), async (req, res) => {
-  try {
-    const { title } = req.body;
-    if (!req.files["before"] || !req.files["after"]) {
-      return res.status(400).json({ error: "Both before and after images are required" });
-    }
-
-    const beforeUrl = `http://localhost:${PORT}/uploads/${req.files["before"][0].filename}`;
-    const afterUrl = `http://localhost:${PORT}/uploads/${req.files["after"][0].filename}`;
-
-    const result = await pool.query(
-      "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",
-      [title, beforeUrl, afterUrl]
-    );
-
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error("❌ Error inserting post:", err);
-    res.status(500).json({ error: "Failed to insert post" });
-  }
-});
 
 // ================== Serve Frontend ==================
 

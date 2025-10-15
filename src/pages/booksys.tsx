@@ -1,5 +1,5 @@
-// Booksys.tsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: string;
@@ -13,17 +13,18 @@ function Booksys() {
   const [user, setUser] = useState<User | null>(null);
   const [service, setService] = useState("");
   const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,40 +44,45 @@ function Booksys() {
       return;
     }
 
+    // Combine date + time into ISO string
+    const bookingDateTime = bookingTime
+      ? new Date(`${bookingDate}T${bookingTime}`).toISOString()
+      : new Date(bookingDate).toISOString();
+
     const bookingData = {
-      userId: user.id, // We need to send the user ID to the backend
+      user_id: user.id,
       service: service,
-      date: bookingDate,
+      booking_date: bookingDateTime,
       address: address,
       notes: notes,
-      forAssessment: forAssessment,
+      for_assessment: forAssessment,
     };
 
     try {
       const response = await fetch("http://localhost:3007/booking", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookingData),
       });
 
-      const result = await response.text();
+      const result = await response.json();
 
       if (response.ok) {
-        setMessage(result); // "Booking successful"
-        // Reset form fields
+        setMessage("✅ Booking successful! Redirecting...");
         setService("");
         setBookingDate("");
+        setBookingTime("");
         setAddress("");
         setNotes("");
         setForAssessment(false);
+
+        setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
-        setMessage(result || "Booking failed. Please try again.");
+        setMessage(result.message || "❌ Booking failed. Please try again.");
       }
     } catch (error) {
-      console.error("An unexpected error occurred:", error);
-      setMessage("An unexpected error occurred.");
+      console.error("Error:", error);
+      setMessage("⚠️ An unexpected error occurred while booking.");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,9 +92,7 @@ function Booksys() {
     <>
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
-          <a className="navbar-brand" href="#">
-            GenClean
-          </a>
+          <a className="navbar-brand" href="#">GenClean</a>
           <button
             className="navbar-toggler"
             type="button"
@@ -97,32 +101,6 @@ function Booksys() {
           >
             <span className="navbar-toggler-icon"></span>
           </button>
-
-          <div
-            className="collapse navbar-collapse justify-content-end"
-            id="navbarSupportedContent"
-          >
-            <ul className="navbar-nav mb-2 mb-lg-0">
-              <li className="nav-item">
-                <a className="nav-link" href="#home">
-                  Home
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#services">
-                  Services
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#contact">
-                  Contact Us
-                </a>
-              </li>
-              <li className="nav-item">
-                <button className="btn btn-link nav-link">About Us</button>
-              </li>
-            </ul>
-          </div>
         </div>
       </nav>
 
@@ -130,7 +108,7 @@ function Booksys() {
         <div className="booking-box">
           <h2 className="booking-title">Book for Quotation!</h2>
           <form onSubmit={handleSubmit}>
-            <div className="row g-5">
+            <div className="row g-4 booking-form">
               <div className="col-md-6 form-column">
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
@@ -141,12 +119,8 @@ function Booksys() {
                     required
                   >
                     <option value="">Select a service</option>
-                    <option value="General Maintenance">
-                      General Maintenance
-                    </option>
-                    <option value="Janitorial and Cleaning Services">
-                      Janitorial and Cleaning Services
-                    </option>
+                    <option value="General Maintenance">General Maintenance</option>
+                    <option value="Janitorial and Cleaning Services">Janitorial and Cleaning Services</option>
                     <option value="Pest Control">Pest Control</option>
                   </select>
                 </div>
@@ -163,11 +137,20 @@ function Booksys() {
                 </div>
 
                 <div className="form-group mb-4">
+                  <label className="form-label">Desired Time:</label>
+                  <input
+                    type="time"
+                    className="form-control booking-input"
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group mb-4">
                   <label className="form-label">Address:</label>
                   <textarea
                     className="form-control booking-input"
                     rows={2}
-                    placeholder=""
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     required
@@ -179,16 +162,13 @@ function Booksys() {
                   <textarea
                     className="form-control booking-input"
                     rows={3}
-                    placeholder=""
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   ></textarea>
                 </div>
 
-                <div className="form-check d-flex align-items-center mb-4">
-                  <label className="form-check-label me-4">
-                    For Assessment:
-                  </label>
+                <div className="form-check mb-4 d-flex align-items-center">
+                  <label className="form-check-label me-3">For Assessment:</label>
                   <input
                     type="checkbox"
                     className="form-check-input"
@@ -233,6 +213,7 @@ function Booksys() {
               </button>
             </div>
           </form>
+
           {message && <div className="mt-3 text-center">{message}</div>}
         </div>
       </div>

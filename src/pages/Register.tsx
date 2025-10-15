@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 const Register = () => {
   const [step, setStep] = useState(1);
@@ -9,10 +10,10 @@ const Register = () => {
   const [emailAdd, setEmailAdd] = useState("");
   const [password, setPassword] = useState("");
   const [conpassword, setConpassword] = useState("");
-
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
+  // ================== HANDLE SUBMIT ==================
+  const handleSubmit = async () => {
     if (password !== conpassword) {
       alert("Passwords do not match");
       return;
@@ -22,35 +23,57 @@ const Register = () => {
       firstName,
       lastName,
       phoneNumber,
-      emailAdd,
+      email: emailAdd,
       password,
     };
 
-    fetch("http://localhost:3007/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    })
-      .then((res) => res.text())
-      .then((data) => {
-        alert(data);
-        localStorage.setItem("userData", JSON.stringify(userData));
+    try {
+      // 1️⃣ Save user data temporarily in localStorage
+      localStorage.setItem("pendingUser", JSON.stringify(userData));
 
-        navigate("/otp", { state: { email: emailAdd } });
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Registration failed");
+      // 2️⃣ Send OTP to email
+      const response = await fetch("http://localhost:3007/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailAdd }),
       });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("OTP sent! Check your email.");
+        navigate("/otp", { state: { email: emailAdd } });
+      } else {
+        alert(data.message || "Failed to send OTP");
+      }
+    } catch (err) {
+      console.error("Error sending OTP:", err);
+      alert("Something went wrong while sending OTP");
+    }
   };
 
+  // ================== PHONE NUMBER FORMAT ==================
+  const handlePhoneInput = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+    if (!digits.startsWith("09")) digits = "09" + digits.slice(digits.startsWith("0") ? 1 : 0);
+    if (digits.length > 11) digits = digits.slice(0, 11);
+
+    let formatted = digits;
+    if (digits.length > 4 && digits.length <= 7) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+    } else if (digits.length > 7) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4, 7) + "-" + digits.slice(7);
+    }
+
+    setPhoneNumber(formatted);
+  };
+
+  // ================== UI ==================
   return (
     <div className="colorscheme">
       <div className="blue-box">
-        <h1 className="logo" style={{ textAlign: "center" }}>
-          GenClean
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
@@ -87,7 +110,7 @@ const Register = () => {
                 className="form-control"
                 placeholder="Phone Number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => handlePhoneInput(e.target.value)}
               />
               <label>Phone Number</label>
             </div>

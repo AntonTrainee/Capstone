@@ -1,0 +1,186 @@
+/* === Layout === */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(to right, #0ea5e9, #2563eb);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  gap: 0.6rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.logo-sub {
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+.app-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.app-footer {
+  border-top: 1px solid #ddd;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* === Hero / Filters Banner === */
+.analytics-hero {
+  background: linear-gradient(to right, #38bdf8, #6366f1);
+  color: white;
+  padding: 2rem;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.analytics-hero h1 {
+  margin: 0 0 0.5rem;
+}
+
+.analytics-hero p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.filter-controls select {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  outline: none;
+}
+
+/* === Filter Cards === */
+.metrics-grid {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.metric-card label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.metric-card input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.3rem;
+}
+
+/* === Table === */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.salesreq-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.salesreq-table th,
+.salesreq-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.salesreq-table th {
+  background: #f8fafc;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.salesreq-table td {
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+/* === Small refinements === */
+input, select, button {
+  font-family: inherit;
+}
+
+/* === Table Header with Button === */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.download-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: background 0.2s ease-in-out;
+}
+
+.download-btn:hover {
+  background: #1e40af;
+}
+

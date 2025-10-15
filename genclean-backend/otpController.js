@@ -1,18 +1,22 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
-const otpStore = {}; 
+// Temporary store for OTPs (in-memory)
+const otpStore = {};
 
+// ================== SEND OTP ==================
 async function sendOTP(req, res) {
-  const userEmailInput = req.body.email;
+  const { email } = req.body;
 
-  if (!userEmailInput) {
-    return res.status(400).json({ message: "Email is required" });
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000); 
-  otpStore[userEmailInput] = otp;
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  otpStore[email.trim().toLowerCase()] = otp; // normalize email
 
+  // Nodemailer transporter
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -24,27 +28,41 @@ async function sendOTP(req, res) {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL,
-      to: userEmailInput,
+      to: email,
       subject: "Your OTP Code",
       text: `Your OTP code is: ${otp}`,
     });
 
-    res.status(200).json({ message: "OTP sent successfully" });
+    console.log(`📩 OTP sent to ${email}: ${otp}`);
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (err) {
-    console.error("Error sending email:", err);
-    res.status(500).json({ message: "Failed to send OTP", error: err.message });
+    console.error("❌ Error sending OTP:", err);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
   }
 }
 
+// ================== VERIFY OTP ==================
 function verifyOTP(req, res) {
   const { email, otp } = req.body;
 
-  if (otpStore[email] && otpStore[email] == otp) {
-    delete otpStore[email];
-    res.status(200).json({ message: "OTP verified" });
-  } else {
-    res.status(400).json({ message: "Invalid OTP" });
+  if (!email || !otp) {
+    return res.status(400).json({ success: false, message: "Email and OTP are required" });
   }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.toString().trim();
+
+  // Check if OTP exists and matches
+  if (!otpStore[normalizedEmail] || otpStore[normalizedEmail].toString() !== cleanOtp) {
+    console.log(`❌ Invalid OTP attempt for ${email}: entered ${otp}, expected ${otpStore[normalizedEmail]}`);
+    return res.status(400).json({ success: false, message: "Invalid OTP" });
+  }
+
+  // OTP is correct, remove it
+  delete otpStore[normalizedEmail];
+
+  console.log(`✅ OTP verified for ${email}`);
+  res.status(200).json({ success: true, message: "OTP verified successfully!" });
 }
 
 module.exports = { sendOTP, verifyOTP };

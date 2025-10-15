@@ -23,7 +23,7 @@ async function sendOTP(req, res) {
 
     // Send email using Resend
     await resend.emails.send({
-      from: "GenClean <noreply@genclean.com>",
+      from: "onboarding@resend.dev",
       to: email,
       subject: "Your OTP Code",
       html: `

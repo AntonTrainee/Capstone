@@ -1,6 +1,7 @@
 require("dotenv").config();
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 const otpStore = {};
 
 async function sendOTP(req, res) {
@@ -13,20 +14,12 @@ async function sendOTP(req, res) {
   const otp = Math.floor(100000 + Math.random() * 900000);
   otpStore[email.trim().toLowerCase()] = otp;
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL,
+    const data = await resend.emails.send({
+      from: "GenClean <onboarding@resend.dev>",
       to: email,
       subject: "Your OTP Code",
-      text: `Your OTP code is: ${otp}`,
+      html: `<p>Your OTP code is: <b>${otp}</b></p><p>This code will expire in 5 minutes.</p>`,
     });
 
     console.log(`📩 OTP sent to ${email}: ${otp}`);

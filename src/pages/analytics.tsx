@@ -28,7 +28,7 @@ export default function Analytics() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:3007/analytics_summary?month=${selectedMonth}`)
+    fetch(`https://capstone-ni5z.onrender.com/analytics_summary?month=${selectedMonth}`)
       .then((res) => res.json())
       .then((data) => {
         setSummary(data);

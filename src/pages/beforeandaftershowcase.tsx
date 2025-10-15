@@ -13,7 +13,7 @@ function BeforeAndAfterShowcase() {
   const [posts, setPosts] = useState<BeforeAfter[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:3007/beforeafter")
+    fetch("https://capstone-ni5z.onrender.com/beforeafter")
       .then((res) => res.json())
       .then((data) => setPosts(data))
       .catch((err) =>

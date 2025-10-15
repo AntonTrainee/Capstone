@@ -48,8 +48,8 @@ export default function SalesAndRequest() {
 
       const endpoint =
         filters.reportType === "sales"
-          ? "http://localhost:3007/sales"
-          : "http://localhost:3007/requests";
+          ? "https://capstone-ni5z.onrender.com/sales"
+          : "https://capstone-ni5z.onrender.com/requests";
 
       try {
         const res = await fetch(endpoint);

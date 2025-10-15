@@ -14,7 +14,7 @@ function BeforeAfter() {
 
   // Fetch posts from backend
   const fetchPosts = () => {
-    fetch("http://localhost:3007/beforeafter")
+    fetch("https://capstone-ni5z.onrender.com/beforeafter")
       .then((res) => res.json())
       .then((data) => setPosts(data))
       .catch((err) => console.error("Error fetching before/after posts:", err));
@@ -29,7 +29,7 @@ function BeforeAfter() {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3007/beforeafter/${id}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/beforeafter/${id}`, {
         method: "DELETE",
       });
 

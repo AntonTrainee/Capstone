@@ -23,7 +23,7 @@ export default function ManageBookingsPage() {
 
   // Fetch all bookings
   useEffect(() => {
-    fetch("http://localhost:3007/bookings")
+    fetch("https://capstone-ni5z.onrender.com/bookings")
       .then((res) => res.json())
       .then((data) => setBookings(data))
       .catch((err) => console.error("Error fetching bookings:", err));
@@ -40,7 +40,7 @@ export default function ManageBookingsPage() {
     if (!window.confirm("Are you sure you want to save changes?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3007/bookings/${editing}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${editing}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -71,7 +71,7 @@ export default function ManageBookingsPage() {
 
       const updatedData = { ...bookingToUpdate, status: "completed" };
 
-      const res = await fetch(`http://localhost:3007/bookings/${booking_id}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${booking_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),

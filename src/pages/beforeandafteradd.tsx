@@ -21,7 +21,7 @@ function BeforeAfterAdd() {
     formData.append("after", afterFile);
 
     try {
-      const res = await fetch("http://localhost:3007/beforeafter", {
+      const res = await fetch("https://capstone-ni5z.onrender.com/beforeafter", {
         method: "POST",
         body: formData,
       });

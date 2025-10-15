@@ -496,7 +496,8 @@ app.post("/contact", async (req, res) => {
 });
 
 // ================== BEFORE & AFTER UPLOADS ==================
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 app.post("/beforeafter", upload.fields([{ name: "before" }, { name: "after" }]), async (req, res) => {
   try {

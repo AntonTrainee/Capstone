@@ -288,8 +288,10 @@ app.post(
       const beforeFile = req.files["before"][0].filename;
       const afterFile = req.files["after"][0].filename;
 
-      const beforeUrl = `http://localhost:${PORT}/uploads/${beforeFile}`;
-      const afterUrl = `http://localhost:${PORT}/uploads/${afterFile}`;
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+      const beforeUrl = `${baseUrl}/uploads/${beforeFile}`;
+      const afterUrl = `${baseUrl}/uploads/${afterFile}`;
+
 
       const result = await pool.query(
         "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",

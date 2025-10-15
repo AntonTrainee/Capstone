@@ -27,7 +27,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mysql": "^2.18.1",
-    "pdfkit": "^0.17.2",
+    "pdfkit": "^0.17.2"
   },
   "devDependencies": {
     "@types/react": "^19.1.11",

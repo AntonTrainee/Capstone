@@ -25,7 +25,7 @@ function OtpPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:3007/send-otp", {
+      const res = await fetch("https://capstone-ni5z.onrender.com/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -47,7 +47,7 @@ function OtpPage() {
     }
 
     try {
-      const verifyRes = await fetch("http://localhost:3007/verify-otp", {
+      const verifyRes = await fetch("https://capstone-ni5z.onrender.com/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otp.toString().trim() }),
@@ -72,7 +72,7 @@ function OtpPage() {
       const userData = JSON.parse(pendingUser);
 
       // Step 3: Send to /register for final DB insert
-      const registerRes = await fetch("http://localhost:3007/register", {
+      const registerRes = await fetch("https://capstone-ni5z.onrender.com/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

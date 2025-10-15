@@ -35,19 +35,19 @@ function Admindashb() {
     const fetchAllData = async () => {
       try {
         // Fetch bookings
-        const bookingsRes = await fetch("http://localhost:3007/bookings");
+        const bookingsRes = await fetch("https://capstone-ni5z.onrender.com/bookings");
         const bookingsData = await bookingsRes.json();
         setBookings(Array.isArray(bookingsData) ? bookingsData : []);
 
         // Fetch sales
-        const salesRes = await fetch("http://localhost:3007/sales");
+        const salesRes = await fetch("https://capstone-ni5z.onrender.com/sales");
         const salesData = await salesRes.json();
         setSales(Array.isArray(salesData) ? salesData : []);
 
         // Fetch analytics summary
         setLoadingAnalytics(true);
         const analyticsRes = await fetch(
-          `http://localhost:3007/analytics_summary?month=${new Date().getMonth() + 1}`
+          `https://capstone-ni5z.onrender.com/analytics_summary?month=${new Date().getMonth() + 1}`
         );
         const analyticsData = await analyticsRes.json();
         setAnalytics(Array.isArray(analyticsData) ? analyticsData : []);

@@ -10,7 +10,7 @@ function VerifyOTPForm({ email, onVerified }) {
     if (sent) return;
 
     try {
-      const response = await axios.post("http://localhost:3007/send-otp", { email });
+      const response = await axios.post("https://capstone-ni5z.onrender.com/send-otp", { email });
       setStatus(response.data.message || "OTP sent successfully.");
       setSent(true);
 
@@ -29,7 +29,7 @@ function VerifyOTPForm({ email, onVerified }) {
     }
 
     try {
-      const response = await axios.post("http://localhost:3007/verify-otp", { email, otp });
+      const response = await axios.post("https://capstone-ni5z.onrender.com/verify-otp", { email, otp });
 
       if (response.data.success) {
         setStatus("✅ OTP verified successfully!");

@@ -37,7 +37,7 @@ function Profile() {
     if (!token) return setMessage("User not authenticated");
 
     try {
-      const res = await fetch("http://localhost:3007/update-profile", {
+      const res = await fetch("https://capstone-ni5z.onrender.com/update-profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

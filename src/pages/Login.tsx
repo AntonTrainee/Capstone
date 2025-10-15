@@ -30,8 +30,8 @@ function Login() {
   try {
     const endpoint =
       role === "admin"
-        ? "http://localhost:3007/admin-login"
-        : "http://localhost:3007/login";
+        ? "https://capstone-ni5z.onrender.com/admin-login"
+        : "https://capstone-ni5z.onrender.com/login";
 
     const res = await fetch(endpoint, {
       method: "POST",

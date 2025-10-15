@@ -44,7 +44,7 @@ function CustomerDashb() {
 
   const fetchBookings = async (userId: string) => {
     try {
-      const response = await axios.get<Booking[]>(`http://localhost:3007/bookings/user/${userId}`);
+      const response = await axios.get<Booking[]>(`https://capstone-ni5z.onrender.com/bookings/user/${userId}`);
       const allBookings = response.data;
 
       const activeBookings = allBookings.filter((b) => b.status.toLowerCase() !== "completed");

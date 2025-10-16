@@ -505,8 +505,10 @@ app.post("/beforeafter", upload.fields([{ name: "before" }, { name: "after" }]),
       return res.status(400).json({ error: "Both before and after images are required" });
     }
 
-    const beforeUrl = `http://localhost:${PORT}/uploads/${req.files["before"][0].filename}`;
-    const afterUrl = `http://localhost:${PORT}/uploads/${req.files["after"][0].filename}`;
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    const beforeUrl = `${baseUrl}/uploads/${req.files["before"][0].filename}`;
+    const afterUrl = `${baseUrl}/uploads/${req.files["after"][0].filename}`;
+
 
     const result = await pool.query(
       "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",

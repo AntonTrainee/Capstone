@@ -1,9 +1,10 @@
 require("dotenv").config();
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Temporary store for OTPs (in-memory)
 const otpStore = {};
 
+// ================== SEND OTP ==================
 async function sendOTP(req, res) {
   const { email } = req.body;
 
@@ -11,15 +12,25 @@ async function sendOTP(req, res) {
     return res.status(400).json({ success: false, message: "Email is required" });
   }
 
+  // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
-  otpStore[email.trim().toLowerCase()] = otp;
+  otpStore[email.trim().toLowerCase()] = otp; // normalize email
+
+  // Nodemailer transporter
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
   try {
-    const data = await resend.emails.send({
-      from: "GenClean <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: process.env.EMAIL,
       to: email,
       subject: "Your OTP Code",
-      html: `<p>Your OTP code is: <b>${otp}</b></p><p>This code will expire in 5 minutes.</p>`,
+      text: `Your OTP code is: ${otp}`,
     });
 
     console.log(`📩 OTP sent to ${email}: ${otp}`);
@@ -30,6 +41,7 @@ async function sendOTP(req, res) {
   }
 }
 
+// ================== VERIFY OTP ==================
 function verifyOTP(req, res) {
   const { email, otp } = req.body;
 
@@ -40,14 +52,18 @@ function verifyOTP(req, res) {
   const normalizedEmail = email.trim().toLowerCase();
   const cleanOtp = otp.toString().trim();
 
+  // Check if OTP exists and matches
   if (!otpStore[normalizedEmail] || otpStore[normalizedEmail].toString() !== cleanOtp) {
-    console.log(`❌ Invalid OTP attempt for ${email}`);
+    console.log(`❌ Invalid OTP attempt for ${email}: entered ${otp}, expected ${otpStore[normalizedEmail]}`);
     return res.status(400).json({ success: false, message: "Invalid OTP" });
   }
 
+  // OTP is correct, remove it
   delete otpStore[normalizedEmail];
+
   console.log(`✅ OTP verified for ${email}`);
   res.status(200).json({ success: true, message: "OTP verified successfully!" });
 }
 
 module.exports = { sendOTP, verifyOTP };
+

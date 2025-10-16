@@ -288,10 +288,8 @@ app.post(
       const beforeFile = req.files["before"][0].filename;
       const afterFile = req.files["after"][0].filename;
 
-      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-      const beforeUrl = `${baseUrl}/uploads/${beforeFile}`;
-      const afterUrl = `${baseUrl}/uploads/${afterFile}`;
-
+      const beforeUrl = `http://localhost:${PORT}/uploads/${beforeFile}`;
+      const afterUrl = `http://localhost:${PORT}/uploads/${afterFile}`;
 
       const result = await pool.query(
         "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",
@@ -495,6 +493,30 @@ app.post("/contact", async (req, res) => {
   }
 });
 
+// ================== BEFORE & AFTER UPLOADS ==================
+app.use("/uploads", express.static("uploads"));
+
+app.post("/beforeafter", upload.fields([{ name: "before" }, { name: "after" }]), async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!req.files["before"] || !req.files["after"]) {
+      return res.status(400).json({ error: "Both before and after images are required" });
+    }
+
+    const beforeUrl = `http://localhost:${PORT}/uploads/${req.files["before"][0].filename}`;
+    const afterUrl = `http://localhost:${PORT}/uploads/${req.files["after"][0].filename}`;
+
+    const result = await pool.query(
+      "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",
+      [title, beforeUrl, afterUrl]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error inserting post:", err);
+    res.status(500).json({ error: "Failed to insert post" });
+  }
+});
 
 // ================== Serve Frontend ==================
 
@@ -557,9 +579,16 @@ app.get("/requests", async (req, res) => {
 });
 
 
+
+
+// ======================= FRONTEND SERVE =======================
+app.use(express.static(path.join(__dirname, "../dist")));
+app.get(/.*/, (req, res) => res.sendFile(path.join(__dirname, "../dist/index.html")));
+
 // ================== Start Server ==================
 app.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);
   console.log("Loaded email pass:", process.env.EMAIL_PASS ? "✅ exists" : "❌ missing");
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+

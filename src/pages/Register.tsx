@@ -161,6 +161,12 @@ const Register = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <label>Password</label>
+              {/* Inline validation message */}
+              {password && password.length < 8 && (
+                <p style={{ color: "red", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                  Password must be at least 8 characters long
+                </p>
+              )}
             </div>
 
             <div className="form-floating mb-4 w-75">
@@ -172,6 +178,12 @@ const Register = () => {
                 onChange={(e) => setConpassword(e.target.value)}
               />
               <label>Confirm Password</label>
+              {/* Inline mismatch warning */}
+              {conpassword && conpassword !== password && (
+                <p style={{ color: "red", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                  Passwords do not match
+                </p>
+              )}
             </div>
 
             <div className="d-flex gap-3">
@@ -181,7 +193,13 @@ const Register = () => {
               <button
                 className="btn crAct-btn"
                 onClick={handleSubmit}
-                disabled={!emailAdd || !password || !conpassword}
+                disabled={
+                  !emailAdd ||
+                  !password ||
+                  !conpassword ||
+                  password.length < 8 ||
+                  password !== conpassword
+                }
               >
                 Sign Up
               </button>

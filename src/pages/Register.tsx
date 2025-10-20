@@ -32,7 +32,7 @@ const Register = () => {
       localStorage.setItem("pendingUser", JSON.stringify(userData));
 
       // 2️⃣ Send OTP to email
-      const response = await fetch("localhost:3007/send-otp", {
+      const response = await fetch("https://capstone-ni5z.onrender.com/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailAdd }),

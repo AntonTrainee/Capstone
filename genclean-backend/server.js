@@ -9,6 +9,7 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const fs = require("fs");
 const { Pool } = require("pg");
+const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase added
 
 // OTP Controller
 const { sendOTP, verifyOTP } = require("./otpController.js");
@@ -95,8 +96,7 @@ app.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid password" });
 
     const token = jwt.sign(
-      { user_id: user.user_id, email: user.email, role: "customer" }
-      ,
+      { user_id: user.user_id, email: user.email, role: "customer" },
       process.env.JWT_SECRET || "yoursecret",
       { expiresIn: "1h" }
     );
@@ -163,9 +163,6 @@ app.post("/reset-password", async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "yoursecret");
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await pool.query("UPDATE users SET password = $1 WHERE user_id = $2", [hashedPassword, decoded.user_id]);
-
-
-
     res.status(200).json({ success: true, message: "Password reset successful!" });
   } catch (err) {
     console.error("❌ Reset password error:", err);
@@ -173,38 +170,31 @@ app.post("/reset-password", async (req, res) => {
   }
 });
 
-
 // ======================= ADMIN LOGIN =======================
 app.post("/admin-login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Fetch admin by email
     const result = await pool.query(`SELECT * FROM "Admins" WHERE email = $1`, [email]);
-
     if (result.rows.length === 0) {
       return res.status(400).json({ message: "Admin not found" });
     }
 
     const admin = result.rows[0];
-
-    // Compare password with hashed password
     const isMatch = await bcrypt.compare(password, admin.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Generate JWT token for admin
     const token = jwt.sign(
       { id: admin.id, email: admin.email, role: "admin" },
       process.env.JWT_SECRET || "yoursecret",
       { expiresIn: "1h" }
     );
 
-    // Return success with token and admin info
     res.status(200).json({
       message: "Admin login successful",
-      token, // <-- important for frontend
+      token,
       user: {
         id: admin.id,
         email: admin.email,
@@ -219,28 +209,20 @@ app.post("/admin-login", async (req, res) => {
   }
 });
 
-
-
-
-// ======================= ADMIN REGISTER (one-time setup) =======================
+// ======================= ADMIN REGISTER =======================
 app.post("/admin-register", async (req, res) => {
   const { userName, email, password } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `
-      INSERT INTO "Admins" (user_name, email, password_hash)
-      VALUES ($1, $2, $3)
-    `;
+    const query = `INSERT INTO "Admins" (user_name, email, password_hash) VALUES ($1, $2, $3)`;
     await pool.query(query, [userName, email, hashedPassword]);
-
     res.status(200).send("Admin registered successfully");
   } catch (err) {
     console.error("Error inserting admin:", err);
     res.status(500).send("Error registering admin");
   }
 });
-
 
 // ======================= MULTER CONFIG =======================
 const storage = multer.diskStorage({
@@ -256,51 +238,66 @@ const upload = multer({ storage });
 // ✅ Make uploads publicly accessible
 app.use("/uploads", express.static("uploads"));
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
+// ======================= BEFORE & AFTER (SUPABASE VERSION) =======================
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-
-// ======================= Before and After =======================
-// Get all before/after posts
-app.get("/beforeafter", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM before_after ORDER BY created_at DESC");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching before/after posts:", err);
-    res.status(500).json({ error: "Failed to fetch posts" });
-  }
-});
-
-// ======================= Before and After Add (WITH MULTER) =======================
 app.post(
   "/beforeafter",
   upload.fields([{ name: "before" }, { name: "after" }]),
   async (req, res) => {
     try {
       const { title } = req.body;
-
       if (!req.files["before"] || !req.files["after"]) {
         return res.status(400).json({ error: "Both before and after images are required" });
       }
 
-      const beforeFile = req.files["before"][0].filename;
-      const afterFile = req.files["after"][0].filename;
+      const beforeFile = req.files["before"][0];
+      const afterFile = req.files["after"][0];
 
-      const baseUrl = "https://capstone-ni5z.onrender.com";
-      const beforeUrl = `${baseUrl}/uploads/${beforeFile}`;
-      const afterUrl = `${baseUrl}/uploads/${afterFile}`;
+      const beforeFileName = `before-${Date.now()}${path.extname(beforeFile.originalname)}`;
+      const afterFileName = `after-${Date.now()}${path.extname(afterFile.originalname)}`;
 
+      // Upload to Supabase
+      const { error: beforeError } = await supabase.storage
+        .from(process.env.SUPABASE_BUCKET)
+        .upload(beforeFileName, fs.readFileSync(beforeFile.path), {
+          contentType: beforeFile.mimetype,
+          upsert: false,
+        });
+
+      const { error: afterError } = await supabase.storage
+        .from(process.env.SUPABASE_BUCKET)
+        .upload(afterFileName, fs.readFileSync(afterFile.path), {
+          contentType: afterFile.mimetype,
+          upsert: false,
+        });
+
+      if (beforeError || afterError) {
+        console.error("Supabase upload error:", beforeError || afterError);
+        return res.status(500).json({ error: "Upload to Supabase failed" });
+      }
+
+      const { data: beforePublic } = supabase.storage
+        .from(process.env.SUPABASE_BUCKET)
+        .getPublicUrl(beforeFileName);
+      const { data: afterPublic } = supabase.storage
+        .from(process.env.SUPABASE_BUCKET)
+        .getPublicUrl(afterFileName);
 
       const result = await pool.query(
         "INSERT INTO before_after (title, before_url, after_url) VALUES ($1, $2, $3) RETURNING *",
-        [title, beforeUrl, afterUrl]
+        [title, beforePublic.publicUrl, afterPublic.publicUrl]
       );
+
+      fs.unlinkSync(beforeFile.path);
+      fs.unlinkSync(afterFile.path);
 
       res.status(201).json(result.rows[0]);
     } catch (err) {
-      console.error("Error inserting post:", err);
+      console.error("❌ Error inserting post:", err);
       res.status(500).json({ error: "Failed to insert post" });
     }
   }
@@ -310,22 +307,16 @@ app.post(
 app.delete("/beforeafter/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      "DELETE FROM before_after WHERE id = $1 RETURNING *",
-      [id]
-    );
-
+    const result = await pool.query("DELETE FROM before_after WHERE id = $1 RETURNING *", [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Post not found" });
     }
-
     res.json({ success: true, message: "Post deleted successfully" });
   } catch (err) {
     console.error("Error deleting post:", err);
     res.status(500).json({ error: "Failed to delete post" });
   }
 });
-
 
 // ======================= UPDATE PROFILE =======================
 app.put("/update-profile", requireAuth, async (req, res) => {

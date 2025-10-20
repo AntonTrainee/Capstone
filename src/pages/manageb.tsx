@@ -5,7 +5,7 @@ interface Booking {
   booking_id: string;
   user_id: string;
   service: string;
-  booking_date: string; // ISO datetime
+  booking_date: string;
   address: string;
   notes?: string;
   for_assessment: boolean;
@@ -15,20 +15,93 @@ interface Booking {
   status?: string;
 }
 
+interface IncomingRequest {
+  request_id: string;
+  user_id: string;
+  name?: string;
+  service: string;
+  booking_date: string;
+  address: string;
+  notes?: string;
+  for_assessment: boolean;
+  created_at?: string;
+  status?: string;
+}
+
 export default function ManageBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Booking>>({});
   const [search, setSearch] = useState("");
 
   // Fetch all bookings
-  useEffect(() => {
-    fetch("https://capstone-ni5z.onrender.com/bookings")
+  const fetchBookings = () => {
+    fetch("http://localhost:3007/bookings")
       .then((res) => res.json())
       .then((data) => setBookings(data))
       .catch((err) => console.error("Error fetching bookings:", err));
+  };
+
+  // Fetch all incoming requests
+  const fetchIncomingRequests = () => {
+    fetch("http://localhost:3007/incoming-requests")
+      .then((res) => res.json())
+      .then((data) => setIncomingRequests(data))
+      .catch((err) => console.error("Error fetching incoming requests:", err));
+  };
+
+  useEffect(() => {
+    fetchBookings();
+    fetchIncomingRequests();
   }, []);
 
+  // --- Incoming Requests Actions ---
+  // --- Incoming Requests Actions ---
+const approveRequest = async (id: string) => {
+  if (!window.confirm("Approve this request? It will move to bookings and notify the customer.")) return;
+
+  try {
+    const res = await fetch(`http://localhost:3007/incoming-requests/approve/${id}`, {
+      method: "POST",
+    });
+
+    if (res.ok) {
+      setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
+      fetchBookings();
+      alert("✅ Request approved and customer notified!");
+    } else {
+      alert("❌ Failed to approve request.");
+    }
+  } catch (err) {
+    console.error("Error approving request:", err);
+  }
+};
+
+const rejectRequest = async (id: string) => {
+  const reason = prompt("Enter reason for rejection (optional):", "") || "No reason provided";
+  if (!window.confirm("⚠️ Continue rejection? This cannot be undone.")) return;
+
+  try {
+    const res = await fetch(`http://localhost:3007/incoming-requests/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }), // send reason to backend
+    });
+
+    if (res.ok) {
+      setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
+      alert(`🚫 Request rejected and customer notified.\nReason: ${reason}`);
+    } else {
+      alert("❌ Failed to reject request.");
+    }
+  } catch (err) {
+    console.error("Error rejecting request:", err);
+  }
+};
+
+
+  // --- Bookings Actions ---
   const startEdit = (booking: Booking) => {
     if (booking.status === "completed") return;
     setEditing(booking.booking_id);
@@ -40,7 +113,7 @@ export default function ManageBookingsPage() {
     if (!window.confirm("Are you sure you want to save changes?")) return;
 
     try {
-      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${editing}`, {
+      const res = await fetch(`http://localhost:3007/bookings/${editing}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -57,7 +130,7 @@ export default function ManageBookingsPage() {
       } else {
         alert("❌ Failed to update booking.");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error updating booking:", err);
     }
   };
@@ -71,7 +144,7 @@ export default function ManageBookingsPage() {
 
       const updatedData = { ...bookingToUpdate, status: "completed" };
 
-      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${booking_id}`, {
+      const res = await fetch(`http://localhost:3007/bookings/${booking_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -125,6 +198,65 @@ export default function ManageBookingsPage() {
           </div>
         </section>
 
+        {/* ================= INCOMING REQUESTS TABLE ================= */}
+        <section>
+          <h2>Incoming Requests (Pending Approval)</h2>
+          <div className="table-wrapper">
+            <table className="analytics-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User ID</th>
+                  <th>Name</th>
+                  <th>Service</th>
+                  <th>Date & Time</th>
+                  <th>Address</th>
+                  <th>Notes</th>
+                  <th>Assessment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incomingRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: "center" }}>
+                      No incoming requests
+                    </td>
+                  </tr>
+                ) : (
+                  incomingRequests.map((r) => (
+                    <tr key={r.request_id}>
+                      <td>{r.request_id}</td>
+                      <td>{r.user_id}</td>
+                      <td>{r.name || "—"}</td>
+                      <td>{r.service}</td>
+                      <td>{new Date(r.booking_date).toLocaleString()}</td>
+                      <td>{r.address}</td>
+                      <td>{r.notes || "—"}</td>
+                      <td>{r.for_assessment ? "✅" : "❌"}</td>
+                      <td className="actions">
+                        <button
+                          className="btn btn--save"
+                          onClick={() => approveRequest(r.request_id)}
+                        >
+                          ✅ Approve
+                        </button>
+                        <button
+                          className="btn btn--cancel"
+                          onClick={() => rejectRequest(r.request_id)}
+                        >
+                          🚫 Reject
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ================= BOOKINGS TABLE ================= */}
         <section>
           <h2>Bookings Table</h2>
           <div className="table-wrapper">
@@ -144,7 +276,6 @@ export default function ManageBookingsPage() {
                   <th>Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
@@ -169,20 +300,21 @@ export default function ManageBookingsPage() {
                           b.name || "—"
                         )}
                       </td>
-
                       <td>
                         {editing === b.booking_id ? (
                           <input
                             value={formData.service || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, service: e.target.value })
+                              setFormData({
+                                ...formData,
+                                service: e.target.value,
+                              })
                             }
                           />
                         ) : (
                           b.service
                         )}
                       </td>
-
                       <td>
                         {editing === b.booking_id ? (
                           <>
@@ -192,7 +324,8 @@ export default function ManageBookingsPage() {
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
-                                  booking_date: e.target.value + 
+                                  booking_date:
+                                    e.target.value +
                                     (formData.booking_date?.slice(10) || "T00:00"),
                                 })
                               }
@@ -208,7 +341,8 @@ export default function ManageBookingsPage() {
                                 setFormData({
                                   ...formData,
                                   booking_date:
-                                    (formData.booking_date?.slice(0, 10) || "1970-01-01") +
+                                    (formData.booking_date?.slice(0, 10) ||
+                                      "1970-01-01") +
                                     "T" +
                                     e.target.value,
                                 })
@@ -219,7 +353,6 @@ export default function ManageBookingsPage() {
                           new Date(b.booking_date).toLocaleString()
                         )}
                       </td>
-
                       <td>
                         {editing === b.booking_id ? (
                           <input
@@ -232,7 +365,6 @@ export default function ManageBookingsPage() {
                           b.address
                         )}
                       </td>
-
                       <td>
                         {editing === b.booking_id ? (
                           <textarea
@@ -246,16 +378,17 @@ export default function ManageBookingsPage() {
                           b.notes || "—"
                         )}
                       </td>
-
                       <td>{b.for_assessment ? "✅" : "❌"}</td>
-
                       <td>
                         {editing === b.booking_id ? (
                           <input
                             type="number"
                             value={formData.payment || ""}
                             onChange={(e) =>
-                              setFormData({ ...formData, payment: e.target.value })
+                              setFormData({
+                                ...formData,
+                                payment: e.target.value,
+                              })
                             }
                           />
                         ) : b.payment ? (
@@ -264,21 +397,14 @@ export default function ManageBookingsPage() {
                           "—"
                         )}
                       </td>
-
                       <td>
-                        {b.status === "completed"
-                          ? "completed ✅"
-                          : "pending ⏳"}
+                        {b.status === "completed" ? "completed ✅" : "pending ⏳"}
                       </td>
-
                       <td className="actions">
                         {b.status === "pending" ? (
                           editing === b.booking_id ? (
                             <>
-                              <button
-                                onClick={saveEdit}
-                                className="btn btn--save"
-                              >
+                              <button onClick={saveEdit} className="btn btn--save">
                                 💾 Save
                               </button>
                               <button

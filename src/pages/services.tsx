@@ -46,7 +46,7 @@ function Services() {
       </div>
 
       {/* Services Section */}
-      <div className="services-page container services-container d-flex gap-4">
+      <div className="services-page container services-container d-flex gap-4 flex-wrap">
         {/* Sidebar */}
         <div
           className="p-3 services-sidebar"
@@ -83,14 +83,19 @@ function Services() {
             backgroundColor: "#13294B",
             borderRadius: "12px",
             color: "white",
+            flex: "1",
+            minWidth: "300px",
           }}
         >
-          <div className="d-flex gap-4 flex-wrap">
+          <div
+            className="d-flex gap-4 align-items-center flex-nowrap flex-md-nowrap flex-sm-wrap"
+            style={{ flexWrap: "nowrap" }}
+          >
             {/* Image */}
             <div
               style={{
-                width: "200px",
-                height: "200px",
+                width: "220px",
+                height: "220px",
                 borderRadius: "10px",
                 overflow: "hidden",
                 flexShrink: 0,
@@ -99,12 +104,16 @@ function Services() {
               <img
                 src={selectedService.image}
                 alt={selectedService.title}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
               />
             </div>
 
             {/* Text */}
-            <div>
+            <div style={{ flex: 1 }}>
               <h3>{selectedService.title}</h3>
               <h5>Details:</h5>
               <p>{selectedService.details}</p>

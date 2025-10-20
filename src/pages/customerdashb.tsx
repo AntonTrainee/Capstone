@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -6,6 +7,7 @@ import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 import Footer from "../components/footer";
+import { Bell } from "lucide-react"; 
 
 interface Booking {
   booking_id: string;
@@ -15,18 +17,28 @@ interface Booking {
   status: string;
 }
 
+interface Notification {
+  notification_id: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 function CustomerDashb() {
   const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(
-    null
-  );
+  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [history, setHistory] = useState<Booking[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
+  // 🔔 Notifications
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   const navigate = useNavigate();
 
+  // ✅ Load data on mount
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
@@ -39,12 +51,17 @@ function CustomerDashb() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
       fetchBookings(parsedUser.id);
+      fetchNotifications(parsedUser.id);
+
+      // 🔁 Auto-refresh notifications every 10s
+      const interval = setInterval(() => fetchNotifications(parsedUser.id), 10000);
+      return () => clearInterval(interval);
     }
   }, [navigate]);
 
   const fetchBookings = async (userId: string) => {
     try {
-      const response = await axios.get<Booking[]>(`https://capstone-ni5z.onrender.com/bookings/user/${userId}`);
+      const response = await axios.get<Booking[]>(`http://localhost:3007/bookings/user/${userId}`);
       const allBookings = response.data;
 
       const activeBookings = allBookings.filter((b) => b.status.toLowerCase() !== "completed");
@@ -57,6 +74,31 @@ function CustomerDashb() {
     }
   };
 
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const res = await axios.get(`http://localhost:3007/notifications/${userId}`);
+      if (Array.isArray(res.data)) {
+        setNotifications(res.data);
+      } else {
+        setNotifications([]);
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+      setNotifications([]);
+    }
+  };
+
+  const markAsRead = async (id: number) => {
+    try {
+      await axios.put(`http://localhost:3007/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
+
   const handleLinkClick = (section: "bookings" | "history") => {
     setActiveSection(section);
     setIsDrawerOpen(false);
@@ -66,16 +108,18 @@ function CustomerDashb() {
     setIsDrawerOpen(false);
   };
 
+  // 🔢 Unread Notification Count
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
   return (
     <>
-      {/* NAVBAR — Brand + Drawer Button */}
+      {/* NAVBAR */}
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
-        <div className="container-fluid">
+        <div className="container-fluid d-flex justify-content-between align-items-center">
           <a className="navbar-brand" href="#">
             GenClean
           </a>
 
-          {/* DRAWER TOGGLE BUTTON */}
           <button
             className="navbar-toggler profile-toggler"
             type="button"
@@ -87,22 +131,76 @@ function CustomerDashb() {
         </div>
       </nav>
 
-      {/* DRAWER BACKDROP (for mobile overlay effect) */}
-      {isDrawerOpen && (
-        <div className="drawer-backdrop" onClick={() => setIsDrawerOpen(false)}></div>
-      )}
-
-      {/* MAIN DASHBOARD CONTENT */}
+      {/* MAIN CONTENT */}
       <div className="dashboard-content">
         <div className="left-column-content">
-          {/* BOOKINGS / HISTORY TABLES */}
+          {/* BOOKINGS / HISTORY */}
           <div className="booked-services-column">
             <div className="booked-services-card">
               {activeSection === "bookings" ? (
                 <>
-                  <h1 className="booked-services-title" id="Bookings">
-                    Booked Services
-                  </h1>
+                  <div className="d-flex align-items-center justify-content-between mb-3 position-relative">
+                    <h1 className="booked-services-title mb-0" id="Bookings">
+                      Booked Services
+                    </h1>
+
+                    {/* 🔔 Notification Bell with Count */}
+                    <div className="position-relative">
+                      <Bell
+                        size={24}
+                        className="cursor-pointer"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                      />
+
+                      {/* 🔢 Red badge for unread count */}
+                      {unreadCount > 0 && (
+                        <span
+                          className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-circle"
+                          style={{ fontSize: "0.7rem", padding: "4px 6px" }}
+                        >
+                          {unreadCount}
+                        </span>
+                      )}
+
+                      {/* 🔔 Notification Dropdown */}
+                      {showNotifications && (
+                        <div
+                          className="notification-box position-absolute end-0 mt-2 bg-white shadow rounded p-2"
+                          style={{
+                            width: "320px",
+                            maxHeight: "300px",
+                            overflowY: "auto",
+                            zIndex: 1000,
+                          }}
+                        >
+                          <h6 className="border-bottom pb-2">Notifications</h6>
+                          {notifications.length === 0 ? (
+                            <p className="text-muted small text-center mb-0">
+                              No notifications yet.
+                            </p>
+                          ) : (
+                            notifications.map((n) => (
+                              <div
+                                key={n.notification_id}
+                                onClick={() => markAsRead(n.notification_id)}
+                                className={`p-2 rounded mb-1 ${
+                                  n.is_read ? "bg-light" : "bg-warning-subtle"
+                                }`}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <p className="mb-1 fw-semibold">{n.message}</p>
+                                <small className="text-muted">
+                                  {new Date(n.created_at).toLocaleString()}
+                                </small>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* BOOKINGS TABLE */}
                   <div className="table-container">
                     <table className="bookings-table">
                       <thead>
@@ -208,7 +306,7 @@ function CustomerDashb() {
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
                     <p className="card-text">
-                      Effective and safe pest management solutions to protect your property.
+                      Reliable pest management solutions for residential and commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -219,7 +317,7 @@ function CustomerDashb() {
           <Footer />
         </div>
 
-        {/* PROFILE SIDEBAR (DRAWER) */}
+        {/* PROFILE SIDEBAR */}
         <div className={`profile-column ${isDrawerOpen ? "open" : ""}`}>
           <div className="profile-card">
             <h2 className="client-name">

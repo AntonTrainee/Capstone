@@ -61,7 +61,7 @@ function Booksys() {
     };
 
     try {
-      const response = await fetch("http://localhost:3007/incoming-requests", {
+      const response = await fetch("https://capstone-ni5z.onrender.com/incoming-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
@@ -72,7 +72,7 @@ function Booksys() {
       if (response.ok) {
         // ✅ After booking, send notification
         try {
-          await fetch("http://localhost:3007/notifications", {
+          await fetch("https://capstone-ni5z.onrender.com/notifications", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

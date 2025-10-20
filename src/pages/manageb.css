@@ -14,7 +14,7 @@
   background: linear-gradient(to right, #0ea5e9, #2563eb);
   color: white;
   padding: 1rem 1.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   z-index: 10;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
@@ -75,7 +75,7 @@
 .search-input:focus {
   outline: none;
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* Table */
@@ -83,7 +83,7 @@
   overflow-x: auto;
   margin-top: 1rem;
   border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   background: white;
 }
 
@@ -170,6 +170,16 @@
   background: #d97706;
 }
 
+/* New Disapprove Button */
+.btn--disapprove {
+  background: #7c3aed;
+  color: white;
+}
+
+.btn--disapprove:hover {
+  background: #5b21b6;
+}
+
 /* Side panel for editing/viewing */
 .details-panel {
   position: fixed;
@@ -178,7 +188,7 @@
   width: 380px;
   height: 100%;
   background: white;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
   padding: 1.5rem;
   overflow-y: auto;
   transition: right 0.3s ease;
@@ -222,7 +232,32 @@
 .details-panel textarea:focus {
   border-color: #2563eb;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Footer */
@@ -238,7 +273,9 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .analytics-table th, .analytics-table td {
+
+  .analytics-table th,
+  .analytics-table td {
     padding: 0.5rem 0.4rem;
     font-size: 0.85rem;
   }
@@ -257,4 +294,6 @@
   .details-panel {
     width: 95%;
   }
+
+
 }

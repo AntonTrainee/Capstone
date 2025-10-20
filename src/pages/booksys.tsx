@@ -22,6 +22,7 @@ function Booksys() {
 
   const navigate = useNavigate();
 
+  // Load logged-in user
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -44,13 +45,14 @@ function Booksys() {
       return;
     }
 
-    // Combine date + time into ISO string
+    // Combine date + time into ISO format
     const bookingDateTime = bookingTime
       ? new Date(`${bookingDate}T${bookingTime}`).toISOString()
       : new Date(bookingDate).toISOString();
 
-    const bookingData = {
+    const requestData = {
       user_id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
       service: service,
       booking_date: bookingDateTime,
       address: address,
@@ -59,16 +61,31 @@ function Booksys() {
     };
 
     try {
-      const response = await fetch("https://capstone-ni5z.onrender.com/booking", {
+      const response = await fetch("http://localhost:3007/incoming-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify(requestData),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        setMessage("✅ Booking successful! Redirecting...");
+        // ✅ After booking, send notification
+        try {
+          await fetch("http://localhost:3007/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: user.id,
+              request_id: result.request?.request_id || null,
+              message: `Your booking request for ${service} on ${bookingDate} has been submitted and is awaiting approval.`,
+            }),
+          });
+        } catch (notifError) {
+          console.error("Error creating notification:", notifError);
+        }
+
+        setMessage("✅ Request submitted successfully! Redirecting...");
         setService("");
         setBookingDate("");
         setBookingTime("");
@@ -76,13 +93,14 @@ function Booksys() {
         setNotes("");
         setForAssessment(false);
 
+        // Redirect to customer dashboard after 2 seconds
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
-        setMessage(result.message || "❌ Booking failed. Please try again.");
+        setMessage(result.message || "❌ Failed to submit request. Please try again.");
       }
     } catch (error) {
-      console.error("Error:", error);
-      setMessage("⚠️ An unexpected error occurred while booking.");
+      console.error("Error submitting request:", error);
+      setMessage("⚠️ An unexpected error occurred while submitting your request.");
     } finally {
       setIsSubmitting(false);
     }
@@ -110,6 +128,7 @@ function Booksys() {
           <form onSubmit={handleSubmit}>
             <div className="row g-4 booking-form">
               <div className="col-md-6 form-column">
+                {/* Service */}
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
                   <select
@@ -125,6 +144,7 @@ function Booksys() {
                   </select>
                 </div>
 
+                {/* Date */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Date:</label>
                   <input
@@ -136,6 +156,7 @@ function Booksys() {
                   />
                 </div>
 
+                {/* Time */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Time:</label>
                   <input
@@ -146,6 +167,7 @@ function Booksys() {
                   />
                 </div>
 
+                {/* Address */}
                 <div className="form-group mb-4">
                   <label className="form-label">Address:</label>
                   <textarea
@@ -157,6 +179,7 @@ function Booksys() {
                   ></textarea>
                 </div>
 
+                {/* Notes */}
                 <div className="form-group mb-4">
                   <label className="form-label">Notes:</label>
                   <textarea
@@ -167,6 +190,7 @@ function Booksys() {
                   ></textarea>
                 </div>
 
+                {/* For Assessment */}
                 <div className="form-check mb-4 d-flex align-items-center">
                   <label className="form-check-label me-3">For Assessment:</label>
                   <input
@@ -178,6 +202,7 @@ function Booksys() {
                 </div>
               </div>
 
+              {/* Customer Details */}
               <div className="col-md-6 customer-details">
                 <h5 className="details-title">Customer Details:</h5>
                 {user ? (
@@ -203,13 +228,14 @@ function Booksys() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <div className="text-center mt-5">
               <button
                 className="btn book-now-btn"
                 type="submit"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Booking..." : "Book Now!"}
+                {isSubmitting ? "Submitting..." : "Book Now!"}
               </button>
             </div>
           </form>

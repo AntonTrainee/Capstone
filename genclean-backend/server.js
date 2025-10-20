@@ -592,6 +592,250 @@ app.get("/requests", async (req, res) => {
   res.json(result.rows);
 });
 
+
+
+/** SALES (READ - GET ALL) */
+app.get("/sales", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM sales ORDER BY created_at DESC");
+    console.log("Fetched Sales:", result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching sales:", err);
+    res.status(500).send("Error fetching sales");
+  }
+});
+
+/** REQUEST (READ - GET ALL) */
+app.get("/requests", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM bookings WHERE status != 'completed' ORDER BY created_at DESC"
+  );
+  res.json(result.rows);
+});
+
+
+
+
+
+
+/* ======================= INCOMING REQUEST ROUTES ======================= */
+
+// ✅ Create new incoming request (from user)
+app.post("/incoming-requests", async (req, res) => {
+  try {
+    const { user_id, name, service, booking_date, address, notes, for_assessment } = req.body;
+
+    if (!user_id || !service || !booking_date || !address) {
+      return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    const insertQuery = `
+      INSERT INTO incoming_requests (user_id, name, service, booking_date, address, notes, for_assessment)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+    const result = await pool.query(insertQuery, [
+      user_id,
+      name || null,
+      service,
+      booking_date,
+      address,
+      notes || "",
+      for_assessment || false,
+    ]);
+
+    res.status(201).json({ success: true, request: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Error creating incoming request:", err);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+});
+
+// ✅ Get all incoming requests (for admin approval)
+// ✅ Get all incoming requests (for admin approval)
+app.get("/incoming-requests", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM incoming_requests ORDER BY created_at DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching incoming requests:", err);
+    res.status(500).json({ error: "Failed to fetch requests" });
+  }
+});
+
+// ===================== INCOMING REQUESTS ROUTES =====================
+
+// ✅ Fetch all incoming requests
+app.get("/incoming-requests", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM incoming_requests 
+      ORDER BY created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching incoming requests:", err);
+    res.status(500).json({ error: "Failed to fetch requests" });
+  }
+});
+
+
+// ✅ Approve Request → Move to bookings + Notify user
+app.post("/incoming-requests/approve/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Fetch request details
+    const reqResult = await pool.query(
+      `SELECT * FROM incoming_requests WHERE request_id = $1`,
+      [id]
+    );
+
+    if (reqResult.rows.length === 0)
+      return res.status(404).json({ error: "Request not found" });
+
+    const request = reqResult.rows[0];
+
+    // Move to bookings table
+    const insertBooking = await pool.query(
+      `INSERT INTO bookings (
+        user_id, service, booking_date, address, notes, for_assessment, status, name
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, 'pending', $7
+      ) RETURNING *`,
+      [
+        request.user_id,
+        request.service,
+        request.booking_date,
+        request.address,
+        request.notes,
+        request.for_assessment,
+        request.name || "Customer"
+      ]
+    );
+
+    // Delete the request after approval
+    await pool.query(`DELETE FROM incoming_requests WHERE request_id = $1`, [id]);
+
+    // Add a notification for the user
+    await pool.query(
+      `INSERT INTO notifications (user_id, message, created_at)
+   VALUES ($1, $2, NOW())`,
+      [request.user_id, `Your booking request for ${request.service} on ${new Date(request.booking_date).toLocaleString()} has been approved!`]
+    );
+
+
+
+    res.status(200).json({
+      success: true,
+      message: "Request approved, moved to bookings, and user notified.",
+      booking: insertBooking.rows[0]
+    });
+  } catch (err) {
+    console.error("Error approving request:", err);
+    res.status(500).json({ error: "Failed to approve request." });
+  }
+});
+
+
+// 🚫 Reject Request → Delete + Notify user
+app.delete("/incoming-requests/:id", async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+
+  try {
+    // Fetch request details
+    const reqResult = await pool.query(
+      `SELECT * FROM incoming_requests WHERE request_id = $1`,
+      [id]
+    );
+
+    if (reqResult.rows.length === 0)
+      return res.status(404).json({ error: "Request not found" });
+
+    const request = reqResult.rows[0];
+
+    // Delete the request
+    await pool.query(`DELETE FROM incoming_requests WHERE request_id = $1`, [id]);
+
+    // Insert rejection notification
+    await pool.query(
+      `INSERT INTO notifications (user_id, message, created_at)
+   VALUES ($1, $2, NOW())`,
+      [request.user_id, `Your booking request for ${request.service} has been rejected. Reason: ${reason || "Not specified"}`]
+    );
+
+
+
+    res.status(200).json({
+      success: true,
+      message: "Request rejected, deleted, and user notified."
+    });
+  } catch (err) {
+    console.error("Error rejecting request:", err);
+    res.status(500).json({ error: "Failed to reject request." });
+  }
+});
+
+
+/* ======================= NOTIFICATION ROUTES ======================= */
+
+// ✅ CREATE a new notification
+app.post("/notifications", async (req, res) => {
+  try {
+    const { user_id, request_id, message } = req.body;
+
+    if (!user_id || !message) {
+      return res.status(400).json({ error: "Missing required fields (user_id, message)" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO notifications (user_id, request_id, message, is_read, created_at)
+       VALUES ($1, $2, $3, false, NOW())
+       RETURNING *`,
+      [user_id, request_id, message]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error creating notification:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ✅ GET notifications for a specific user
+app.get("/notifications/:user_id", async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC`,
+      [user_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ✅ MARK notification as read
+app.put("/notifications/:id/read", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query(`UPDATE notifications SET is_read = true WHERE notification_id = $1`, [id]);
+    res.status(200).json({ message: "Notification marked as read" });
+  } catch (err) {
+    console.error("Error updating notification:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+
+
+
+
 // ================== Start Server ==================
 app.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);

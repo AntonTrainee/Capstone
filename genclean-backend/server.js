@@ -288,7 +288,7 @@ app.post(
       const beforeFile = req.files["before"][0].filename;
       const afterFile = req.files["after"][0].filename;
 
-      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+      const baseUrl = "https://capstone-ni5z.onrender.com";
       const beforeUrl = `${baseUrl}/uploads/${beforeFile}`;
       const afterUrl = `${baseUrl}/uploads/${afterFile}`;
 
@@ -582,7 +582,6 @@ app.get("/requests", async (req, res) => {
   res.json(result.rows);
 });
 
-cd
 // ================== Start Server ==================
 app.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);

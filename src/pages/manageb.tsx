@@ -62,7 +62,7 @@ const approveRequest = async (id: string) => {
   if (!window.confirm("Approve this request? It will move to bookings and notify the customer.")) return;
 
   try {
-    const res = await fetch(`http://localhost:3007/incoming-requests/approve/${id}`, {
+    const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/approve/${id}`, {
       method: "POST",
     });
 
@@ -83,7 +83,7 @@ const rejectRequest = async (id: string) => {
   if (!window.confirm("⚠️ Continue rejection? This cannot be undone.")) return;
 
   try {
-    const res = await fetch(`http://localhost:3007/incoming-requests/${id}`, {
+    const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason }), // send reason to backend
@@ -113,7 +113,7 @@ const rejectRequest = async (id: string) => {
     if (!window.confirm("Are you sure you want to save changes?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3007/bookings/${editing}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${editing}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -144,7 +144,7 @@ const rejectRequest = async (id: string) => {
 
       const updatedData = { ...bookingToUpdate, status: "completed" };
 
-      const res = await fetch(`http://localhost:3007/bookings/${booking_id}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${booking_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),

@@ -288,7 +288,7 @@ app.post(
       const beforeFile = req.files["before"][0].filename;
       const afterFile = req.files["after"][0].filename;
 
-      const baseUrl = "https://capstone-ni5z.onrender.com";
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
       const beforeUrl = `${baseUrl}/uploads/${beforeFile}`;
       const afterUrl = `${baseUrl}/uploads/${afterFile}`;
 

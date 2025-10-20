@@ -7,7 +7,7 @@ import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
 import Footer from "../components/footer";
-import { Bell } from "lucide-react"; 
+import { Bell } from "lucide-react";
 
 interface Booking {
   booking_id: string;
@@ -61,7 +61,7 @@ function CustomerDashb() {
 
   const fetchBookings = async (userId: string) => {
     try {
-      const response = await axios.get<Booking[]>(`http://localhost:3007/bookings/user/${userId}`);
+      const response = await axios.get<Booking[]>(`https://capstone-ni5z.onrender.com/bookings/user/${userId}`);
       const allBookings = response.data;
 
       const activeBookings = allBookings.filter((b) => b.status.toLowerCase() !== "completed");
@@ -76,7 +76,7 @@ function CustomerDashb() {
 
   const fetchNotifications = async (userId: string) => {
     try {
-      const res = await axios.get(`http://localhost:3007/notifications/${userId}`);
+      const res = await axios.get(`https://capstone-ni5z.onrender.com/notifications/${userId}`);
       if (Array.isArray(res.data)) {
         setNotifications(res.data);
       } else {
@@ -90,7 +90,7 @@ function CustomerDashb() {
 
   const markAsRead = async (id: number) => {
     try {
-      await axios.put(`http://localhost:3007/notifications/${id}/read`);
+      await axios.put(`https://capstone-ni5z.onrender.com/notifications/${id}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n))
       );

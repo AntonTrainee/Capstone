@@ -238,7 +238,6 @@ const upload = multer({ storage });
 // ✅ Make uploads publicly accessible
 app.use("/uploads", express.static("uploads"));
 
-// ======================= BEFORE & AFTER (SUPABASE VERSION) =======================
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -303,6 +302,25 @@ app.post(
   }
 );
 
+// ======================= FETCH BEFORE & AFTER (SUPABASE VERSION) =======================
+app.get("/beforeafter", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM before_after ORDER BY id DESC");
+    const posts = result.rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      before_url: row.before_url,
+      after_url: row.after_url,
+      created_at: row.created_at,
+    }));
+
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error("❌ Error fetching before/after posts:", err);
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
+});
+
 // ======================= DELETE PICS =======================
 app.delete("/beforeafter/:id", async (req, res) => {
   try {
@@ -317,6 +335,7 @@ app.delete("/beforeafter/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete post" });
   }
 });
+
 
 // ======================= UPDATE PROFILE =======================
 app.put("/update-profile", requireAuth, async (req, res) => {

@@ -37,7 +37,7 @@ export default function ManageBookingsPage() {
 
   // Fetch all bookings
   const fetchBookings = () => {
-    fetch("http://localhost:3007/bookings")
+    fetch("https://capstone-ni5z.onrender.com/bookings")
       .then((res) => res.json())
       .then((data) => setBookings(data))
       .catch((err) => console.error("Error fetching bookings:", err));
@@ -45,7 +45,7 @@ export default function ManageBookingsPage() {
 
   // Fetch all incoming requests
   const fetchIncomingRequests = () => {
-    fetch("http://localhost:3007/incoming-requests")
+    fetch("https://capstone-ni5z.onrender.com/incoming-requests")
       .then((res) => res.json())
       .then((data) => setIncomingRequests(data))
       .catch((err) => console.error("Error fetching incoming requests:", err));

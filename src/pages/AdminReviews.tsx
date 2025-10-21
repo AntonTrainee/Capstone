@@ -7,7 +7,7 @@ export default function AdminReviews() {
   const [form, setForm] = useState({ name: "", location: "", rating: 5, comment: "" });
 
   const startEdit = (rev: any) => {
-    setEditingId(rev.id);
+    setEditingId(rev.review_id);
     setForm({ name: rev.name, location: rev.location, rating: rev.rating, comment: rev.comment });
   };
 
@@ -104,7 +104,7 @@ export default function AdminReviews() {
         </thead>
         <tbody>
           {reviews.map((rev) => (
-            <tr key={rev.id} style={{ borderBottom: "1px solid #ddd" }}>
+            <tr key={rev.review_id} style={{ borderBottom: "1px solid #ddd" }}>
               <td style={{ padding: "0.75rem" }}>{rev.name}</td>
               <td style={{ padding: "0.75rem" }}>{rev.location}</td>
               <td style={{ padding: "0.75rem" }}>{rev.rating}</td>
@@ -124,7 +124,7 @@ export default function AdminReviews() {
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteReview(rev.id)}
+                  onClick={() => deleteReview(rev.review_id)}
                   style={{
                     backgroundColor: "#dc3545",
                     border: "none",

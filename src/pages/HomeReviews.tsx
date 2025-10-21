@@ -19,7 +19,7 @@ export default function HomeReviews() {
         <div className="carousel-inner text-center p-5 review-carousel rounded shadow">
           {reviews.map((rev, idx) => (
             <div
-              key={rev.id}
+              key={rev.review_id}
               className={`carousel-item ${idx === 0 ? "active" : ""}`}
               data-bs-interval="4000"
             >

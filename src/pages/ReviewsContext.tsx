@@ -1,47 +1,101 @@
 // src/contexts/ReviewsContext.tsx
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
-
 export interface Review {
-  id: number;
-  name: string;
-  location: string;
+  review_id: number; // match your DB primary key
+  user_id?: number; // optional, if you have it
+  name?: string; // optional
+  location?: string; // optional
+  service?: string;
   rating: number;
-  comment: string;
+  comment?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ReviewsContextType {
   reviews: Review[];
-  addReview: (r: Omit<Review, "id">) => void;
-  updateReview: (id: number, r: Omit<Review, "id">) => void;
-  deleteReview: (id: number) => void;
+  addReview: (r: Omit<Review, "review_id" | "created_at" | "updated_at">) => Promise<void>;
+  updateReview: (
+    id: number,
+    r: Omit<Review, "review_id" | "created_at" | "updated_at">
+  ) => Promise<void>;
+  deleteReview: (id: number) => Promise<void>;
+  refreshReviews: () => Promise<void>;
 }
 
 const ReviewsContext = createContext<ReviewsContextType | undefined>(undefined);
 
 export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
-  const [reviews, setReviews] = useState<Review[]>([
-    // initial placeholder reviews
-    { id: 1, name: "Maria L.", location: "Quezon City", rating: 5, comment: "Super professional." },
-    { id: 2, name: "Kevin R.", location: "Taguig", rating: 5, comment: "Easy to book and reliable." },
-  ]);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
-  const addReview = (r: Omit<Review, "id">) => {
-    const newReview: Review = { id: Date.now(), ...r };
-    setReviews([...reviews, newReview]);
+  // Fetch all reviews from backend
+  const refreshReviews = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/reviews");
+      if (!res.ok) throw new Error("Failed to fetch reviews");
+      const data = await res.json();
+      setReviews(data);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    }
   };
 
-  const updateReview = (id: number, r: Omit<Review, "id">) => {
-    setReviews(reviews.map((rev) => (rev.id === id ? { id, ...r } : rev)));
+  useEffect(() => {
+    refreshReviews();
+  }, []);
+
+  // Add a review
+  const addReview = async (r: Omit<Review, "review_id" | "created_at" | "updated_at">) => {
+    try {
+      const res = await fetch("http://localhost:5000/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(r),
+      });
+      if (!res.ok) throw new Error("Failed to add review");
+      const newReview = await res.json();
+      setReviews((prev) => [...prev, newReview]);
+    } catch (err) {
+      console.error("Error adding review:", err);
+    }
   };
 
-  const deleteReview = (id: number) => {
-    setReviews(reviews.filter((rev) => rev.id !== id));
+  // Update a review
+  const updateReview = async (
+    id: number,
+    r: Omit<Review, "review_id" | "created_at" | "updated_at">
+  ) => {
+    try {
+      const res = await fetch(`http://localhost:5000/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(r),
+      });
+      if (!res.ok) throw new Error("Failed to update review");
+      const updatedReview = await res.json();
+      setReviews((prev) => prev.map((rev) => (rev.review_id === id ? updatedReview : rev)));
+    } catch (err) {
+      console.error("Error updating review:", err);
+    }
+  };
+
+  // Delete a review
+  const deleteReview = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:5000/reviews/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete review");
+      setReviews((prev) => prev.filter((rev) => rev.review_id !== id));
+    } catch (err) {
+      console.error("Error deleting review:", err);
+    }
   };
 
   return (
-    <ReviewsContext.Provider value={{ reviews, addReview, updateReview, deleteReview }}>
+    <ReviewsContext.Provider
+      value={{ reviews, addReview, updateReview, deleteReview, refreshReviews }}
+    >
       {children}
     </ReviewsContext.Provider>
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 interface User {
   id: string;
@@ -20,9 +21,15 @@ function Booksys() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Validation reminders
+  const [errors, setErrors] = useState({
+    service: "",
+    bookingDate: "",
+    address: "",
+  });
+
   const navigate = useNavigate();
 
-  // Load logged-in user
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -33,19 +40,26 @@ function Booksys() {
     setIsSubmitting(true);
     setMessage("");
 
+    // reset errors
+    const newErrors = {
+      service: service ? "" : "Please select a service.",
+      bookingDate: bookingDate ? "" : "Please select a date.",
+      address: address ? "" : "Please enter an address.",
+    };
+    setErrors(newErrors);
+
+    // stop submit if any field empty
+    if (!service || !bookingDate || !address) {
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!user) {
       setMessage("You must be logged in to book a service.");
       setIsSubmitting(false);
       return;
     }
 
-    if (!service || !bookingDate || !address) {
-      setMessage("Please fill in all required fields.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Combine date + time into ISO format
     const bookingDateTime = bookingTime
       ? new Date(`${bookingDate}T${bookingTime}`).toISOString()
       : new Date(bookingDate).toISOString();
@@ -53,10 +67,10 @@ function Booksys() {
     const requestData = {
       user_id: user.id,
       name: `${user.firstName} ${user.lastName}`,
-      service: service,
+      service,
       booking_date: bookingDateTime,
-      address: address,
-      notes: notes,
+      address,
+      notes,
       for_assessment: forAssessment,
     };
 
@@ -70,7 +84,6 @@ function Booksys() {
       const result = await response.json();
 
       if (response.ok) {
-        // ✅ After booking, send notification
         try {
           await fetch("https://capstone-ni5z.onrender.com/notifications", {
             method: "POST",
@@ -92,8 +105,8 @@ function Booksys() {
         setAddress("");
         setNotes("");
         setForAssessment(false);
+        setErrors({ service: "", bookingDate: "", address: "" });
 
-        // Redirect to customer dashboard after 2 seconds
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
         setMessage(result.message || "❌ Failed to submit request. Please try again.");
@@ -110,15 +123,9 @@ function Booksys() {
     <>
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
-          <a className="navbar-brand" href="#">GenClean</a>
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarSupportedContent"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+          <Link className="navbar-brand d-flex align-items-center" to="/">
+            <img src={logo} alt="Gemini Logo" className="img-fluid" style={{ maxHeight: "60px" }} />
+          </Link>
         </div>
       </nav>
 
@@ -135,13 +142,13 @@ function Booksys() {
                     className="form-select booking-input"
                     value={service}
                     onChange={(e) => setService(e.target.value)}
-                    required
                   >
                     <option value="">Select a service</option>
                     <option value="General Maintenance">General Maintenance</option>
                     <option value="Janitorial and Cleaning Services">Janitorial and Cleaning Services</option>
                     <option value="Pest Control">Pest Control</option>
                   </select>
+                  {errors.service && <small className="text-danger">{errors.service}</small>}
                 </div>
 
                 {/* Date */}
@@ -152,8 +159,8 @@ function Booksys() {
                     className="form-control booking-input"
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
-                    required
                   />
+                  {errors.bookingDate && <small className="text-danger">{errors.bookingDate}</small>}
                 </div>
 
                 {/* Time */}
@@ -175,8 +182,8 @@ function Booksys() {
                     rows={2}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    required
                   ></textarea>
+                  {errors.address && <small className="text-danger">{errors.address}</small>}
                 </div>
 
                 {/* Notes */}
@@ -194,11 +201,11 @@ function Booksys() {
                 <div className="form-check mb-4 d-flex align-items-center">
                   <label className="form-check-label">For Assessment:</label>
                   <input
-                  type="checkbox"
-                  className="form-check-input ms-2" // ms-2 = margin-start
-                  checked={forAssessment}
-                  onChange={(e) => setForAssessment(e.target.checked)}
-                />
+                    type="checkbox"
+                    className="form-check-input ms-2"
+                    checked={forAssessment}
+                    onChange={(e) => setForAssessment(e.target.checked)}
+                  />
                 </div>
               </div>
 
@@ -230,11 +237,7 @@ function Booksys() {
 
             {/* Submit Button */}
             <div className="text-center mt-5">
-              <button
-                className="btn book-now-btn"
-                type="submit"
-                disabled={isSubmitting}
-              >
+              <button className="btn book-now-btn" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Submitting..." : "Book Now!"}
               </button>
             </div>

@@ -11,6 +11,7 @@ const fs = require("fs");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase added
 
+
 // OTP Controller
 const { sendOTP, verifyOTP } = require("./otpController.js");
 
@@ -832,15 +833,21 @@ app.put("/notifications/:id/read", async (req, res) => {
 });
 
 
-/* ======================= REVIEWS ROUTES ======================= */
+/* ======================= REVIEWS ROUTES (SUPABASE) ======================= */
 
 // ✅ Get all reviews
 app.get("/reviews", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM reviews ORDER BY created_at DESC");
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.json(data);
   } catch (err) {
-    console.error("Error fetching reviews:", err);
+    console.error("❌ Error fetching reviews:", err);
     res.status(500).json({ error: "Failed to fetch reviews" });
   }
 });
@@ -853,15 +860,16 @@ app.post("/reviews", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const result = await pool.query(
-      `INSERT INTO reviews (name, location, rating, comment)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [name, location, rating, comment || null]
-    );
+    const { data, error } = await supabase
+      .from("reviews")
+      .insert([{ name, location, rating, comment }])
+      .select();
 
-    res.status(201).json(result.rows[0]);
+    if (error) throw error;
+
+    res.status(201).json(data[0]);
   } catch (err) {
-    console.error("Error adding review:", err);
+    console.error("❌ Error adding review:", err);
     res.status(500).json({ error: "Failed to add review" });
   }
 });
@@ -872,18 +880,18 @@ app.put("/reviews/:id", async (req, res) => {
     const { id } = req.params;
     const { name, location, rating, comment } = req.body;
 
-    const result = await pool.query(
-      `UPDATE reviews 
-       SET name=$1, location=$2, rating=$3, comment=$4, updated_at=NOW() 
-       WHERE review_id=$5 
-       RETURNING *`,
-      [name, location, rating, comment, id]
-    );
+    const { data, error } = await supabase
+      .from("reviews")
+      .update({ name, location, rating, comment, updated_at: new Date() })
+      .eq("review_id", id)
+      .select();
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Review not found" });
-    res.json(result.rows[0]);
+    if (error) throw error;
+    if (!data || data.length === 0) return res.status(404).json({ error: "Review not found" });
+
+    res.json(data[0]);
   } catch (err) {
-    console.error("Error updating review:", err);
+    console.error("❌ Error updating review:", err);
     res.status(500).json({ error: "Failed to update review" });
   }
 });
@@ -892,21 +900,22 @@ app.put("/reviews/:id", async (req, res) => {
 app.delete("/reviews/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      "DELETE FROM reviews WHERE review_id=$1 RETURNING *",
-      [id]
-    );
 
-    if (result.rows.length === 0) return res.status(404).json({ error: "Review not found" });
+    const { data, error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("review_id", id)
+      .select();
+
+    if (error) throw error;
+    if (!data || data.length === 0) return res.status(404).json({ error: "Review not found" });
+
     res.json({ success: true, message: "Review deleted" });
   } catch (err) {
-    console.error("Error deleting review:", err);
+    console.error("❌ Error deleting review:", err);
     res.status(500).json({ error: "Failed to delete review" });
   }
 });
-
-
-
 
 
 

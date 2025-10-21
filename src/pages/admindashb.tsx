@@ -100,6 +100,9 @@ function Admindashb() {
             <Link to="/beforeafter">Before & After</Link>
           </li>
           <li>
+            <Link to="/admin-reviews">Change Reviews</Link>
+          </li>
+          <li>
             <button className="btn-logout" onClick={handleSignOut}>
               Sign out
             </button>

@@ -9,6 +9,7 @@ import fact from "../assets/Factory.jpg";
 import clean from "../assets/cleaners.jpg";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import Footer from "../components/footer";
+import HomeReviews from "../pages/HomeReviews";
 
 function Home() {
   // --- state for form inputs ---
@@ -199,6 +200,9 @@ function Home() {
           </div>
         </div>
       </div>
+
+      <HomeReviews />
+
 
       <section
         id="contact"

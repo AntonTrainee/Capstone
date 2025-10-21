@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import logo from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
@@ -116,9 +117,14 @@ function CustomerDashb() {
       {/* NAVBAR */}
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid d-flex justify-content-between align-items-center">
-          <a className="navbar-brand" href="#">
-            GenClean
-          </a>
+          <Link className="navbar-brand d-flex align-items-center" to="/">
+          <img 
+            src={logo} 
+            alt="Gemini Logo" 
+            className="img-fluid"
+            style={{ maxHeight: "60px" }} 
+          />
+        </Link>
 
           <button
             className="navbar-toggler profile-toggler"

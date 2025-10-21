@@ -73,6 +73,17 @@ function Navbar() {
                 <i className="bi bi-telephone-fill"></i> Contact Us
               </Link>
             </li>
+
+            <li className="nav-item">
+              <Link className="nav-link d-flex align-items-center gap-2"  to="/login">
+                <i className="bi bi-box-arrow-in-right"></i> Login
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link d-flex align-items-center gap-2" to="/register">
+                <i className="bi bi-person-plus-fill"></i> Sign Up
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { Routes, Route } from "react-router-dom";
+import { ReviewsProvider } from "./pages/ReviewsContext"; 
+
 import OtpPage from "./pages/OtpPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminProtectedRoute from "./AdminProtectedRoute";
@@ -25,48 +27,46 @@ import Cookies from "./pages/cookies";
 import CookieBanner from "./components/CookieBanner";
 
 
+import AdminReviews from "./pages/AdminReviews";
 
 function App() {
   return (
-    <>  
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/services" element={<Services />} />
-      
-      <Route path="/register" element={<Register />} />
-      <Route path="/otp" element={<OtpPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/aboutus" element={<About />} />
-      <Route path="/beforeandaftershowcase" element={<BeforeAndAfterShowcase />} />
-      <Route path="/privacy-notice" element={<PrivacyNotice />} />
-      <Route path="/cookies" element={<Cookies />} />
+    <ReviewsProvider> 
+      <Routes>
+        <Route path="/" element={<AdminReviews />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/otp" element={<OtpPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/aboutus" element={<About />} />
+        <Route path="/beforeandaftershowcase" element={<BeforeAndAfterShowcase />} />
+        <Route path="/privacy-notice" element={<PrivacyNotice />} />
+        <Route path="/cookies" element={<Cookies />} />
+        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/resetpassword" element={<ResetPassword />} />
 
+        <Route element={<ProtectedRoute />}>
+          <Route path="/customerdashb" element={<CustomerDashb />} />
+          <Route path="/Profile" element={<Profile />} />
+          <Route path="/booksys" element={<Booksys />} />
+        </Route>
 
-      <Route path="/forgotpassword" element={<ForgotPassword />} />
-      <Route path="/resetpassword" element={<ResetPassword />} />
+        <Route element={<AdminProtectedRoute />}>
+          <Route path="/admindashb" element={<Admindashb />} />
+          <Route path="/manageb" element={<Manageb />} />
+          <Route path="/salesandreq" element={<Salesandreq />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/beforeafter" element={<BeforeAfter />} />
+          <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
 
-     <Route element={<ProtectedRoute />}>
-        <Route path="/customerdashb" element={<CustomerDashb />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/booksys" element={<Booksys />} />
-      </Route>
+          
+          <Route path="/admin-reviews" element={<AdminReviews />} />
+        </Route>
+      </Routes>
 
-      <Route element={<AdminProtectedRoute />}>
-        <Route path="/admindashb" element={<Admindashb />} />
-        <Route path="/manageb" element={<Manageb />} />
-        <Route path="/salesandreq" element={<Salesandreq />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/beforeafter" element={<BeforeAfter />} />
-        <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
-      </Route>
-
-      
-    </Routes>
-
-    <CookieBanner />
-  </>
-  
+      <CookieBanner />
+    </ReviewsProvider>
   );
 }
 

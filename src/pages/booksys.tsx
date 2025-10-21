@@ -25,6 +25,7 @@ function Booksys() {
   const [errors, setErrors] = useState({
     service: "",
     bookingDate: "",
+    bookingTime: "",
     address: "",
   });
 
@@ -40,16 +41,17 @@ function Booksys() {
     setIsSubmitting(true);
     setMessage("");
 
-    // reset errors
+    // Reset and validate
     const newErrors = {
       service: service ? "" : "Please select a service.",
       bookingDate: bookingDate ? "" : "Please select a date.",
+      bookingTime: bookingTime ? "" : "Please select a time.",
       address: address ? "" : "Please enter an address.",
     };
     setErrors(newErrors);
 
-    // stop submit if any field empty
-    if (!service || !bookingDate || !address) {
+    // Stop submit if any field empty
+    if (!service || !bookingDate || !bookingTime || !address) {
       setIsSubmitting(false);
       return;
     }
@@ -60,9 +62,7 @@ function Booksys() {
       return;
     }
 
-    const bookingDateTime = bookingTime
-      ? new Date(`${bookingDate}T${bookingTime}`).toISOString()
-      : new Date(bookingDate).toISOString();
+    const bookingDateTime = new Date(`${bookingDate}T${bookingTime}`).toISOString();
 
     const requestData = {
       user_id: user.id,
@@ -91,7 +91,7 @@ function Booksys() {
             body: JSON.stringify({
               user_id: user.id,
               request_id: result.request?.request_id || null,
-              message: `Your booking request for ${service} on ${bookingDate} has been submitted and is awaiting approval.`,
+              message: `Your booking request for ${service} on ${bookingDate} at ${bookingTime} has been submitted and is awaiting approval.`,
             }),
           });
         } catch (notifError) {
@@ -105,7 +105,7 @@ function Booksys() {
         setAddress("");
         setNotes("");
         setForAssessment(false);
-        setErrors({ service: "", bookingDate: "", address: "" });
+        setErrors({ service: "", bookingDate: "", bookingTime: "", address: "" });
 
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
@@ -172,6 +172,7 @@ function Booksys() {
                     value={bookingTime}
                     onChange={(e) => setBookingTime(e.target.value)}
                   />
+                  {errors.bookingTime && <small className="text-danger">{errors.bookingTime}</small>}
                 </div>
 
                 {/* Address */}

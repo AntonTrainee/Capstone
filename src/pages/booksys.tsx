@@ -192,13 +192,13 @@ function Booksys() {
 
                 {/* For Assessment */}
                 <div className="form-check mb-4 d-flex align-items-center">
-                  <label className="form-check-label me-3">For Assessment:</label>
+                  <label className="form-check-label">For Assessment:</label>
                   <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={forAssessment}
-                    onChange={(e) => setForAssessment(e.target.checked)}
-                  />
+                  type="checkbox"
+                  className="form-check-input ms-2" // ms-2 = margin-start
+                  checked={forAssessment}
+                  onChange={(e) => setForAssessment(e.target.checked)}
+                />
                 </div>
               </div>
 

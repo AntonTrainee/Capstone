@@ -845,33 +845,18 @@ app.get("/reviews", async (req, res) => {
   }
 });
 
-// ✅ Get reviews by user
-app.get("/reviews/user/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const result = await pool.query(
-      "SELECT * FROM reviews WHERE user_id = $1 ORDER BY created_at DESC",
-      [userId]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching user reviews:", err);
-    res.status(500).json({ error: "Failed to fetch user reviews" });
-  }
-});
-
 // ✅ Add a review
 app.post("/reviews", async (req, res) => {
   try {
-    const { user_id, service, rating, comment } = req.body;
-    if (!user_id || !service || !rating) {
+    const { name, location, rating, comment } = req.body;
+    if (!name || !location || !rating) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     const result = await pool.query(
-      `INSERT INTO reviews (user_id, service, rating, comment)
+      `INSERT INTO reviews (name, location, rating, comment)
        VALUES ($1, $2, $3, $4) RETURNING *`,
-      [user_id, service, rating, comment || null]
+      [name, location, rating, comment || null]
     );
 
     res.status(201).json(result.rows[0]);
@@ -885,11 +870,14 @@ app.post("/reviews", async (req, res) => {
 app.put("/reviews/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { rating, comment } = req.body;
+    const { name, location, rating, comment } = req.body;
 
     const result = await pool.query(
-      `UPDATE reviews SET rating=$1, comment=$2, updated_at=NOW() WHERE review_id=$3 RETURNING *`,
-      [rating, comment, id]
+      `UPDATE reviews 
+       SET name=$1, location=$2, rating=$3, comment=$4, updated_at=NOW() 
+       WHERE review_id=$5 
+       RETURNING *`,
+      [name, location, rating, comment, id]
     );
 
     if (result.rows.length === 0) return res.status(404).json({ error: "Review not found" });
@@ -904,7 +892,11 @@ app.put("/reviews/:id", async (req, res) => {
 app.delete("/reviews/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("DELETE FROM reviews WHERE review_id=$1 RETURNING *", [id]);
+    const result = await pool.query(
+      "DELETE FROM reviews WHERE review_id=$1 RETURNING *",
+      [id]
+    );
+
     if (result.rows.length === 0) return res.status(404).json({ error: "Review not found" });
     res.json({ success: true, message: "Review deleted" });
   } catch (err) {
@@ -912,6 +904,7 @@ app.delete("/reviews/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete review" });
   }
 });
+
 
 
 

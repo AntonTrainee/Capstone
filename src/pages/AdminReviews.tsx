@@ -1,3 +1,4 @@
+// src/pages/AdminReviews.tsx
 import { useState } from "react";
 import { useReviews } from "../pages/ReviewsContext";
 
@@ -22,120 +23,37 @@ export default function AdminReviews() {
   };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h2 style={{ marginBottom: "1.5rem", color: "#007b9e" }}>Admin Reviews</h2>
+    <div style={{ padding: "2rem" }}>
+      <h2>Admin Reviews</h2>
 
-      {/* Form */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "1rem",
-          marginBottom: "2rem",
-          backgroundColor: "#f4f7f9",
-          padding: "1rem",
-          borderRadius: "8px",
-        }}
-      >
-        <input
-          style={{ flex: "1 1 150px", padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-          placeholder="Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          style={{ flex: "1 1 150px", padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-          placeholder="Location"
-          value={form.location}
-          onChange={(e) => setForm({ ...form, location: e.target.value })}
-        />
-        <input
-          type="number"
-          min={1}
-          max={5}
-          style={{ width: "80px", padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-          value={form.rating}
-          onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })}
-        />
-        <textarea
-          style={{
-            flex: "2 1 300px",
-            padding: "0.5rem",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
-            minHeight: "60px",
-          }}
-          placeholder="Comment"
-          value={form.comment}
-          onChange={(e) => setForm({ ...form, comment: e.target.value })}
-        />
-        <button
-          style={{
-            backgroundColor: "#007b9e",
-            color: "#fff",
-            border: "none",
-            padding: "0.5rem 1rem",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-          onClick={handleSubmit}
-        >
-          {editingId ? "Update" : "Add"}
-        </button>
+      <div style={{ marginBottom: "1rem" }}>
+        <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <input placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+        <input type="number" min={1} max={5} value={form.rating} onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })} />
+        <input placeholder="Comment" value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} />
+        <button onClick={handleSubmit}>{editingId ? "Update" : "Add"}</button>
       </div>
 
-      {/* Table */}
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          textAlign: "left",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        }}
-      >
-        <thead style={{ backgroundColor: "#007b9e", color: "#fff" }}>
+      <table border={1} cellPadding={5}>
+        <thead>
           <tr>
-            <th style={{ padding: "0.75rem" }}>Name</th>
-            <th style={{ padding: "0.75rem" }}>Location</th>
-            <th style={{ padding: "0.75rem" }}>Rating</th>
-            <th style={{ padding: "0.75rem" }}>Comment</th>
-            <th style={{ padding: "0.75rem" }}>Actions</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {reviews.map((rev) => (
-            <tr key={rev.id} style={{ borderBottom: "1px solid #ddd" }}>
-              <td style={{ padding: "0.75rem" }}>{rev.name}</td>
-              <td style={{ padding: "0.75rem" }}>{rev.location}</td>
-              <td style={{ padding: "0.75rem" }}>{rev.rating}</td>
-              <td style={{ padding: "0.75rem" }}>{rev.comment}</td>
-              <td style={{ padding: "0.75rem" }}>
-                <button
-                  onClick={() => startEdit(rev)}
-                  style={{
-                    backgroundColor: "#ffc107",
-                    border: "none",
-                    borderRadius: "4px",
-                    padding: "0.25rem 0.5rem",
-                    marginRight: "0.5rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => deleteReview(rev.id)}
-                  style={{
-                    backgroundColor: "#dc3545",
-                    border: "none",
-                    borderRadius: "4px",
-                    padding: "0.25rem 0.5rem",
-                    cursor: "pointer",
-                    color: "#fff",
-                  }}
-                >
-                  Delete
-                </button>
+            <tr key={rev.id}>
+              <td>{rev.name}</td>
+              <td>{rev.location}</td>
+              <td>{rev.rating}</td>
+              <td>{rev.comment}</td>
+              <td>
+                <button onClick={() => startEdit(rev)}>Edit</button>
+                <button onClick={() => deleteReview(rev.id)}>Delete</button>
               </td>
             </tr>
           ))}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect} from "react";
 import type { ReactNode } from "react";
 
 export interface Review {
@@ -24,13 +24,16 @@ const ReviewsContext = createContext<ReviewsContextType | undefined>(undefined);
 export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
 
+  // 🔄 Fetch all reviews from Supabase
   const refreshReviews = async () => {
     try {
-      const res = await fetch("http://localhost:5000/reviews");
+      const res = await fetch("https://capstone-ni5z.onrender.com/reviews");
+      if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
-      setReviews(data);
+      setReviews(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching reviews:", err);
+      setReviews([]);
     }
   };
 
@@ -38,40 +41,68 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
     refreshReviews();
   }, []);
 
+  // ➕ Add review safely
   const addReview = async (r: Omit<Review, "review_id" | "created_at" | "updated_at">) => {
     try {
-      const res = await fetch("http://localhost:5000/reviews", {
+      const res = await fetch("https://capstone-ni5z.onrender.com/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(r),
+        body: JSON.stringify({ ...r, rating: Number(r.rating) }),
       });
-      const newReview = await res.json();
-      setReviews(prev => [...prev, newReview]);
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Failed to add review:", err);
+        alert("Error adding review: " + (err.error || "Unknown error"));
+        return;
+      }
+
+      // Refresh from server to make sure it's consistent
+      await refreshReviews();
     } catch (err) {
-      console.error(err);
+      console.error("Error adding review:", err);
+      alert("Error adding review, check console");
     }
   };
 
+  // ✏️ Update review safely
   const updateReview = async (id: number, r: Omit<Review, "review_id" | "created_at" | "updated_at">) => {
     try {
-      const res = await fetch(`http://localhost:5000/reviews/${id}`, {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/reviews/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(r),
+        body: JSON.stringify({ ...r, rating: Number(r.rating) }),
       });
-      const updated = await res.json();
-      setReviews(prev => prev.map(rev => rev.review_id === id ? updated : rev));
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Failed to update review:", err);
+        alert("Error updating review: " + (err.error || "Unknown error"));
+        return;
+      }
+
+      await refreshReviews();
     } catch (err) {
-      console.error(err);
+      console.error("Error updating review:", err);
+      alert("Error updating review, check console");
     }
   };
 
+  // ❌ Delete review safely
   const deleteReview = async (id: number) => {
     try {
-      await fetch(`http://localhost:5000/reviews/${id}`, { method: "DELETE" });
-      setReviews(prev => prev.filter(rev => rev.review_id !== id));
+      const res = await fetch(`https://capstone-ni5z.onrender.com/reviews/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Failed to delete review:", err);
+        alert("Error deleting review: " + (err.error || "Unknown error"));
+        return;
+      }
+
+      await refreshReviews();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting review:", err);
+      alert("Error deleting review, check console");
     }
   };
 

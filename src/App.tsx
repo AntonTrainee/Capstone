@@ -31,13 +31,13 @@ import AdminReviews from "./pages/AdminReviews";
 
 function App() {
   return (
-    <ReviewsProvider> 
+    <ReviewsProvider>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/register" element={<Register />} />
         <Route path="/otp" element={<OtpPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/aboutus" element={<About />} />
         <Route path="/beforeandaftershowcase" element={<BeforeAndAfterShowcase />} />
         <Route path="/privacy-notice" element={<PrivacyNotice />} />
@@ -45,22 +45,21 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/resetpassword" element={<ResetPassword />} />
 
+        {/* Protected Customer Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/customerdashb" element={<CustomerDashb />} />
           <Route path="/Profile" element={<Profile />} />
           <Route path="/booksys" element={<Booksys />} />
         </Route>
 
+        {/* Protected Admin Routes */}
         <Route element={<AdminProtectedRoute />}>
           <Route path="/admindashb" element={<Admindashb />} />
           <Route path="/manageb" element={<Manageb />} />
           <Route path="/salesandreq" element={<Salesandreq />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/beforeafter" element={<BeforeAfter />} />
-          <Route path="/" element={<AdminReviews />} />
           <Route path="/beforeafter/add" element={<BeforeAfterAdd />} />
-
-          
           <Route path="/admin-reviews" element={<AdminReviews />} />
         </Route>
       </Routes>

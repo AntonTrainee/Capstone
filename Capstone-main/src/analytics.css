@@ -1,0 +1,164 @@
+/* Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(to right, #0ea5e9, #2563eb);
+  color: white;
+  padding: 0.8rem 1.2rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  gap: 0.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+}
+
+.logo-sub {
+  opacity: 0.7;
+}
+
+/* Main */
+.app-main {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.app-footer {
+  border-top: 1px solid #ddd;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Analytics */
+.analytics-hero {
+  background: linear-gradient(to right, #38bdf8, #6366f1);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-controls select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.metric-card h3 {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.metric-card p {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin: 0.5rem 0 0;
+}
+
+.service-list {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+  list-style: none;
+  margin: 0;
+}
+
+.service-list li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.service-list li:last-child {
+  border-bottom: none;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+.analytics-table th {
+  background: #f8fafc;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.chart-wrapper {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 350px; /* required */
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+}

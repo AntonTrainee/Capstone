@@ -1,0 +1,311 @@
+/* === General Reset & Utilities === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  background: #f8fafc;
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.bold-text {
+  font-weight: 600;
+}
+
+.loading-state {
+  padding: 1rem;
+  text-align: center;
+  color: #64748b;
+}
+
+/* === Layout === */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(to right, #0ea5e9, #2563eb);
+  color: white;
+  padding: 0.8rem 1.2rem;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.logo {
+  font-weight: 700;
+  text-decoration: none;
+  color: white;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.logo-sub {
+  opacity: 0.85;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.navbar-toggler {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: none;
+}
+
+/* === Sidebar Overlay === */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.sidebar-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+/* === Sidebar Panel === */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 250px;
+  background: #1e293b;
+  color: white;
+  padding: 1.5rem 1rem;
+  z-index: 1051;
+  overflow-y: auto;
+  transform: translateX(100%); /* hidden by default */
+  transition: transform 0.3s ease-in-out;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar.open {
+  transform: translateX(0); /* slide in */
+}
+
+/* Close button inside sidebar */
+.sidebar .close-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 1.8rem;
+  float: right;
+  cursor: pointer;
+  margin-bottom: 2rem;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin-top: 3rem;
+}
+
+.sidebar-nav li {
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-nav a,
+.sidebar-nav button {
+  display: block;
+  width: 100%;
+  color: #cbd5e1;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav button:hover {
+  background: #334155;
+  color: #38bdf8;
+}
+
+/* Logout button */
+.btn-logout {
+  background: #dc2626;
+  border: none;
+  padding: 0.6rem 0.8rem;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.btn-logout:hover {
+  background: #b91c1c;
+}
+
+/* === Main Content === */
+.app-main {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: auto;
+}
+
+/* Section */
+.section-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.section-container h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.5rem;
+}
+
+/* === Tables === */
+.table-container {
+  width: 100%;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.data-table th {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* === Responsive Design === */
+
+/* Desktop & large screens */
+@media (min-width: 769px) {
+  .sidebar {
+    transform: translateX(100%); /* hidden by default */
+    position: fixed;
+    right: 0;
+    left: auto;
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* slide in from right */
+  }
+
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  .navbar-toggler {
+    display: block; /* desktop toggle button visible */
+  }
+
+  .app-main {
+    margin-left: 0; /* content stays full width */
+  }
+}
+
+/* Tablet & Mobile */
+@media (max-width: 768px) {
+  .navbar-toggler {
+    display: block;
+  }
+
+  .sidebar {
+    width: 80%;
+    right: 0;
+    left: auto;
+    transform: translateX(100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .app-main {
+    margin-left: 0;
+    padding: 1rem 0.75rem;
+  }
+}

@@ -3,6 +3,7 @@ import Navbar from "../components/navbar";
 import genmain from "../assets/general-maintenance.jpg";
 import janitor from "../assets/janitorial-services-1536x1024.jpg";
 import pest from "../assets/pest-control-UT-hybridpestcontrol-scaled-2560x1280.jpeg";
+import Footer from "../components/footer";
 
 function Services() {
   const services = [
@@ -34,7 +35,7 @@ function Services() {
 
       {/* Heading + Divider */}
       <div className="services-header text-center my-5">
-        <h1 style={{ fontSize: "2.5rem", marginBottom: "15px" }}>Our Services</h1>
+        <h1 className="section-title about-title text-center">Our Services</h1>
         <div
           className="divider"
           style={{
@@ -45,9 +46,7 @@ function Services() {
         />
       </div>
 
-      {/* Services Section */}
       <div className="services-page container services-container d-flex gap-4 flex-wrap">
-        {/* Sidebar */}
         <div
           className="p-3 services-sidebar"
           style={{
@@ -85,6 +84,7 @@ function Services() {
             color: "white",
             flex: "1",
             minWidth: "300px",
+            marginBottom: "100px",
           }}
         >
           <div
@@ -123,38 +123,7 @@ function Services() {
       </div>
 
       {/* Contact Section */}
-      <section className="contact-section" style={{ marginTop: "220px" }}>
-        <div className="contactcontainer">
-          <h2 className="contact-title">Contact Us</h2>
-
-          <div className="contact-grid">
-            <div>
-              <p>
-                <span className="bold">Email:</span> inquiries@genclean.com.ph
-              </p>
-              <p className="bold">Phone Numbers:</p>
-              <div className="phone-grid">
-                <ul>
-                  <li>82546323</li>
-                  <li>277385555</li>
-                </ul>
-                <ul>
-                  <li>09260193470</li>
-                  <li>09543174179</li>
-                </ul>
-              </div>
-            </div>
-            <div>
-              <p className="bold">Address:</p>
-              <p>
-                Unit 114, 2nd Floor, Corinthian Executive Regency,
-                <br />
-                Ortigas Ave., San Antonio, Pasig City
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Footer />
     </>
   );
 }

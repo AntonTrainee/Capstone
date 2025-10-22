@@ -203,7 +203,6 @@ function Home() {
 
       <HomeReviews />
 
-
       <section
         id="contact"
         className="contactcontainer"
@@ -302,18 +301,24 @@ function Home() {
 
           <div className="col-md-4">
             <div className="info-card h-100 d-flex flex-column justify-content-center">
-              <p className="bold">Business Hours:</p>
-              <p>Monday – Saturday, 9:00 AM – 6:00 PM</p>
+              <p className="bold" style={{ color: "#2a4d57ff" }}>
+                Business Hours:
+              </p>
+              <p style={{ color: "#2a4d57ff" }}>
+                Monday – Saturday, 9:00 AM – 6:00 PM
+              </p>
 
-              <p className="bold mt-3">Address:</p>
-              <p>
+              <p className="bold mt-3" style={{ color: "#2a4d57ff" }}>
+                Address:
+              </p>
+              <p style={{ color: "#2a4d57ff" }}>
                 Unit 114, 2nd Floor, Corinthian Executive Regency,
                 <br />
                 Ortigas Ave., San Antonio, Pasig City
               </p>
             </div>
           </div>
-      </div>
+        </div>
       </section>
 
       <Footer />

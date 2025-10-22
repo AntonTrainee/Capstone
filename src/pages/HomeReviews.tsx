@@ -14,7 +14,7 @@ export default function HomeReviews() {
         className="carousel slide"
         data-bs-ride="carousel"
         data-bs-interval="4000"
-        style={{ width: "100vw", marginTop: "110px", marginBottom: "70px" }}
+        style={{ width: "100vw", marginTop: "10px", marginBottom: "50px" }}
       >
         <div className="carousel-inner text-center p-5 review-carousel rounded shadow">
           {reviews.map((rev, idx) => (
@@ -41,7 +41,10 @@ export default function HomeReviews() {
           data-bs-target="#reviewCarousel"
           data-bs-slide="prev"
         >
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span
+            className="carousel-control-prev-icon"
+            aria-hidden="true"
+          ></span>
         </button>
         <button
           className="carousel-control-next"
@@ -49,7 +52,10 @@ export default function HomeReviews() {
           data-bs-target="#reviewCarousel"
           data-bs-slide="next"
         >
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+          <span
+            className="carousel-control-next-icon"
+            aria-hidden="true"
+          ></span>
         </button>
       </div>
     </div>

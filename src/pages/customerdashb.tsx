@@ -26,9 +26,15 @@ interface Notification {
 }
 
 function CustomerDashb() {
-  const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
+  const [activeSection, setActiveSection] = useState<"bookings" | "history">(
+    "bookings"
+  );
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [history, setHistory] = useState<Booking[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -55,18 +61,27 @@ function CustomerDashb() {
       fetchNotifications(parsedUser.id);
 
       // 🔁 Auto-refresh notifications every 10s
-      const interval = setInterval(() => fetchNotifications(parsedUser.id), 10000);
+      const interval = setInterval(
+        () => fetchNotifications(parsedUser.id),
+        10000
+      );
       return () => clearInterval(interval);
     }
   }, [navigate]);
 
   const fetchBookings = async (userId: string) => {
     try {
-      const response = await axios.get<Booking[]>(`https://capstone-ni5z.onrender.com/bookings/user/${userId}`);
+      const response = await axios.get<Booking[]>(
+        `https://capstone-ni5z.onrender.com/bookings/user/${userId}`
+      );
       const allBookings = response.data;
 
-      const activeBookings = allBookings.filter((b) => b.status.toLowerCase() !== "completed");
-      const completedBookings = allBookings.filter((b) => b.status.toLowerCase() === "completed");
+      const activeBookings = allBookings.filter(
+        (b) => b.status.toLowerCase() !== "completed"
+      );
+      const completedBookings = allBookings.filter(
+        (b) => b.status.toLowerCase() === "completed"
+      );
 
       setBookings(activeBookings);
       setHistory(completedBookings);
@@ -77,7 +92,9 @@ function CustomerDashb() {
 
   const fetchNotifications = async (userId: string) => {
     try {
-      const res = await axios.get(`https://capstone-ni5z.onrender.com/notifications/${userId}`);
+      const res = await axios.get(
+        `https://capstone-ni5z.onrender.com/notifications/${userId}`
+      );
       if (Array.isArray(res.data)) {
         setNotifications(res.data);
       } else {
@@ -91,9 +108,13 @@ function CustomerDashb() {
 
   const markAsRead = async (id: number) => {
     try {
-      await axios.put(`https://capstone-ni5z.onrender.com/notifications/${id}/read`);
+      await axios.put(
+        `https://capstone-ni5z.onrender.com/notifications/${id}/read`
+      );
       setNotifications((prev) =>
-        prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n))
+        prev.map((n) =>
+          n.notification_id === id ? { ...n, is_read: true } : n
+        )
       );
     } catch (err) {
       console.error("Error marking notification as read:", err);
@@ -118,13 +139,13 @@ function CustomerDashb() {
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid d-flex justify-content-between align-items-center">
           <Link className="navbar-brand d-flex align-items-center" to="/">
-          <img 
-            src={logo} 
-            alt="Gemini Logo" 
-            className="img-fluid"
-            style={{ maxHeight: "60px" }} 
-          />
-        </Link>
+            <img
+              src={logo}
+              alt="Gemini Logo"
+              className="img-fluid"
+              style={{ maxHeight: "60px" }}
+            />
+          </Link>
 
           <button
             className="navbar-toggler profile-toggler"
@@ -223,7 +244,9 @@ function CustomerDashb() {
                             <tr key={b.booking_id}>
                               <td>{b.service}</td>
                               <td>{b.address}</td>
-                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>
+                                {new Date(b.booking_date).toLocaleString()}
+                              </td>
                               <td>{b.status}</td>
                             </tr>
                           ))
@@ -257,7 +280,9 @@ function CustomerDashb() {
                             <tr key={b.booking_id}>
                               <td>{b.service}</td>
                               <td>{b.address}</td>
-                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>
+                                {new Date(b.booking_date).toLocaleString()}
+                              </td>
                               <td>{b.status}</td>
                             </tr>
                           ))
@@ -284,11 +309,16 @@ function CustomerDashb() {
             <div className="row g-4">
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img src={genmain} className="card-img-top" alt="General Maintenance" />
+                  <img
+                    src={genmain}
+                    className="card-img-top"
+                    alt="General Maintenance"
+                  />
                   <div className="card-body">
                     <h5 className="card-title">General Maintenance</h5>
                     <p className="card-text">
-                      We handle routine repairs and upkeep to keep your property in top condition.
+                      We handle routine repairs and upkeep to keep your property
+                      in top condition.
                     </p>
                   </div>
                 </div>
@@ -296,11 +326,18 @@ function CustomerDashb() {
 
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img src={janitor} className="card-img-top" alt="Janitorial Services" />
+                  <img
+                    src={janitor}
+                    className="card-img-top"
+                    alt="Janitorial Services"
+                  />
                   <div className="card-body">
-                    <h5 className="card-title">Janitorial and Cleaning Services</h5>
+                    <h5 className="card-title">
+                      Janitorial and Cleaning Services
+                    </h5>
                     <p className="card-text">
-                      Comprehensive cleaning services including offices and commercial spaces.
+                      Comprehensive cleaning services including offices and
+                      commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -312,7 +349,8 @@ function CustomerDashb() {
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
                     <p className="card-text">
-                      Reliable pest management solutions for residential and commercial spaces.
+                      Reliable pest management solutions for residential and
+                      commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -330,19 +368,35 @@ function CustomerDashb() {
               {user ? `${user.firstName} ${user.lastName}` : "Client"}
             </h2>
 
-            <a href="#Bookings" className="profile-link" onClick={() => handleLinkClick("bookings")}>
+            <a
+              href="#Bookings"
+              className="profile-link"
+              onClick={() => handleLinkClick("bookings")}
+            >
               Bookings
             </a>
 
-            <a href="#History" className="profile-link" onClick={() => handleLinkClick("history")}>
+            <a
+              href="#History"
+              className="profile-link"
+              onClick={() => handleLinkClick("history")}
+            >
               History
             </a>
 
-            <Link to="/booksys" className="profile-link" onClick={handleBookLinkClick}>
+            <Link
+              to="/booksys"
+              className="profile-link"
+              onClick={handleBookLinkClick}
+            >
               Book
             </Link>
 
-            <Link to="/Profile" className="profile-link" onClick={handleBookLinkClick}>
+            <Link
+              to="/Profile"
+              className="profile-link"
+              onClick={handleBookLinkClick}
+            >
               Edit Profile
             </Link>
 
@@ -375,7 +429,10 @@ function CustomerDashb() {
               >
                 Yes, I am
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowLogoutConfirm(false)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
                 Cancel
               </button>
             </div>

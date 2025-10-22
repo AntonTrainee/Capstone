@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "../salesreq.css";
 
+// ======================== TYPES ========================
 type ReportType = "sales" | "request";
 type ServiceType =
   | "General Cleaning"
@@ -29,6 +30,28 @@ interface Filters {
   search?: string;
 }
 
+// Response types from backend
+interface SaleApiResponse {
+  sale_id: string;
+  user_id: string;
+  service: string;
+  payment: string;
+  status: string;
+  completed_at: string;
+  created_at: string;
+}
+
+interface RequestApiResponse {
+  booking_id: string;
+  user_id: string;
+  service: string;
+  address: string;
+  status: string;
+  created_at: string;
+  booking_date: string;
+}
+
+// ======================== COMPONENT ========================
 export default function SalesAndRequest() {
   const [filters, setFilters] = useState<Filters>({
     reportType: "sales",
@@ -57,35 +80,35 @@ export default function SalesAndRequest() {
           throw new Error(
             `Failed to fetch ${filters.reportType}: ${res.statusText}`
           );
-        const rows = await res.json();
+
+        const rows: SaleApiResponse[] | RequestApiResponse[] = await res.json();
 
         const mapped: RecordItem[] =
           filters.reportType === "sales"
-            ? rows.map((item: any) => ({
+            ? (rows as SaleApiResponse[]).map((item) => ({
                 id: item.sale_id ?? "N/A",
                 user_id: item.user_id ?? "N/A",
                 service: item.service ?? "N/A",
-                payment: parseFloat(item.payment ?? 0),
+                payment: parseFloat(item.payment ?? "0"),
                 status: item.status ?? "N/A",
                 completed_at: item.completed_at ?? "N/A",
                 created_at: item.created_at ?? "N/A",
               }))
-            : rows.map((item: any) => ({
-    id: item.booking_id ?? "N/A", // <-- use booking_id here
-    booking_id: item.booking_id ?? "N/A",
-    user_id: item.user_id ?? "N/A",
-    service: item.service ?? "N/A",
-    address: item.address ?? "N/A",
-    status: item.status ?? "N/A",
-    created_at: item.created_at ?? "N/A",
-    booking_date: item.booking_date ?? "N/A",
-}));
-
+            : (rows as RequestApiResponse[]).map((item) => ({
+                id: item.booking_id ?? "N/A",
+                booking_id: item.booking_id ?? "N/A",
+                user_id: item.user_id ?? "N/A",
+                service: item.service ?? "N/A",
+                address: item.address ?? "N/A",
+                status: item.status ?? "N/A",
+                created_at: item.created_at ?? "N/A",
+                booking_date: item.booking_date ?? "N/A",
+              }));
 
         setData(mapped);
-      } catch (err: any) {
+      } catch (err) {
         console.error(`❌ Error fetching ${filters.reportType}:`, err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : "Unknown error");
         setData([]);
       } finally {
         setLoading(false);
@@ -98,7 +121,11 @@ export default function SalesAndRequest() {
   // ✅ Filters
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
-      if (filters.service && filters.service !== "All" && r.service !== filters.service)
+      if (
+        filters.service &&
+        filters.service !== "All" &&
+        r.service !== filters.service
+      )
         return false;
       if (filters.from && new Date(r.created_at ?? "") < new Date(filters.from))
         return false;
@@ -119,7 +146,15 @@ export default function SalesAndRequest() {
 
     const headers =
       filters.reportType === "sales"
-        ? ["Sale ID", "User ID", "Service", "Payment", "Status", "Completed At", "Created At"]
+        ? [
+            "Sale ID",
+            "User ID",
+            "Service",
+            "Payment",
+            "Status",
+            "Completed At",
+            "Created At",
+          ]
         : [
             "Request ID",
             "Booking ID",
@@ -166,6 +201,7 @@ export default function SalesAndRequest() {
     document.body.removeChild(a);
   };
 
+  // ======================== RENDER ========================
   return (
     <div className="app-container">
       <header className="app-header">
@@ -189,7 +225,10 @@ export default function SalesAndRequest() {
             <select
               value={filters.service}
               onChange={(e) =>
-                setFilters({ ...filters, service: e.target.value as Filters["service"] })
+                setFilters({
+                  ...filters,
+                  service: e.target.value as Filters["service"],
+                })
               }
             >
               <option value="All">All Services</option>
@@ -232,7 +271,9 @@ export default function SalesAndRequest() {
                   name="reportType"
                   value="sales"
                   checked={filters.reportType === "sales"}
-                  onChange={() => setFilters({ ...filters, reportType: "sales" })}
+                  onChange={() =>
+                    setFilters({ ...filters, reportType: "sales" })
+                  }
                 />
                 Sales
               </label>
@@ -242,7 +283,9 @@ export default function SalesAndRequest() {
                   name="reportType"
                   value="request"
                   checked={filters.reportType === "request"}
-                  onChange={() => setFilters({ ...filters, reportType: "request" })}
+                  onChange={() =>
+                    setFilters({ ...filters, reportType: "request" })
+                  }
                 />
                 Requests
               </label>
@@ -312,30 +355,78 @@ export default function SalesAndRequest() {
                       </td>
                     </tr>
                   ) : filters.reportType === "sales" ? (
-                    filteredRows.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.id}</td>
-                        <td>{r.user_id}</td>
-                        <td>{r.service}</td>
-                        <td>₱{r.payment?.toFixed(2)}</td>
-                        <td>{r.status}</td>
-                        <td>{r.completed_at}</td>
-                        <td>{r.created_at}</td>
-                      </tr>
-                    ))
+                    filteredRows.map((r) => {
+                      const formattedCompletedAt =
+                        r.completed_at && r.completed_at !== "N/A"
+                          ? new Date(r.completed_at).toLocaleString("en-PH", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A";
+
+                      const formattedCreatedAt =
+                        r.created_at && r.created_at !== "N/A"
+                          ? new Date(r.created_at).toLocaleString("en-PH", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A";
+
+                      return (
+                        <tr key={r.id}>
+                          <td>{r.id}</td>
+                          <td>{r.user_id}</td>
+                          <td>{r.service}</td>
+                          <td>₱{r.payment?.toFixed(2)}</td>
+                          <td>{r.status}</td>
+                          <td>{formattedCompletedAt}</td>
+                          <td>{formattedCreatedAt}</td>
+                        </tr>
+                      );
+                    })
                   ) : (
-                    filteredRows.map((r) => (
-                      <tr key={r.id}>
-                        <td>{r.id}</td>
-                        <td>{r.booking_id}</td>
-                        <td>{r.user_id}</td>
-                        <td>{r.service}</td>
-                        <td>{r.address}</td>
-                        <td>{r.status}</td>
-                        <td>{r.created_at}</td>
-                        <td>{r.booking_date}</td>
-                      </tr>
-                    ))
+                    filteredRows.map((r) => {
+                      const formattedCreatedAt =
+                        r.created_at && r.created_at !== "N/A"
+                          ? new Date(r.created_at).toLocaleString("en-PH", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A";
+
+                      const formattedBookingDate =
+                        r.booking_date && r.booking_date !== "N/A"
+                          ? new Date(r.booking_date).toLocaleString("en-PH", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "N/A";
+
+                      return (
+                        <tr key={r.id}>
+                          <td>{r.id}</td>
+                          <td>{r.booking_id}</td>
+                          <td>{r.user_id}</td>
+                          <td>{r.service}</td>
+                          <td>{r.address}</td>
+                          <td>{r.status}</td>
+                          <td>{formattedCreatedAt}</td>
+                          <td>{formattedBookingDate}</td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -344,7 +435,9 @@ export default function SalesAndRequest() {
         </section>
       </main>
 
-      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
+      <footer className="app-footer">
+        © {new Date().getFullYear()} GenClean
+      </footer>
     </div>
   );
 }

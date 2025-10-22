@@ -4,7 +4,7 @@ import { ReviewsProvider } from "./pages/ReviewsContext";
 import OtpPage from "./pages/OtpPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminProtectedRoute from "./AdminProtectedRoute";
-import Home from "./pages/Home";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CustomerDashb from "./pages/customerdashb";
@@ -32,7 +32,7 @@ function App() {
   return (
     <ReviewsProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Salesandreq />} />
         <Route path="/services" element={<Services />} />
         <Route path="/register" element={<Register />} />
         <Route path="/otp" element={<OtpPage />} />

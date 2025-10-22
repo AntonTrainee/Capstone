@@ -1,5 +1,3 @@
-import Footer from "../components/footer";
-
 export default function Cookies() {
   return (
     <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
@@ -76,8 +74,6 @@ export default function Cookies() {
         or write to us at Unit 114, Corinthian Executive Regency, No. 7 Ortigas
         Avenue, Ortigas Center, Brgy San Antonio, Pasig City.
       </p>
-
-      <Footer />
     </div>
   );
 }

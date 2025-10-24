@@ -136,7 +136,7 @@ app.post("/forgot-password", async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    const resetLink = `http://localhost:${PORT}/resetpassword?token=${resetToken}`;
+    const resetLink = `https://genclean.vercel.app/resetpassword?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",

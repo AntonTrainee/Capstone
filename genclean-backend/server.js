@@ -484,7 +484,7 @@ app.get("/bookings/user/:userId", async (req, res) => {
 
 
 app.post("/contact", async (req, res) => {
-  const { name, email, phone, message } = req.body;
+  const { name, email, phone, address, message } = req.body;
 
   try {
     const transporter = nodemailer.createTransport({
@@ -496,7 +496,7 @@ app.post("/contact", async (req, res) => {
       from: email,
       to: process.env.EMAIL,
       subject: `New Contact Form Submission from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nAddress: ${address}\nMessage: ${message}`,
     });
 
     res.status(200).json({ success: true, message: "Message sent successfully!" });

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
-
 interface User {
   id: number;
   first_name?: string;
@@ -19,7 +18,7 @@ function Profile() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Load user from localStorage
+  // ================== LOAD USER FROM LOCAL STORAGE ==================
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -31,34 +30,66 @@ function Profile() {
     }
   }, []);
 
+  // ================== PHONE NUMBER FORMAT ==================
+  const handlePhoneInput = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+
+    if (!digits.startsWith("09"))
+      digits = "09" + digits.slice(digits.startsWith("0") ? 1 : 0);
+
+    if (digits.length > 11) digits = digits.slice(0, 11);
+
+    let formatted = digits;
+    if (digits.length > 4 && digits.length <= 7) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+    } else if (digits.length > 7) {
+      formatted =
+        digits.slice(0, 4) + "-" + digits.slice(4, 7) + "-" + digits.slice(7);
+    }
+
+    setPhoneNumber(formatted);
+  };
+
+  // ================== HANDLE PROFILE UPDATE ==================
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage("");
+
     const token = localStorage.getItem("auth_token");
     if (!token) return setMessage("User not authenticated");
 
+    // 🔒 Check password length if user entered a new one
+    if (password && password.length < 8) {
+      setMessage("❌ Password must be at least 8 characters long.");
+      return;
+    }
+
     try {
-      const res = await fetch("https://capstone-ni5z.onrender.com/update-profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          phoneNumber,
-          password: password || undefined, // only send if filled
-        }),
-      });
+      const res = await fetch(
+        "https://capstone-ni5z.onrender.com/update-profile",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            phoneNumber,
+            password: password || undefined, // only send if filled
+          }),
+        }
+      );
 
       const data = await res.json();
       if (res.ok && data.success) {
         setUser(data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
         setPassword("");
-        setMessage("Profile updated successfully!");
+        setMessage("✅ Profile updated successfully!");
       } else {
-        setMessage(data.message || "Failed to update profile.");
+        setMessage(data.message || "❌ Failed to update profile.");
       }
     } catch (err) {
       console.error(err);
@@ -71,12 +102,8 @@ function Profile() {
   return (
     <div className="colorscheme">
       <div className="blue-box">
-       <h1 className="navbar-brand" style={{ textAlign: "center" }}>
-          <img
-            src={Genclean}
-            alt="GenClean Logo"
-            className="genclean-logo"
-          />
+        <h1 className="navbar-brand" style={{ textAlign: "center" }}>
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
@@ -89,7 +116,7 @@ function Profile() {
               className="form-control"
               placeholder="First Name"
               value={firstName}
-              onChange={e => setFirstName(e.target.value)}
+              onChange={(e) => setFirstName(e.target.value)}
               required
             />
             <label>First Name</label>
@@ -101,7 +128,7 @@ function Profile() {
               className="form-control"
               placeholder="Last Name"
               value={lastName}
-              onChange={e => setLastName(e.target.value)}
+              onChange={(e) => setLastName(e.target.value)}
               required
             />
             <label>Last Name</label>
@@ -120,12 +147,12 @@ function Profile() {
 
           <div className="form-floating mb-3">
             <input
-                type="text"
-                className="form-control"
-                placeholder="Phone Number"
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-                required
+              type="text"
+              className="form-control"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => handlePhoneInput(e.target.value)}
+              required
             />
             <label>Phone Number</label>
           </div>
@@ -136,15 +163,35 @@ function Profile() {
               className="form-control"
               placeholder="New Password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <label>New Password</label>
             <span
               onClick={() => setShowPassword(!showPassword)}
-              style={{ position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: "1.2rem" }}
+              style={{
+                position: "absolute",
+                right: "15px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                cursor: "pointer",
+                fontSize: "1.2rem",
+              }}
             >
               <i className={showPassword ? "bi bi-eye-fill" : "bi bi-eye"}></i>
             </span>
+
+            {/* ⚠️ Inline password warning (only shows if user types) */}
+            {password && password.length < 8 && (
+              <p
+                style={{
+                  color: "red",
+                  fontSize: "0.85rem",
+                  marginTop: "0.25rem",
+                }}
+              >
+                Password must be at least 8 characters long
+              </p>
+            )}
           </div>
 
           <button type="submit" className="btn crAct-btn mx-auto d-block mt-3">

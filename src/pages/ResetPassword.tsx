@@ -8,23 +8,32 @@ function ResetPassword() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Grab token from URL ?token=XXXX
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage("");
+
     if (!token) {
       setMessage("Invalid or missing token.");
       return;
     }
 
+    if (newPassword.length < 8) {
+      setMessage("❌ Password must be at least 8 characters long.");
+      return;
+    }
+
     try {
-      const res = await fetch("https://capstone-ni5z.onrender.com/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
-      });
+      const res = await fetch(
+        "https://capstone-ni5z.onrender.com/reset-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, newPassword }),
+        }
+      );
 
       const data = await res.json();
       if (res.ok) {
@@ -43,11 +52,7 @@ function ResetPassword() {
     <div className="colorscheme">
       <div className="blue-box">
         <h1 className="navbar-brand" style={{ textAlign: "center" }}>
-          <img
-            src={Genclean}
-            alt="GenClean Logo"
-            className="genclean-logo"
-          />
+          <img src={Genclean} alt="GenClean Logo" className="genclean-logo" />
         </h1>
       </div>
 
@@ -79,6 +84,18 @@ function ResetPassword() {
             >
               <i className={showPassword ? "bi bi-eye-fill" : "bi bi-eye"}></i>
             </span>
+
+            {newPassword && newPassword.length < 8 && (
+              <p
+                style={{
+                  color: "red",
+                  fontSize: "0.85rem",
+                  marginTop: "0.25rem",
+                }}
+              >
+                Password must be at least 8 characters long
+              </p>
+            )}
           </div>
 
           <button type="submit" className="btn crAct-btn mx-auto d-block">

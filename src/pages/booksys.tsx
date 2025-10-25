@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import logo from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 interface User {
@@ -15,16 +13,21 @@ interface User {
 function Booksys() {
   const [user, setUser] = useState<User | null>(null);
   const [service, setService] = useState("");
-  const [bookingDate, setBookingDate] = useState<Date | null>(null);
+  const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
+
   const [region] = useState("NCR");
   const [city, setCity] = useState("");
   const [barangay, setBarangay] = useState("");
   const [street, setStreet] = useState("");
+
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
+
+  // Messages
+  const [message, setMessage] = useState(""); // below button
+  const [dateWarning, setDateWarning] = useState(""); // fully booked warning
 
   const [errors, setErrors] = useState({
     service: "",
@@ -33,11 +36,8 @@ function Booksys() {
     address: "",
   });
 
-  const [fullyBookedDates, setFullyBookedDates] = useState<Date[]>([]);
-
   const navigate = useNavigate();
-  const today = new Date();
-  const MAX_BOOKINGS_PER_DAY = 5;
+  const today = new Date().toISOString().split("T")[0];
 
   const ncrData: Record<string, string[]> = {
     Manila: [
@@ -201,42 +201,40 @@ function Booksys() {
     ],
   };
 
-  // Fetch user
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // Fetch fully booked dates
+  // Live check for fully booked date
   useEffect(() => {
-    async function fetchFullyBooked() {
-      try {
-        const res = await fetch(
-          `https://capstone-ni5z.onrender.com/fully-booked-dates`
-        );
-        const data: string[] = await res.json();
-        const dates = data.map((d) => {
-          const [year, month, day] = d.split("-").map(Number);
-          return new Date(year, month - 1, day); // month is 0-based
-        });
-        setFullyBookedDates(dates);
-      } catch (err) {
-        console.error("Error fetching fully booked dates:", err);
-      }
+    if (!bookingDate) {
+      setDateWarning("");
+      return;
     }
-    fetchFullyBooked();
-  }, []);
 
-  // Timezone-safe comparison
-  const isSameDay = (d1: Date, d2: Date) =>
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate();
+    const checkDate = async () => {
+      try {
+        const response = await fetch(
+          `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
+        );
+        const result = await response.json();
 
-  const isDateAvailable = (date: Date) => {
-    const bookingsForDate = fullyBookedDates.filter((d) => isSameDay(d, date));
-    return bookingsForDate.length < MAX_BOOKINGS_PER_DAY;
-  };
+        if (!response.ok || result.fullyBooked) {
+          setDateWarning(
+            "This date is fully booked. Please choose another day."
+          );
+        } else {
+          setDateWarning("");
+        }
+      } catch (err) {
+        console.error("Error checking fully booked date:", err);
+        setDateWarning("⚠️ Could not verify availability. Try again later.");
+      }
+    };
+
+    checkDate();
+  }, [bookingDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +245,7 @@ function Booksys() {
       street && barangay && city
         ? `${street}, ${barangay}, ${city}, ${region}`
         : "";
+
     const newErrors = {
       service: service ? "" : "Please select a service.",
       bookingDate: bookingDate ? "" : "Please select a date.",
@@ -260,13 +259,31 @@ function Booksys() {
       return;
     }
 
+    const selectedDate = new Date(bookingDate);
+    const now = new Date();
+    if (selectedDate < new Date(now.toDateString())) {
+      setErrors((prev) => ({
+        ...prev,
+        bookingDate: "You cannot book a past date.",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!user) {
       setMessage("You must be logged in to book a service.");
       setIsSubmitting(false);
       return;
     }
 
-    const bookingDateTime = bookingDate.toISOString();
+    if (dateWarning) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    const bookingDateTime = new Date(
+      `${bookingDate}T${bookingTime}`
+    ).toISOString();
 
     const requestData = {
       user_id: user.id,
@@ -287,12 +304,27 @@ function Booksys() {
           body: JSON.stringify(requestData),
         }
       );
+
       const result = await response.json();
 
       if (response.ok) {
+        try {
+          await fetch("https://capstone-ni5z.onrender.com/notifications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: user.id,
+              request_id: result.request?.request_id || null,
+              message: `Your booking request for ${service} on ${bookingDate} at ${bookingTime} has been submitted and is awaiting approval.`,
+            }),
+          });
+        } catch (notifError) {
+          console.error("Error creating notification:", notifError);
+        }
+
         setMessage("✅ Request submitted successfully! Redirecting...");
         setService("");
-        setBookingDate(null);
+        setBookingDate("");
         setBookingTime("");
         setCity("");
         setBarangay("");
@@ -305,6 +337,7 @@ function Booksys() {
           bookingTime: "",
           address: "",
         });
+
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
         setMessage(
@@ -364,29 +397,23 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Date picker */}
+                {/* Date */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Date:</label>
-                  <DatePicker
-                    selected={bookingDate}
-                    onChange={(date: Date | null) => setBookingDate(date)}
-                    filterDate={isDateAvailable}
-                    minDate={today}
+                  <input
+                    type="date"
                     className="form-control booking-input"
-                    placeholderText="Select a date"
-                    dateFormat="yyyy-MM-dd"
-                    dayClassName={(date) => {
-                      if (date < today) return "past-date";
-                      const bookingsForDate = fullyBookedDates.filter((d) =>
-                        isSameDay(d, date)
-                      );
-                      if (bookingsForDate.length >= MAX_BOOKINGS_PER_DAY)
-                        return "booked-date";
-                      return "available-date";
-                    }}
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    min={today}
                   />
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
+                  )}
+                  {dateWarning && (
+                    <small className="text-danger d-block mt-1">
+                      {dateWarning}
+                    </small>
                   )}
                 </div>
 
@@ -404,7 +431,7 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Address Fields */}
+                {/* Address */}
                 <div className="form-group mb-4">
                   <label className="form-label">Region:</label>
                   <input
@@ -468,6 +495,7 @@ function Booksys() {
                   )}
                 </div>
 
+                {/* Notes */}
                 <div className="form-group mb-4">
                   <label className="form-label">Notes:</label>
                   <textarea
@@ -499,6 +527,7 @@ function Booksys() {
                 </div>
               </div>
 
+              {/* Customer Details */}
               <div className="col-md-6 customer-details">
                 <h5 className="details-title">Customer Details:</h5>
                 {user ? (
@@ -524,6 +553,7 @@ function Booksys() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <div className="text-center mt-5">
               <button
                 className="btn book-now-btn"
@@ -537,12 +567,6 @@ function Booksys() {
           </form>
         </div>
       </div>
-
-      <style>{`
-        .available-date { color: green !important; font-weight: bold; }
-        .booked-date { color: red !important; text-decoration: line-through; cursor: not-allowed; }
-        .past-date { color: #aaa; }
-      `}</style>
     </>
   );
 }

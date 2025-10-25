@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import logo from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg-preview.png";
 
 interface User {
@@ -13,21 +15,16 @@ interface User {
 function Booksys() {
   const [user, setUser] = useState<User | null>(null);
   const [service, setService] = useState("");
-  const [bookingDate, setBookingDate] = useState("");
+  const [bookingDate, setBookingDate] = useState<Date | null>(null);
   const [bookingTime, setBookingTime] = useState("");
-
   const [region] = useState("NCR");
   const [city, setCity] = useState("");
   const [barangay, setBarangay] = useState("");
   const [street, setStreet] = useState("");
-
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Messages
-  const [message, setMessage] = useState(""); // below button
-  const [dateWarning, setDateWarning] = useState(""); // fully booked warning
+  const [message, setMessage] = useState("");
 
   const [errors, setErrors] = useState({
     service: "",
@@ -36,8 +33,10 @@ function Booksys() {
     address: "",
   });
 
+  const [fullyBookedDates, setFullyBookedDates] = useState<Date[]>([]);
+
   const navigate = useNavigate();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date();
 
   const ncrData: Record<string, string[]> = {
     Manila: [
@@ -201,40 +200,34 @@ function Booksys() {
     ],
   };
 
+  // Fetch user
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // Live check for fully booked date
+  // Fetch fully booked dates
   useEffect(() => {
-    if (!bookingDate) {
-      setDateWarning("");
-      return;
-    }
-
-    const checkDate = async () => {
+    async function fetchFullyBooked() {
       try {
-        const response = await fetch(
-          `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
+        const res = await fetch(
+          `https://capstone-ni5z.onrender.com/fully-booked-dates`
         );
-        const result = await response.json();
-
-        if (!response.ok || result.fullyBooked) {
-          setDateWarning(
-            "This date is fully booked. Please choose another day."
-          );
-        } else {
-          setDateWarning("");
-        }
+        const data: string[] = await res.json(); // assuming backend returns ["2025-10-25", "2025-10-26", ...]
+        const dates = data.map((d) => new Date(d));
+        setFullyBookedDates(dates);
       } catch (err) {
-        console.error("Error checking fully booked date:", err);
-        setDateWarning("⚠️ Could not verify availability. Try again later.");
+        console.error("Error fetching fully booked dates:", err);
       }
-    };
+    }
+    fetchFullyBooked();
+  }, []);
 
-    checkDate();
-  }, [bookingDate]);
+  const isDateAvailable = (date: Date) => {
+    return !fullyBookedDates.some(
+      (booked) => booked.toDateString() === date.toDateString()
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,7 +238,6 @@ function Booksys() {
       street && barangay && city
         ? `${street}, ${barangay}, ${city}, ${region}`
         : "";
-
     const newErrors = {
       service: service ? "" : "Please select a service.",
       bookingDate: bookingDate ? "" : "Please select a date.",
@@ -259,31 +251,13 @@ function Booksys() {
       return;
     }
 
-    const selectedDate = new Date(bookingDate);
-    const now = new Date();
-    if (selectedDate < new Date(now.toDateString())) {
-      setErrors((prev) => ({
-        ...prev,
-        bookingDate: "You cannot book a past date.",
-      }));
-      setIsSubmitting(false);
-      return;
-    }
-
     if (!user) {
       setMessage("You must be logged in to book a service.");
       setIsSubmitting(false);
       return;
     }
 
-    if (dateWarning) {
-      setIsSubmitting(false);
-      return;
-    }
-
-    const bookingDateTime = new Date(
-      `${bookingDate}T${bookingTime}`
-    ).toISOString();
+    const bookingDateTime = bookingDate.toISOString();
 
     const requestData = {
       user_id: user.id,
@@ -304,27 +278,12 @@ function Booksys() {
           body: JSON.stringify(requestData),
         }
       );
-
       const result = await response.json();
 
       if (response.ok) {
-        try {
-          await fetch("https://capstone-ni5z.onrender.com/notifications", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user_id: user.id,
-              request_id: result.request?.request_id || null,
-              message: `Your booking request for ${service} on ${bookingDate} at ${bookingTime} has been submitted and is awaiting approval.`,
-            }),
-          });
-        } catch (notifError) {
-          console.error("Error creating notification:", notifError);
-        }
-
         setMessage("✅ Request submitted successfully! Redirecting...");
         setService("");
-        setBookingDate("");
+        setBookingDate(null);
         setBookingTime("");
         setCity("");
         setBarangay("");
@@ -337,7 +296,6 @@ function Booksys() {
           bookingTime: "",
           address: "",
         });
-
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
         setMessage(
@@ -375,7 +333,6 @@ function Booksys() {
           <form onSubmit={handleSubmit}>
             <div className="row g-4 booking-form">
               <div className="col-md-6 form-column">
-                {/* Service */}
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
                   <select
@@ -397,27 +354,22 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Date */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Date:</label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    selected={bookingDate}
+                    onChange={(date: Date | null) => setBookingDate(date)}
+                    filterDate={isDateAvailable}
+                    minDate={today}
                     className="form-control booking-input"
-                    value={bookingDate}
-                    onChange={(e) => setBookingDate(e.target.value)}
-                    min={today}
+                    placeholderText="Select a date"
+                    dateFormat="yyyy-MM-dd"
                   />
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
                   )}
-                  {dateWarning && (
-                    <small className="text-danger d-block mt-1">
-                      {dateWarning}
-                    </small>
-                  )}
                 </div>
 
-                {/* Time */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Time:</label>
                   <input
@@ -431,7 +383,6 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Address */}
                 <div className="form-group mb-4">
                   <label className="form-label">Region:</label>
                   <input
@@ -495,7 +446,6 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Notes */}
                 <div className="form-group mb-4">
                   <label className="form-label">Notes:</label>
                   <textarea
@@ -506,7 +456,6 @@ function Booksys() {
                   ></textarea>
                 </div>
 
-                {/* For Assessment */}
                 <div className="form-check mb-4 d-flex align-items-center">
                   <i
                     className="bi bi-question-diamond-fill text-primary ms-1 me-1"
@@ -527,7 +476,6 @@ function Booksys() {
                 </div>
               </div>
 
-              {/* Customer Details */}
               <div className="col-md-6 customer-details">
                 <h5 className="details-title">Customer Details:</h5>
                 {user ? (
@@ -553,7 +501,6 @@ function Booksys() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="text-center mt-5">
               <button
                 className="btn book-now-btn"

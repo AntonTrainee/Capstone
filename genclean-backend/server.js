@@ -919,7 +919,7 @@ app.delete("/reviews/:id", async (req, res) => {
 
 
 // Get all fully booked dates (5 approved)
-app.get("/fully-booked-dates", async (req, res) => {
+app.get("/check-fully-booked", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT DATE(booking_date) AS date

@@ -918,6 +918,22 @@ app.delete("/reviews/:id", async (req, res) => {
 });
 
 
+// Get all fully booked dates (5 approved)
+app.get("/fully-booked-dates", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT DATE(booking_date) AS date
+      FROM incoming_requests
+      WHERE status = 'approved'
+      GROUP BY DATE(booking_date)
+      HAVING COUNT(*) >= 5
+    `);
+    res.json(result.rows.map(r => r.date));
+  } catch (err) {
+    console.error("Error fetching fully booked dates:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 // ================== Start Server ==================

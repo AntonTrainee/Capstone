@@ -35,12 +35,7 @@ function Booksys() {
     address: "",
   });
 
-  // Fully booked dates
-  const [fullyBookedDates, setFullyBookedDates] = useState<string[]>([]);
-
   const navigate = useNavigate();
-
-  // Set min date to today
   const today = new Date().toISOString().split("T")[0];
 
   const ncrData: Record<string, string[]> = {
@@ -133,12 +128,6 @@ function Booksys() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
-
-    // Fetch fully booked dates from backend
-    fetch("https://capstone-ni5z.onrender.com/fully-booked-dates")
-      .then((res) => res.json())
-      .then((data) => setFullyBookedDates(data))
-      .catch((err) => console.error("Error fetching fully booked dates:", err));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,7 +153,6 @@ function Booksys() {
       return;
     }
 
-    // Validate date (no past dates)
     const selectedDate = new Date(bookingDate);
     const now = new Date();
     if (selectedDate < new Date(now.toDateString())) {
@@ -176,18 +164,32 @@ function Booksys() {
       return;
     }
 
-    // ✅ Check if date is fully booked
-    if (fullyBookedDates.includes(bookingDate)) {
-      setErrors((prev) => ({
-        ...prev,
-        bookingDate: "This date is fully booked. Please choose another day.",
-      }));
+    if (!user) {
+      setMessage("You must be logged in to book a service.");
       setIsSubmitting(false);
       return;
     }
 
-    if (!user) {
-      setMessage("You must be logged in to book a service.");
+    // ✅ Check backend if date is fully booked
+    try {
+      const checkResponse = await fetch(
+        `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
+      );
+      const checkResult = await checkResponse.json();
+
+      if (!checkResponse.ok || checkResult.fullyBooked) {
+        setErrors((prev) => ({
+          ...prev,
+          bookingDate: "This date is fully booked. Please choose another day.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking fully booked date:", err);
+      setMessage(
+        "⚠️ Could not verify if date is fully booked. Try again later."
+      );
       setIsSubmitting(false);
       return;
     }
@@ -219,6 +221,7 @@ function Booksys() {
       const result = await response.json();
 
       if (response.ok) {
+        // Notify user
         try {
           await fetch("https://capstone-ni5z.onrender.com/notifications", {
             method: "POST",
@@ -337,7 +340,7 @@ function Booksys() {
                   )}
                 </div>
 
-                {/* Address (Structured) */}
+                {/* Address */}
                 <div className="form-group mb-4">
                   <label className="form-label">Region:</label>
                   <input

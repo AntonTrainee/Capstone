@@ -213,7 +213,7 @@ function Booksys() {
         const res = await fetch(
           `https://capstone-ni5z.onrender.com/fully-booked-dates`
         );
-        const data: string[] = await res.json(); // assuming backend returns ["2025-10-25", "2025-10-26", ...]
+        const data: string[] = await res.json();
         const dates = data.map((d) => new Date(d));
         setFullyBookedDates(dates);
       } catch (err) {
@@ -222,12 +222,6 @@ function Booksys() {
     }
     fetchFullyBooked();
   }, []);
-
-  const isDateAvailable = (date: Date) => {
-    return !fullyBookedDates.some(
-      (booked) => booked.toDateString() === date.toDateString()
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -333,6 +327,7 @@ function Booksys() {
           <form onSubmit={handleSubmit}>
             <div className="row g-4 booking-form">
               <div className="col-md-6 form-column">
+                {/* Service */}
                 <div className="form-group mb-4">
                   <label className="form-label">Service:</label>
                   <select
@@ -354,22 +349,34 @@ function Booksys() {
                   )}
                 </div>
 
+                {/* Date picker */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Date:</label>
                   <DatePicker
                     selected={bookingDate}
                     onChange={(date: Date | null) => setBookingDate(date)}
-                    filterDate={isDateAvailable}
+                    filterDate={(date) =>
+                      !fullyBookedDates.some(
+                        (d) => d.toDateString() === date.toDateString()
+                      )
+                    }
                     minDate={today}
                     className="form-control booking-input"
                     placeholderText="Select a date"
                     dateFormat="yyyy-MM-dd"
+                    dayClassName={(date) => {
+                      const isBooked = fullyBookedDates.some(
+                        (d) => d.toDateString() === date.toDateString()
+                      );
+                      return isBooked ? "booked-date" : "available-date";
+                    }}
                   />
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
                   )}
                 </div>
 
+                {/* Time */}
                 <div className="form-group mb-4">
                   <label className="form-label">Desired Time:</label>
                   <input
@@ -383,6 +390,7 @@ function Booksys() {
                   )}
                 </div>
 
+                {/* Address Fields */}
                 <div className="form-group mb-4">
                   <label className="form-label">Region:</label>
                   <input
@@ -456,6 +464,7 @@ function Booksys() {
                   ></textarea>
                 </div>
 
+                {/* For Assessment */}
                 <div className="form-check mb-4 d-flex align-items-center">
                   <i
                     className="bi bi-question-diamond-fill text-primary ms-1 me-1"
@@ -514,6 +523,20 @@ function Booksys() {
           </form>
         </div>
       </div>
+
+      {/* Inline styles for date colors */}
+      <style>{`
+        .available-date {
+          color: green !important;
+          font-weight: bold;
+        }
+
+        .booked-date {
+          color: red !important;
+          text-decoration: line-through;
+          cursor: not-allowed;
+        }
+      `}</style>
     </>
   );
 }

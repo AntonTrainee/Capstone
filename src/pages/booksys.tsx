@@ -37,6 +37,9 @@ function Booksys() {
 
   const navigate = useNavigate();
 
+  // Set min date to today
+  const today = new Date().toISOString().split("T")[0];
+
   const ncrData: Record<string, string[]> = {
     Manila: [
       "Binondo",
@@ -148,6 +151,18 @@ function Booksys() {
     setErrors(newErrors);
 
     if (!service || !bookingDate || !bookingTime || !address) {
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate date (no past dates)
+    const selectedDate = new Date(bookingDate);
+    const now = new Date();
+    if (selectedDate < new Date(now.toDateString())) {
+      setErrors((prev) => ({
+        ...prev,
+        bookingDate: "You cannot book a past date.",
+      }));
       setIsSubmitting(false);
       return;
     }
@@ -282,6 +297,7 @@ function Booksys() {
                     className="form-control booking-input"
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
+                    min={today}
                   />
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>

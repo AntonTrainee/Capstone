@@ -917,23 +917,29 @@ app.delete("/reviews/:id", async (req, res) => {
   }
 });
 
+app.get("/check-fully-booked", async (req, res) => {
+  const { date } = req.query;
 
-// Get all fully booked dates (5 approved)
-app.get("/fully-booked-dates", async (req, res) => {
+  if (!date) return res.status(400).json({ message: "Date is required" });
+
   try {
-    const result = await pool.query(`
-      SELECT DATE(booking_date) AS date
-      FROM incoming_requests
-      WHERE status = 'approved'
-      GROUP BY DATE(booking_date)
-      HAVING COUNT(*) >= 5
-    `);
-    res.json(result.rows.map(r => r.date));
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM bookings WHERE DATE(booking_date) = $1`,
+      [date]
+    );
+
+    const count = parseInt(result.rows[0].count, 10);
+
+    // Example: Max 5 bookings per day
+    const fullyBooked = count >= 5;
+
+    res.json({ fullyBooked });
   } catch (err) {
-    console.error("Error fetching fully booked dates:", err);
+    console.error("Error checking fully booked:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 // ================== Start Server ==================

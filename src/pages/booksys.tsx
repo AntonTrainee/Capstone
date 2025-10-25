@@ -16,7 +16,6 @@ function Booksys() {
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
 
-  // Address fields
   const [region] = useState("NCR");
   const [city, setCity] = useState("");
   const [barangay, setBarangay] = useState("");
@@ -25,9 +24,11 @@ function Booksys() {
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
 
-  // Validation reminders
+  // Messages
+  const [message, setMessage] = useState(""); // below button
+  const [dateWarning, setDateWarning] = useState(""); // fully booked warning
+
   const [errors, setErrors] = useState({
     service: "",
     bookingDate: "",
@@ -50,27 +51,112 @@ function Booksys() {
       "Tondo",
     ],
     Makati: [
+      "Bangkal",
       "Bel-Air",
-      "San Lorenzo",
-      "Poblacion",
+      "Carmona",
+      "Cembo",
+      "Comembo",
+      "Dasmariñas",
+      "East Rembo",
+      "Forbes Park",
+      "Guadalupe Nuevo",
       "Guadalupe Viejo",
+      "Kasilawan",
+      "La Paz",
+      "Magallanes",
+      "Olympia",
+      "Palanan",
+      "Pembo",
+      "Pinagkaisahan",
+      "Pio del Pilar",
+      "Pitogo",
+      "Poblacion",
+      "Rizal",
+      "San Antonio",
+      "San Isidro",
+      "San Lorenzo",
+      "Santa Cruz",
+      "Singkamas",
+      "South Cembo",
+      "Tejeros",
       "Urdaneta",
+      "Valenzuela",
+      "West Rembo",
     ],
-    "Quezon City": [
-      "Bagong Pag-asa",
-      "Commonwealth",
-      "Fairview",
-      "Batasan Hills",
-      "Diliman",
-    ],
+
     Taguig: [
-      "Fort Bonifacio",
-      "Western Bicutan",
-      "Central Signal Village",
-      "Lower Bicutan",
       "Bagumbayan",
+      "Bambang",
+      "Calzada-Tipas",
+      "Comembo",
+      "Cembo",
+      "Central Bicutan",
+      "Central Signal Village",
+      "East Rembo",
+      "Fort Bonifacio",
+      "Hagonoy",
+      "Ibayo-Tipas",
+      "Katuparan",
+      "Ligid-Tipas",
+      "Lower Bicutan",
+      "Maharlika Village",
+      "Napindan",
+      "New Lower Bicutan",
+      "North Daang Hari",
+      "North Signal Village",
+      "Palingon-Tipas",
+      "Pembo",
+      "Pinagsama",
+      "Pitogo",
+      "Post Proper Northside",
+      "Post Proper Southside",
+      "Rizal",
+      "San Miguel",
+      "Santa Ana",
+      "South Cembo",
+      "South Daang Hari",
+      "South Signal Village",
+      "Tanyag",
+      "Tuktukan",
+      "Upper Bicutan",
+      "Ususan",
+      "Wawa",
+      "Western Bicutan",
     ],
-    Pasig: ["Bagong Ilog", "Manggahan", "Rosario", "Santolan", "Ugong"],
+
+    Pasig: [
+      "Bagong Ilog",
+      "Bagong Katipunan",
+      "Bambang",
+      "Buting",
+      "Caniogan",
+      "Dela Paz",
+      "Kalawaan",
+      "Kapasigan",
+      "Kapitolyo",
+      "Malinao",
+      "Manggahan",
+      "Maybunga",
+      "Oranbo",
+      "Palatiw",
+      "Pinagbuhatan",
+      "Pineda",
+      "Rosario",
+      "Sagad",
+      "San Antonio",
+      "San Joaquin",
+      "San Jose",
+      "San Miguel",
+      "San Nicolas",
+      "Santa Cruz",
+      "Santa Lucia",
+      "Santa Rosa",
+      "Santo Tomas",
+      "Santolan",
+      "Sumilang",
+      "Ugong",
+    ],
+
     Parañaque: [
       "BF Homes",
       "Don Bosco",
@@ -100,13 +186,6 @@ function Booksys() {
       "Tañong",
     ],
     Muntinlupa: ["Alabang", "Bayanan", "Cupang", "Poblacion", "Putatan"],
-    Pasay: [
-      "Barangay 1",
-      "Barangay 24",
-      "Barangay 47",
-      "Barangay 56",
-      "Barangay 73",
-    ],
     Caloocan: ["Bagong Barrio", "Grace Park", "Maypajo", "Sangandaan", "Tala"],
     Malabon: ["Catmon", "Dampalit", "Muzon", "Tonsuya", "Tinajeros"],
     Navotas: [
@@ -134,6 +213,7 @@ function Booksys() {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
+    setDateWarning("");
 
     const address =
       street && barangay && city
@@ -170,7 +250,7 @@ function Booksys() {
       return;
     }
 
-    // ✅ Check backend if date is fully booked
+    // Check if date is fully booked
     try {
       const checkResponse = await fetch(
         `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
@@ -178,10 +258,7 @@ function Booksys() {
       const checkResult = await checkResponse.json();
 
       if (!checkResponse.ok || checkResult.fullyBooked) {
-        setErrors((prev) => ({
-          ...prev,
-          bookingDate: "This date is fully booked. Please choose another day.",
-        }));
+        setDateWarning("This date is fully booked. Please choose another day.");
         setIsSubmitting(false);
         return;
       }
@@ -221,7 +298,6 @@ function Booksys() {
       const result = await response.json();
 
       if (response.ok) {
-        // Notify user
         try {
           await fetch("https://capstone-ni5z.onrender.com/notifications", {
             method: "POST",
@@ -323,6 +399,11 @@ function Booksys() {
                   />
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
+                  )}
+                  {dateWarning && (
+                    <small className="text-danger d-block mt-1">
+                      {dateWarning}
+                    </small>
                   )}
                 </div>
 
@@ -471,10 +552,10 @@ function Booksys() {
               >
                 {isSubmitting ? "Submitting..." : "Book Now!"}
               </button>
+              {/* General warning below button */}
+              {message && <p className="mt-2 text-warning">{message}</p>}
             </div>
           </form>
-
-          {message && <div className="mt-3 text-center">{message}</div>}
         </div>
       </div>
     </>

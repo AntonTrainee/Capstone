@@ -83,7 +83,6 @@ function Booksys() {
       "Valenzuela",
       "West Rembo",
     ],
-
     Taguig: [
       "Bagumbayan",
       "Bambang",
@@ -123,7 +122,6 @@ function Booksys() {
       "Wawa",
       "Western Bicutan",
     ],
-
     Pasig: [
       "Bagong Ilog",
       "Bagong Katipunan",
@@ -156,7 +154,6 @@ function Booksys() {
       "Sumilang",
       "Ugong",
     ],
-
     Parañaque: [
       "BF Homes",
       "Don Bosco",
@@ -209,11 +206,40 @@ function Booksys() {
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
+  // Live check for fully booked date
+  useEffect(() => {
+    if (!bookingDate) {
+      setDateWarning("");
+      return;
+    }
+
+    const checkDate = async () => {
+      try {
+        const response = await fetch(
+          `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
+        );
+        const result = await response.json();
+
+        if (!response.ok || result.fullyBooked) {
+          setDateWarning(
+            "This date is fully booked. Please choose another day."
+          );
+        } else {
+          setDateWarning("");
+        }
+      } catch (err) {
+        console.error("Error checking fully booked date:", err);
+        setDateWarning("⚠️ Could not verify availability. Try again later.");
+      }
+    };
+
+    checkDate();
+  }, [bookingDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage("");
-    setDateWarning("");
 
     const address =
       street && barangay && city
@@ -250,23 +276,7 @@ function Booksys() {
       return;
     }
 
-    // Check if date is fully booked
-    try {
-      const checkResponse = await fetch(
-        `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
-      );
-      const checkResult = await checkResponse.json();
-
-      if (!checkResponse.ok || checkResult.fullyBooked) {
-        setDateWarning("This date is fully booked. Please choose another day.");
-        setIsSubmitting(false);
-        return;
-      }
-    } catch (err) {
-      console.error("Error checking fully booked date:", err);
-      setMessage(
-        "⚠️ Could not verify if date is fully booked. Try again later."
-      );
+    if (dateWarning) {
       setIsSubmitting(false);
       return;
     }
@@ -552,7 +562,6 @@ function Booksys() {
               >
                 {isSubmitting ? "Submitting..." : "Book Now!"}
               </button>
-              {/* General warning below button */}
               {message && <p className="mt-2 text-warning">{message}</p>}
             </div>
           </form>

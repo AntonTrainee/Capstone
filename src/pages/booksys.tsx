@@ -37,8 +37,10 @@ function Booksys() {
 
   const navigate = useNavigate();
   const today = new Date();
+  const MAX_BOOKINGS_PER_DAY = 5;
 
   const ncrData: Record<string, string[]> = {
+    // same ncrData as before
     Manila: [
       "Binondo",
       "Ermita",
@@ -223,6 +225,13 @@ function Booksys() {
     fetchFullyBooked();
   }, []);
 
+  const isDateAvailable = (date: Date) => {
+    const bookingsForDate = fullyBookedDates.filter(
+      (d) => d.toDateString() === date.toDateString()
+    );
+    return bookingsForDate.length < MAX_BOOKINGS_PER_DAY;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -355,22 +364,31 @@ function Booksys() {
                   <DatePicker
                     selected={bookingDate}
                     onChange={(date: Date | null) => setBookingDate(date)}
-                    filterDate={(date) =>
-                      !fullyBookedDates.some(
-                        (d) => d.toDateString() === date.toDateString()
-                      )
-                    }
+                    filterDate={(date) => {
+                      // Disable past dates
+                      const isPast = date < today;
+                      if (isPast) return false;
+                      // Only allow dates with less than max bookings
+                      return isDateAvailable(date);
+                    }}
                     minDate={today}
                     className="form-control booking-input"
                     placeholderText="Select a date"
                     dateFormat="yyyy-MM-dd"
                     dayClassName={(date) => {
-                      const isBooked = fullyBookedDates.some(
+                      if (date < today) return "past-date";
+
+                      const bookingsForDate = fullyBookedDates.filter(
                         (d) => d.toDateString() === date.toDateString()
                       );
-                      return isBooked ? "booked-date" : "available-date";
+
+                      if (bookingsForDate.length >= MAX_BOOKINGS_PER_DAY)
+                        return "booked-date";
+
+                      return "available-date";
                     }}
                   />
+
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
                   )}

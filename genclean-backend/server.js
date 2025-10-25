@@ -928,13 +928,15 @@ app.get("/fully-booked-dates", async (req, res) => {
       GROUP BY DATE(booking_date)
       HAVING COUNT(*) >= 5
     `);
-    res.json(result.rows.map(r => r.date));
+    // Return as yyyy-mm-dd strings
+    res.json(result.rows.map(r => r.date.toISOString().split("T")[0]));
   } catch (err) {
     console.error("Error fetching fully booked dates:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
+// Check if a specific date is fully booked
 app.get("/check-fully-booked", async (req, res) => {
   const { date } = req.query;
 
@@ -942,13 +944,13 @@ app.get("/check-fully-booked", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT COUNT(*) FROM bookings WHERE DATE(booking_date) = $1`,
+      `SELECT COUNT(*) FROM incoming_requests WHERE DATE(booking_date) = $1 AND status = 'approved'`,
       [date]
     );
 
     const count = parseInt(result.rows[0].count, 10);
 
-    // Example: Max 5 bookings per day
+    // Max 5 bookings per day
     const fullyBooked = count >= 5;
 
     res.json({ fullyBooked });
@@ -957,6 +959,7 @@ app.get("/check-fully-booked", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 // ================== Start Server ==================

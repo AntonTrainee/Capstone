@@ -766,6 +766,13 @@ tr:nth-child(even) {
   z-index: 1050;
 }
 
+.past-date {
+  color: gray !important;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+
 .logout-modal {
   background: white;
   padding: 20px;

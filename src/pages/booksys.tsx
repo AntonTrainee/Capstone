@@ -215,7 +215,10 @@ function Booksys() {
           `https://capstone-ni5z.onrender.com/fully-booked-dates`
         );
         const data: string[] = await res.json();
-        const dates = data.map((d) => new Date(d));
+        const dates = data.map((d) => {
+          const [year, month, day] = d.split("-").map(Number);
+          return new Date(year, month - 1, day); // month is 0-based
+        });
         setFullyBookedDates(dates);
       } catch (err) {
         console.error("Error fetching fully booked dates:", err);

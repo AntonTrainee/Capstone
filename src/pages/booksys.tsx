@@ -216,18 +216,8 @@ function Booksys() {
     const checkDate = async () => {
       try {
         const response = await fetch(
-          `https://capstone-ni5z.onrender.com/fully-booked-dates`
+          `https://capstone-ni5z.onrender.com/check-fully-booked?date=${bookingDate}`
         );
-        const fullyBookedDates: string[] = await response.json();
-
-        if (fullyBookedDates.includes(bookingDate)) {
-          setDateWarning(
-            "This date is fully booked. Please choose another day."
-          );
-        } else {
-          setDateWarning("");
-        }
-
         const result = await response.json();
 
         if (!response.ok || result.fullyBooked) {

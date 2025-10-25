@@ -928,38 +928,12 @@ app.get("/fully-booked-dates", async (req, res) => {
       GROUP BY DATE(booking_date)
       HAVING COUNT(*) >= 5
     `);
-    // Return as yyyy-mm-dd strings
-    res.json(result.rows.map(r => r.date.toISOString().split("T")[0]));
+    res.json(result.rows.map(r => r.date));
   } catch (err) {
     console.error("Error fetching fully booked dates:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
-
-// Check if a specific date is fully booked
-app.get("/check-fully-booked", async (req, res) => {
-  const { date } = req.query;
-
-  if (!date) return res.status(400).json({ message: "Date is required" });
-
-  try {
-    const result = await pool.query(
-      `SELECT COUNT(*) FROM incoming_requests WHERE DATE(booking_date) = $1 AND status = 'approved'`,
-      [date]
-    );
-
-    const count = parseInt(result.rows[0].count, 10);
-
-    // Max 5 bookings per day
-    const fullyBooked = count >= 5;
-
-    res.json({ fullyBooked });
-  } catch (err) {
-    console.error("Error checking fully booked:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 
 
 // ================== Start Server ==================

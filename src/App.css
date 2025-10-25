@@ -772,15 +772,6 @@ tr:nth-child(even) {
   cursor: not-allowed;
 }
 
-.available-date {
-  color: green;
-}
-
-.booked-date {
-  color: red;
-  font-weight: bold;
-}
-
 
 .logout-modal {
   background: white;

@@ -40,7 +40,6 @@ function Booksys() {
   const MAX_BOOKINGS_PER_DAY = 5;
 
   const ncrData: Record<string, string[]> = {
-    // same ncrData as before
     Manila: [
       "Binondo",
       "Ermita",
@@ -225,10 +224,14 @@ function Booksys() {
     fetchFullyBooked();
   }, []);
 
+  // Timezone-safe comparison
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
   const isDateAvailable = (date: Date) => {
-    const bookingsForDate = fullyBookedDates.filter(
-      (d) => d.toDateString() === date.toDateString()
-    );
+    const bookingsForDate = fullyBookedDates.filter((d) => isSameDay(d, date));
     return bookingsForDate.length < MAX_BOOKINGS_PER_DAY;
   };
 
@@ -364,31 +367,21 @@ function Booksys() {
                   <DatePicker
                     selected={bookingDate}
                     onChange={(date: Date | null) => setBookingDate(date)}
-                    filterDate={(date) => {
-                      // Disable past dates
-                      const isPast = date < today;
-                      if (isPast) return false;
-                      // Only allow dates with less than max bookings
-                      return isDateAvailable(date);
-                    }}
+                    filterDate={isDateAvailable}
                     minDate={today}
                     className="form-control booking-input"
                     placeholderText="Select a date"
                     dateFormat="yyyy-MM-dd"
                     dayClassName={(date) => {
                       if (date < today) return "past-date";
-
-                      const bookingsForDate = fullyBookedDates.filter(
-                        (d) => d.toDateString() === date.toDateString()
+                      const bookingsForDate = fullyBookedDates.filter((d) =>
+                        isSameDay(d, date)
                       );
-
                       if (bookingsForDate.length >= MAX_BOOKINGS_PER_DAY)
                         return "booked-date";
-
                       return "available-date";
                     }}
                   />
-
                   {errors.bookingDate && (
                     <small className="text-danger">{errors.bookingDate}</small>
                   )}
@@ -542,18 +535,10 @@ function Booksys() {
         </div>
       </div>
 
-      {/* Inline styles for date colors */}
       <style>{`
-        .available-date {
-          color: green !important;
-          font-weight: bold;
-        }
-
-        .booked-date {
-          color: red !important;
-          text-decoration: line-through;
-          cursor: not-allowed;
-        }
+        .available-date { color: green !important; font-weight: bold; }
+        .booked-date { color: red !important; text-decoration: line-through; cursor: not-allowed; }
+        .past-date { color: #aaa; }
       `}</style>
     </>
   );

@@ -15,7 +15,13 @@ function Booksys() {
   const [service, setService] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [bookingTime, setBookingTime] = useState("");
-  const [address, setAddress] = useState("");
+
+  // Address fields
+  const [region] = useState("NCR");
+  const [city, setCity] = useState("");
+  const [barangay, setBarangay] = useState("");
+  const [street, setStreet] = useState("");
+
   const [notes, setNotes] = useState("");
   const [forAssessment, setForAssessment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +37,93 @@ function Booksys() {
 
   const navigate = useNavigate();
 
+  const ncrData: Record<string, string[]> = {
+    Manila: [
+      "Binondo",
+      "Ermita",
+      "Malate",
+      "Paco",
+      "Pandacan",
+      "Sampaloc",
+      "Santa Cruz",
+      "Tondo",
+    ],
+    Makati: [
+      "Bel-Air",
+      "San Lorenzo",
+      "Poblacion",
+      "Guadalupe Viejo",
+      "Urdaneta",
+    ],
+    "Quezon City": [
+      "Bagong Pag-asa",
+      "Commonwealth",
+      "Fairview",
+      "Batasan Hills",
+      "Diliman",
+    ],
+    Taguig: [
+      "Fort Bonifacio",
+      "Western Bicutan",
+      "Central Signal Village",
+      "Lower Bicutan",
+      "Bagumbayan",
+    ],
+    Pasig: ["Bagong Ilog", "Manggahan", "Rosario", "Santolan", "Ugong"],
+    Parañaque: [
+      "BF Homes",
+      "Don Bosco",
+      "San Antonio",
+      "San Dionisio",
+      "Tambo",
+    ],
+    "Las Piñas": [
+      "Almanza Uno",
+      "Pamplona Tres",
+      "Pulang Lupa Uno",
+      "Zapote",
+      "Talon Dos",
+    ],
+    Mandaluyong: [
+      "Addition Hills",
+      "Barangka Drive",
+      "Burol",
+      "Mauway",
+      "Plainview",
+    ],
+    Marikina: [
+      "Barangka",
+      "Concepcion Uno",
+      "Industrial Valley",
+      "Parang",
+      "Tañong",
+    ],
+    Muntinlupa: ["Alabang", "Bayanan", "Cupang", "Poblacion", "Putatan"],
+    Pasay: [
+      "Barangay 1",
+      "Barangay 24",
+      "Barangay 47",
+      "Barangay 56",
+      "Barangay 73",
+    ],
+    Caloocan: ["Bagong Barrio", "Grace Park", "Maypajo", "Sangandaan", "Tala"],
+    Malabon: ["Catmon", "Dampalit", "Muzon", "Tonsuya", "Tinajeros"],
+    Navotas: [
+      "Daanghari",
+      "North Bay Boulevard North",
+      "San Jose",
+      "San Rafael Village",
+      "Sipac-Almacen",
+    ],
+    Valenzuela: [
+      "Bagbaguin",
+      "Balangkas",
+      "Canumay East",
+      "Karuhatan",
+      "Marulas",
+    ],
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -41,16 +134,19 @@ function Booksys() {
     setIsSubmitting(true);
     setMessage("");
 
-    // Reset and validate
+    const address =
+      street && barangay && city
+        ? `${street}, ${barangay}, ${city}, ${region}`
+        : "";
+
     const newErrors = {
       service: service ? "" : "Please select a service.",
       bookingDate: bookingDate ? "" : "Please select a date.",
       bookingTime: bookingTime ? "" : "Please select a time.",
-      address: address ? "" : "Please enter an address.",
+      address: address ? "" : "Please complete the address.",
     };
     setErrors(newErrors);
 
-    // Stop submit if any field empty
     if (!service || !bookingDate || !bookingTime || !address) {
       setIsSubmitting(false);
       return;
@@ -62,7 +158,9 @@ function Booksys() {
       return;
     }
 
-    const bookingDateTime = new Date(`${bookingDate}T${bookingTime}`).toISOString();
+    const bookingDateTime = new Date(
+      `${bookingDate}T${bookingTime}`
+    ).toISOString();
 
     const requestData = {
       user_id: user.id,
@@ -75,11 +173,14 @@ function Booksys() {
     };
 
     try {
-      const response = await fetch("https://capstone-ni5z.onrender.com/incoming-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestData),
-      });
+      const response = await fetch(
+        "https://capstone-ni5z.onrender.com/incoming-requests",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        }
+      );
 
       const result = await response.json();
 
@@ -102,18 +203,29 @@ function Booksys() {
         setService("");
         setBookingDate("");
         setBookingTime("");
-        setAddress("");
+        setCity("");
+        setBarangay("");
+        setStreet("");
         setNotes("");
         setForAssessment(false);
-        setErrors({ service: "", bookingDate: "", bookingTime: "", address: "" });
+        setErrors({
+          service: "",
+          bookingDate: "",
+          bookingTime: "",
+          address: "",
+        });
 
         setTimeout(() => navigate("/customerdashb"), 2000);
       } else {
-        setMessage(result.message || "❌ Failed to submit request. Please try again.");
+        setMessage(
+          result.message || "❌ Failed to submit request. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error submitting request:", error);
-      setMessage("⚠️ An unexpected error occurred while submitting your request.");
+      setMessage(
+        "⚠️ An unexpected error occurred while submitting your request."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +236,12 @@ function Booksys() {
       <nav className="navbar navbar-expand-lg my-navbar sticky-top">
         <div className="container-fluid">
           <Link className="navbar-brand d-flex align-items-center" to="/">
-            <img src={logo} alt="Gemini Logo" className="img-fluid" style={{ maxHeight: "60px" }} />
+            <img
+              src={logo}
+              alt="Gemini Logo"
+              className="img-fluid"
+              style={{ maxHeight: "60px" }}
+            />
           </Link>
         </div>
       </nav>
@@ -144,11 +261,17 @@ function Booksys() {
                     onChange={(e) => setService(e.target.value)}
                   >
                     <option value="">Select a service</option>
-                    <option value="General Maintenance">General Maintenance</option>
-                    <option value="Janitorial and Cleaning Services">Janitorial and Cleaning Services</option>
+                    <option value="General Maintenance">
+                      General Maintenance
+                    </option>
+                    <option value="Janitorial and Cleaning Services">
+                      Janitorial and Cleaning Services
+                    </option>
                     <option value="Pest Control">Pest Control</option>
                   </select>
-                  {errors.service && <small className="text-danger">{errors.service}</small>}
+                  {errors.service && (
+                    <small className="text-danger">{errors.service}</small>
+                  )}
                 </div>
 
                 {/* Date */}
@@ -160,7 +283,9 @@ function Booksys() {
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
                   />
-                  {errors.bookingDate && <small className="text-danger">{errors.bookingDate}</small>}
+                  {errors.bookingDate && (
+                    <small className="text-danger">{errors.bookingDate}</small>
+                  )}
                 </div>
 
                 {/* Time */}
@@ -172,19 +297,73 @@ function Booksys() {
                     value={bookingTime}
                     onChange={(e) => setBookingTime(e.target.value)}
                   />
-                  {errors.bookingTime && <small className="text-danger">{errors.bookingTime}</small>}
+                  {errors.bookingTime && (
+                    <small className="text-danger">{errors.bookingTime}</small>
+                  )}
                 </div>
 
-                {/* Address */}
+                {/* Address (Structured) */}
                 <div className="form-group mb-4">
-                  <label className="form-label">Address:</label>
-                  <textarea
+                  <label className="form-label">Region:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={region}
+                    readOnly
+                  />
+                </div>
+
+                <div className="form-group mb-4">
+                  <label className="form-label">City:</label>
+                  <select
+                    className="form-select booking-input"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      setBarangay("");
+                    }}
+                  >
+                    <option value="">Select City</option>
+                    {Object.keys(ncrData).map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group mb-4">
+                  <label className="form-label">Municipality / Barangay:</label>
+                  <select
+                    className="form-select booking-input"
+                    value={barangay}
+                    onChange={(e) => setBarangay(e.target.value)}
+                    disabled={!city}
+                  >
+                    <option value="">
+                      {city ? "Select Barangay" : "Select a city first"}
+                    </option>
+                    {city &&
+                      ncrData[city].map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="form-group mb-4">
+                  <label className="form-label">Street / Unit Number:</label>
+                  <input
+                    type="text"
                     className="form-control booking-input"
-                    rows={2}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                  ></textarea>
-                  {errors.address && <small className="text-danger">{errors.address}</small>}
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    placeholder="e.g. Blk 12 Lot 4, Phase 3"
+                  />
+                  {errors.address && (
+                    <small className="text-danger">{errors.address}</small>
+                  )}
                 </div>
 
                 {/* Notes */}
@@ -200,7 +379,16 @@ function Booksys() {
 
                 {/* For Assessment */}
                 <div className="form-check mb-4 d-flex align-items-center">
-                  <label className="form-check-label">For Assessment:</label>
+                  <i
+                    className="bi bi-question-diamond-fill text-primary ms-1 me-1"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                    title="Selecting this means our team will first assess your location or service area before giving a final quotation."
+                    style={{ cursor: "pointer", fontSize: "1rem" }}
+                  ></i>
+                  <label className="form-check-label me-2">
+                    For Assessment:
+                  </label>
                   <input
                     type="checkbox"
                     className="form-check-input ms-2"
@@ -238,7 +426,11 @@ function Booksys() {
 
             {/* Submit Button */}
             <div className="text-center mt-5">
-              <button className="btn book-now-btn" type="submit" disabled={isSubmitting}>
+              <button
+                className="btn book-now-btn"
+                type="submit"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Submitting..." : "Book Now!"}
               </button>
             </div>

@@ -336,7 +336,7 @@ function Home() {
               <p style={{ color: "#2a4d57ff" }}>
                 Unit 114, 2nd Floor, Corinthian Executive Regency,
                 <br />
-                Ortigas Ave., San Antonio, Pasig City
+                Guadalupe Ave., San Antonio, Pasig City
               </p>
             </div>
           </div>

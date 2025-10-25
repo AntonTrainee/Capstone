@@ -35,6 +35,9 @@ function Booksys() {
     address: "",
   });
 
+  // Fully booked dates
+  const [fullyBookedDates, setFullyBookedDates] = useState<string[]>([]);
+
   const navigate = useNavigate();
 
   // Set min date to today
@@ -130,6 +133,12 @@ function Booksys() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
+
+    // Fetch fully booked dates from backend
+    fetch("https://capstone-ni5z.onrender.com/fully-booked-dates")
+      .then((res) => res.json())
+      .then((data) => setFullyBookedDates(data))
+      .catch((err) => console.error("Error fetching fully booked dates:", err));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +171,16 @@ function Booksys() {
       setErrors((prev) => ({
         ...prev,
         bookingDate: "You cannot book a past date.",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+
+    // ✅ Check if date is fully booked
+    if (fullyBookedDates.includes(bookingDate)) {
+      setErrors((prev) => ({
+        ...prev,
+        bookingDate: "This date is fully booked. Please choose another day.",
       }));
       setIsSubmitting(false);
       return;

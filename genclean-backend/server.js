@@ -82,42 +82,40 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ================== LOGIN (AUTO-DETECT ROLE) ==================
+// ================== LOGIN (CHECK BOTH TABLES FULLY) ==================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1️⃣ Check Admins table first
+    // 1️⃣ Try Admins first, but only count as valid if password matches
     const adminResult = await pool.query(`SELECT * FROM "Admins" WHERE email = $1`, [email]);
 
     if (adminResult.rows.length > 0) {
       const admin = adminResult.rows[0];
       const isAdminMatch = await bcrypt.compare(password, admin.password_hash);
 
-      if (!isAdminMatch) {
-        return res.status(400).json({ message: "Invalid password" });
+      if (isAdminMatch) {
+        const token = jwt.sign(
+          { id: admin.id, email: admin.email, role: "admin" },
+          process.env.JWT_SECRET || "yoursecret",
+          { expiresIn: "1h" }
+        );
+
+        return res.status(200).json({
+          message: "Admin login successful",
+          token,
+          role: "admin",
+          redirect: "/admindashb",
+          user: {
+            id: admin.id,
+            email: admin.email,
+            username: admin.user_name,
+          },
+        });
       }
-
-      const token = jwt.sign(
-        { id: admin.id, email: admin.email, role: "admin" },
-        process.env.JWT_SECRET || "yoursecret",
-        { expiresIn: "1h" }
-      );
-
-      return res.status(200).json({
-        message: "Admin login successful",
-        token,
-        role: "admin",
-        redirect: "/admindashb",
-        user: {
-          id: admin.id,
-          email: admin.email,
-          username: admin.user_name,
-        },
-      });
     }
 
-    // 2️⃣ If not admin, check Users table
+    // 2️⃣ If not a valid admin, check Users table
     const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: "Account not found" });

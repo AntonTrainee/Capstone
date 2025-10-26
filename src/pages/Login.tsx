@@ -5,6 +5,8 @@ import Genclean from "../assets/Gemini_Generated_Image_bmrzg0bmrzg0bmrz-removebg
 interface LoginResponse {
   message?: string;
   token?: string;
+  role?: string;
+  redirect?: string;
   user?: {
     id: number;
     email: string;
@@ -18,54 +20,44 @@ interface LoginResponse {
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("customer"); // "customer" or "admin"
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  console.log("Selected role before request:", role); // ✅ check this
+    e.preventDefault();
 
-  try {
-    const endpoint =
-      role === "admin"
-        ? "https://capstone-ni5z.onrender.com/admin-login"
-        : "https://capstone-ni5z.onrender.com/login";
+    try {
+      const res = await fetch("https://capstone-ni5z.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+      const data: LoginResponse = await res.json();
 
-    const data: LoginResponse = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Login failed.");
+        return;
+      }
 
-    if (!res.ok) {
-      setMessage(data.message || "Login failed.");
-      return;
+      // Save token and user info
+      if (data.token && data.user) {
+        localStorage.setItem("auth_token", data.token);
+        localStorage.setItem("user", JSON.stringify({ ...data.user, role: data.role }));
+      }
+
+      // Redirect user based on role
+      if (data.redirect) {
+        navigate(data.redirect);
+      } else {
+        navigate("/customerdashb");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("Unexpected error. Please try again.");
     }
-
-    // Save token and user info
-    if (data.token && data.user) {
-      const userWithRole = { ...data.user, role };
-      console.log("Saving user data:", userWithRole); // ✅ check this
-      localStorage.setItem("auth_token", data.token);
-      localStorage.setItem("user", JSON.stringify(userWithRole));
-    }
-
-    // Redirect based on role
-    if (role === "admin") {
-      navigate("/admindashb");
-    } else {
-      navigate("/customerdashb");
-    }
-  } catch (err) {
-    console.error(err);
-    setMessage("Unexpected error. Please try again.");
-  }
-};
-
+  };
 
   return (
     <div className="colorscheme">
@@ -127,29 +119,6 @@ function Login() {
               Forgot Password?
             </a>
           </p>
-
-          <div className="mb-3 text-center">
-            <label className="me-3">
-              <input
-                type="radio"
-                value="customer"
-                checked={role === "customer"}
-                onChange={() => setRole("customer")}
-                className="me-1"
-              />
-              Customer
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="admin"
-                checked={role === "admin"}
-                onChange={() => setRole("admin")}
-                className="me-1"
-              />
-              Admin
-            </label>
-          </div>
 
           <button type="submit" className="btn crAct-btn mx-auto d-block">
             Login

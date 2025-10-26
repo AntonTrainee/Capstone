@@ -82,19 +82,52 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ================== LOGIN ==================
+// ================== LOGIN (AUTO-DETECT ROLE) ==================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "User not found" });
+    // 1️⃣ Check Admins table first
+    const adminResult = await pool.query(`SELECT * FROM "Admins" WHERE email = $1`, [email]);
+
+    if (adminResult.rows.length > 0) {
+      const admin = adminResult.rows[0];
+      const isAdminMatch = await bcrypt.compare(password, admin.password_hash);
+
+      if (!isAdminMatch) {
+        return res.status(400).json({ message: "Invalid password" });
+      }
+
+      const token = jwt.sign(
+        { id: admin.id, email: admin.email, role: "admin" },
+        process.env.JWT_SECRET || "yoursecret",
+        { expiresIn: "1h" }
+      );
+
+      return res.status(200).json({
+        message: "Admin login successful",
+        token,
+        role: "admin",
+        redirect: "/admindashb",
+        user: {
+          id: admin.id,
+          email: admin.email,
+          username: admin.user_name,
+        },
+      });
     }
 
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+    // 2️⃣ If not admin, check Users table
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: "Account not found" });
+    }
+
+    const user = userResult.rows[0];
+    const isUserMatch = await bcrypt.compare(password, user.password);
+    if (!isUserMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
 
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email, role: "customer" },
@@ -102,9 +135,11 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(200).json({
-      message: "Login successful",
+    return res.status(200).json({
+      message: "Customer login successful",
       token,
+      role: "customer",
+      redirect: "/customerdashb",
       user: {
         id: user.user_id,
         email: user.email,
@@ -118,6 +153,8 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
 
 // ================== PASSWORD RESET ==================
 app.post("/forgot-password", async (req, res) => {

@@ -9,13 +9,21 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const fs = require("fs");
 const { Pool } = require("pg");
-const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase added
+const { createClient } = require("@supabase/supabase-js");
 
+// ✅ NEW: Add HTTP + Socket.IO for realtime updates
+const http = require("http");
+const { Server } = require("socket.io");
 
 // OTP Controller
 const { sendOTP, verifyOTP } = require("./otpController.js");
 
 const app = express();
+const server = http.createServer(app); // wrap express
+const io = new Server(server, {
+  cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] },
+});
+
 const PORT = process.env.PORT || 3007;
 
 // ================== Middleware ==================
@@ -278,6 +286,49 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ✅ NEW: Realtime listener for bookings and history
+const setupRealtime = () => {
+  console.log("🔁 Subscribing to Supabase realtime changes...");
+
+  const bookingsChannel = supabase
+    .channel("bookings-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bookings" },
+      (payload) => {
+        console.log("📢 Realtime: bookings changed", payload);
+        io.emit("bookings_update", payload);
+      }
+    )
+    .subscribe();
+
+  const historyChannel = supabase
+    .channel("history-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "history" },
+      (payload) => {
+        console.log("📢 Realtime: history changed", payload);
+        io.emit("history_update", payload);
+      }
+    )
+    .subscribe();
+
+  // cleanup if process stops
+  process.on("SIGINT", async () => {
+    await supabase.removeChannel(bookingsChannel);
+    await supabase.removeChannel(historyChannel);
+    process.exit();
+  });
+};
+setupRealtime();
+
+// ✅ When a client connects to Socket.IO
+io.on("connection", (socket) => {
+  console.log("⚡ Client connected:", socket.id);
+  socket.on("disconnect", () => console.log("❌ Client disconnected:", socket.id));
+});
 
 app.post(
   "/beforeafter",
@@ -978,7 +1029,7 @@ app.get("/check-fully-booked", async (req, res) => {
 
 
 // ================== Start Server ==================
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);
   console.log("Loaded email pass:", process.env.EMAIL_PASS ? "✅ exists" : "❌ missing");
   console.log(`🚀 Server running on http://localhost:${PORT}`);

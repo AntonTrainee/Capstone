@@ -1029,7 +1029,7 @@ app.get("/check-fully-booked", async (req, res) => {
 
 
 // ================== Start Server ==================
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);
   console.log("Loaded email pass:", process.env.EMAIL_PASS ? "✅ exists" : "❌ missing");
   console.log(`🚀 Server running on http://localhost:${PORT}`);

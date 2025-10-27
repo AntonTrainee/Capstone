@@ -1,4 +1,3 @@
-/* === General Reset & Utilities === */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -35,14 +34,12 @@ body {
   color: #64748b;
 }
 
-/* === Layout === */
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
 .app-header {
   position: sticky;
   top: 0;
@@ -89,7 +86,6 @@ body {
   display: none;
 }
 
-/* === Sidebar Overlay === */
 .sidebar-overlay {
   position: fixed;
   top: 0;
@@ -108,7 +104,6 @@ body {
   opacity: 1;
 }
 
-/* === Sidebar Panel === */
 .sidebar {
   position: fixed;
   top: 0;
@@ -120,16 +115,15 @@ body {
   padding: 1.5rem 1rem;
   z-index: 1051;
   overflow-y: auto;
-  transform: translateX(100%); /* hidden by default */
+  transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
   box-shadow: -4px 0 10px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar.open {
-  transform: translateX(0); /* slide in */
+  transform: translateX(0);
 }
 
-/* Close button inside sidebar */
 .sidebar .close-btn {
   background: none;
   border: none;
@@ -140,7 +134,6 @@ body {
   margin-bottom: 2rem;
 }
 
-/* Sidebar Navigation */
 .sidebar-nav {
   list-style: none;
   padding: 0;
@@ -173,7 +166,6 @@ body {
   color: #38bdf8;
 }
 
-/* Logout button */
 .btn-logout {
   background: #dc2626;
   border: none;
@@ -191,7 +183,6 @@ body {
   background: #b91c1c;
 }
 
-/* === Main Content === */
 .app-main {
   flex: 1;
   padding: 1.5rem;
@@ -200,7 +191,6 @@ body {
   margin: auto;
 }
 
-/* Section */
 .section-container {
   background: white;
   border-radius: 12px;
@@ -218,7 +208,6 @@ body {
   padding-bottom: 0.5rem;
 }
 
-/* === Tables === */
 .table-container {
   width: 100%;
   margin-bottom: 1rem;
@@ -251,19 +240,16 @@ body {
   z-index: 10;
 }
 
-/* === Responsive Design === */
-
-/* Desktop & large screens */
 @media (min-width: 769px) {
   .sidebar {
-    transform: translateX(100%); /* hidden by default */
+    transform: translateX(100%);
     position: fixed;
     right: 0;
     left: auto;
   }
 
   .sidebar.open {
-    transform: translateX(0); /* slide in from right */
+    transform: translateX(0);
   }
 
   .sidebar-overlay {
@@ -271,15 +257,14 @@ body {
   }
 
   .navbar-toggler {
-    display: block; /* desktop toggle button visible */
+    display: block;
   }
 
   .app-main {
-    margin-left: 0; /* content stays full width */
+    margin-left: 0;
   }
 }
 
-/* Tablet & Mobile */
 @media (max-width: 768px) {
   .navbar-toggler {
     display: block;
@@ -308,4 +293,262 @@ body {
     margin-left: 0;
     padding: 1rem 0.75rem;
   }
+}
+
+.admin-page-container {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.form-card-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 700px;
+}
+
+.form-header-bar {
+  background-color: #0ea5e9;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  text-align: center;
+}
+
+.form-content {
+  padding: 1.5rem;
+  position: relative;
+  min-height: 400px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.title-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.title-group input[type="text"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.image-inputs-flex-wrapper {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.image-group {
+  flex: 1;
+}
+
+.image-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.file-input-wrapper {
+  font-size: 0.9rem;
+}
+
+.save-button-wrapper {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+.save-button-wrapper button {
+  background-color: #e0e0e0;
+  color: #444;
+  padding: 8px 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.save-button-wrapper button:hover {
+  background-color: #d0d0d0;
+}
+
+@media (max-width: 600px) {
+  .image-inputs-flex-wrapper {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .save-button-wrapper {
+    position: static;
+    text-align: right;
+    margin-top: 20px;
+  }
+}
+
+
+
+/* --- Global Container and Card Styles --- */
+
+/* Ensures the content is padded and centered */
+.app-main-content {
+    padding: 1.5rem;
+    background-color: #f8fafc; /* Light grey background for the page */
+}
+
+/* The white card container for the table */
+.admin-card-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Remove padding from the top to allow the blue header to span edge-to-edge visually */
+    padding: 0 1.5rem 1.5rem 1.5rem; 
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Header for the card (Title and Add Button) */
+/* *** MODIFIED FOR BLUE BACKGROUND & PADDING *** */
+.card-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    /* NEW: Set the background color to 289CBF */
+    background-color: #289CBF; 
+    /* NEW: Add padding inside the blue bar */
+    padding: 1rem 1.5rem; 
+    /* NEW: Remove the border-bottom */
+    border-bottom: none; 
+    
+    /* NEW: Style the top corners to match the parent container's rounded corners */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    
+    /* NEW: Compensate for the padding removal on admin-card-container */
+    margin: 0 -1.5rem 1.5rem -1.5rem;
+}
+
+.card-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    /* NEW: Change text color to white for contrast on blue background */
+    color: white; 
+    margin: 0;
+}
+/* *** END MODIFIED CSS *** */
+
+/* --- Button Styles --- */
+
+.btn-primary,
+.btn-danger {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none; /* For the Link component */
+    transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+/* + Add New Button */
+.btn-primary {
+    background-color: #0ea5e9; /* Sky blue */
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0284c7;
+    transform: translateY(-1px);
+}
+
+/* Delete Button */
+.btn-danger {
+    background-color: #ef4444; /* Red */
+    color: white;
+    font-size: 0.85rem;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+/* --- Table Styling --- */
+
+.table-responsive-wrapper {
+    overflow-x: auto; /* Allows horizontal scrolling on small screens */
+}
+
+.data-management-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.data-management-table th,
+.data-management-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f1f5f9; /* Light separator line */
+}
+
+/* Table Header Styles */
+.data-management-table th {
+    background-color: #f8fafc; /* Very light grey header background */
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+}
+
+/* Table Body Row Hover Effect */
+.data-management-table tbody tr:hover {
+    background-color: #f8faff; /* Subtle highlight on hover */
+}
+
+/* Image Thumbnails */
+.image-cell {
+    width: 100px; /* Control column width for images */
+}
+
+.image-thumbnail {
+    width: 70px; /* Consistent size */
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Text alignment for specific columns */
+.text-center {
+    text-align: center !important;
+}
+
+.post-title-cell {
+    font-weight: 500;
+}
+
+/* Ensure actions column doesn't wrap */
+.action-col {
+    white-space: nowrap;
+    width: 100px; 
 }

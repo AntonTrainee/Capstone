@@ -1,4 +1,3 @@
-import { io } from "socket.io-client";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -26,9 +25,15 @@ interface Notification {
 }
 
 function CustomerDashb() {
-  const [activeSection, setActiveSection] = useState<"bookings" | "history">("bookings");
+  const [activeSection, setActiveSection] = useState<"bookings" | "history">(
+    "bookings"
+  );
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [history, setHistory] = useState<Booking[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -39,7 +44,7 @@ function CustomerDashb() {
 
   const navigate = useNavigate();
 
-  // ✅ Load data + realtime socket connection
+  // ✅ Load data on mount
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
@@ -55,33 +60,14 @@ function CustomerDashb() {
       fetchNotifications(parsedUser.id);
 
       // 🔁 Auto-refresh notifications every 10s
-      const notifInterval = setInterval(() => fetchNotifications(parsedUser.id), 10000);
-
-      // ⚡ Connect to Socket.IO for realtime updates
-      const socket = io("https://capstone-ni5z.onrender.com", {
-        transports: ["websocket"], // stable transport
-      });
-
-      // 🧩 Listen for booking updates
-      socket.on("bookingsUpdated", () => {
-        console.log("📡 Bookings updated — refreshing...");
-        fetchBookings(parsedUser.id); // Refresh instantly
-      });
-
-      // 🧩 Optionally, listen for notification updates
-      socket.on("notificationsUpdated", () => {
-        console.log("📡 Notifications updated — refreshing...");
-        fetchNotifications(parsedUser.id);
-      });
-
-      return () => {
-        clearInterval(notifInterval);
-        socket.disconnect();
-      };
+      const interval = setInterval(
+        () => fetchNotifications(parsedUser.id),
+        10000
+      );
+      return () => clearInterval(interval);
     }
   }, [navigate]);
 
-  // 📦 Fetch bookings
   const fetchBookings = async (userId: string) => {
     try {
       const response = await axios.get<Booking[]>(
@@ -103,7 +89,6 @@ function CustomerDashb() {
     }
   };
 
-  // 🔔 Fetch notifications
   const fetchNotifications = async (userId: string) => {
     try {
       const res = await axios.get(
@@ -120,7 +105,6 @@ function CustomerDashb() {
     }
   };
 
-  // ✅ Mark notification as read
   const markAsRead = async (id: number) => {
     try {
       await axios.put(
@@ -186,7 +170,7 @@ function CustomerDashb() {
                       Booked Services
                     </h1>
 
-                    {/* 🔔 Notification Bell */}
+                    {/* 🔔 Notification Bell with Count */}
                     <div className="position-relative">
                       <Bell
                         size={24}
@@ -194,6 +178,7 @@ function CustomerDashb() {
                         onClick={() => setShowNotifications(!showNotifications)}
                       />
 
+                      {/* 🔢 Red badge for unread count */}
                       {unreadCount > 0 && (
                         <span
                           className="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-circle"
@@ -203,6 +188,7 @@ function CustomerDashb() {
                         </span>
                       )}
 
+                      {/* 🔔 Notification Dropdown */}
                       {showNotifications && (
                         <div
                           className="notification-box position-absolute end-0 mt-2 bg-white shadow rounded p-2"
@@ -257,7 +243,9 @@ function CustomerDashb() {
                             <tr key={b.booking_id}>
                               <td>{b.service}</td>
                               <td>{b.address}</td>
-                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>
+                                {new Date(b.booking_date).toLocaleString()}
+                              </td>
                               <td>{b.status}</td>
                             </tr>
                           ))
@@ -291,7 +279,9 @@ function CustomerDashb() {
                             <tr key={b.booking_id}>
                               <td>{b.service}</td>
                               <td>{b.address}</td>
-                              <td>{new Date(b.booking_date).toLocaleString()}</td>
+                              <td>
+                                {new Date(b.booking_date).toLocaleString()}
+                              </td>
                               <td>{b.status}</td>
                             </tr>
                           ))
@@ -318,11 +308,16 @@ function CustomerDashb() {
             <div className="row g-4">
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img src={genmain} className="card-img-top" alt="General Maintenance" />
+                  <img
+                    src={genmain}
+                    className="card-img-top"
+                    alt="General Maintenance"
+                  />
                   <div className="card-body">
                     <h5 className="card-title">General Maintenance</h5>
                     <p className="card-text">
-                      We handle routine repairs and upkeep to keep your property in top condition.
+                      We handle routine repairs and upkeep to keep your property
+                      in top condition.
                     </p>
                   </div>
                 </div>
@@ -330,11 +325,18 @@ function CustomerDashb() {
 
               <div className="col-md-6 col-lg-4">
                 <div className="card h-100">
-                  <img src={janitor} className="card-img-top" alt="Janitorial Services" />
+                  <img
+                    src={janitor}
+                    className="card-img-top"
+                    alt="Janitorial Services"
+                  />
                   <div className="card-body">
-                    <h5 className="card-title">Janitorial and Cleaning Services</h5>
+                    <h5 className="card-title">
+                      Janitorial and Cleaning Services
+                    </h5>
                     <p className="card-text">
-                      Comprehensive cleaning services including offices and commercial spaces.
+                      Comprehensive cleaning services including offices and
+                      commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -346,7 +348,8 @@ function CustomerDashb() {
                   <div className="card-body">
                     <h5 className="card-title">Pest Control</h5>
                     <p className="card-text">
-                      Reliable pest management solutions for residential and commercial spaces.
+                      Reliable pest management solutions for residential and
+                      commercial spaces.
                     </p>
                   </div>
                 </div>
@@ -364,19 +367,35 @@ function CustomerDashb() {
               {user ? `${user.firstName} ${user.lastName}` : "Client"}
             </h2>
 
-            <a href="#Bookings" className="profile-link" onClick={() => handleLinkClick("bookings")}>
+            <a
+              href="#Bookings"
+              className="profile-link"
+              onClick={() => handleLinkClick("bookings")}
+            >
               Bookings
             </a>
 
-            <a href="#History" className="profile-link" onClick={() => handleLinkClick("history")}>
+            <a
+              href="#History"
+              className="profile-link"
+              onClick={() => handleLinkClick("history")}
+            >
               History
             </a>
 
-            <Link to="/booksys" className="profile-link" onClick={handleBookLinkClick}>
+            <Link
+              to="/booksys"
+              className="profile-link"
+              onClick={handleBookLinkClick}
+            >
               Book
             </Link>
 
-            <Link to="/Profile" className="profile-link" onClick={handleBookLinkClick}>
+            <Link
+              to="/Profile"
+              className="profile-link"
+              onClick={handleBookLinkClick}
+            >
               Edit Profile
             </Link>
 
@@ -409,7 +428,10 @@ function CustomerDashb() {
               >
                 Yes, I am
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowLogoutConfirm(false)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
                 Cancel
               </button>
             </div>

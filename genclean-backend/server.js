@@ -291,6 +291,7 @@ const supabase = createClient(
 const setupRealtime = () => {
   console.log("🔁 Subscribing to Supabase realtime changes...");
 
+  // Existing channels...
   const bookingsChannel = supabase
     .channel("bookings-changes")
     .on(
@@ -315,13 +316,27 @@ const setupRealtime = () => {
     )
     .subscribe();
 
-  // cleanup if process stops
+  // ✅ NEW: Add Incoming Requests realtime updates
+  const incomingRequestsChannel = supabase
+    .channel("incoming-requests-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "incoming_requests" },
+      (payload) => {
+        console.log("📢 Realtime: incoming_requests changed", payload);
+        io.emit("incoming_requests_update", payload);
+      }
+    )
+    .subscribe();
+
   process.on("SIGINT", async () => {
     await supabase.removeChannel(bookingsChannel);
     await supabase.removeChannel(historyChannel);
+    await supabase.removeChannel(incomingRequestsChannel);
     process.exit();
   });
 };
+
 setupRealtime();
 
 // ✅ When a client connects to Socket.IO

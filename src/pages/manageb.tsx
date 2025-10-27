@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client"; // ✅ NEW
 import "./manageb.css";
 
 interface Booking {
@@ -54,7 +55,26 @@ export default function ManageBookingsPage() {
   useEffect(() => {
     fetchBookings();
     fetchIncomingRequests();
+
+    // ✅ Initialize Socket.IO connection
+    const socket = io("https://capstone-ni5z.onrender.com");
+
+    // ✅ Listen for realtime updates from server
+    socket.on("incoming_requests_update", (payload) => {
+      console.log("⚡ Incoming requests changed:", payload);
+      fetchIncomingRequests(); // refresh only this section
+    });
+
+    socket.on("bookings_update", (payload) => {
+      console.log("⚡ Bookings changed:", payload);
+      fetchBookings();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
+
 
   // --- Incoming Requests Actions ---
   // --- Incoming Requests Actions ---

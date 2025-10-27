@@ -11,12 +11,40 @@ const fs = require("fs");
 const { Pool } = require("pg");
 const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase added
 
+// ============ Add at the top ============
+const http = require("http");
+const { Server } = require("socket.io");
+
+// ============ Replace app.listen(...) with this ============
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // You can limit to your frontend domain later
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
+
+// ✅ Listen for connections
+io.on("connection", (socket) => {
+  console.log("🟢 New client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
+});
+
+// Use this function whenever you modify bookings
+function emitBookingUpdate() {
+  io.emit("bookingsUpdated"); // Notify all connected clients
+}
 
 // OTP Controller
 const { sendOTP, verifyOTP } = require("./otpController.js");
 
 const app = express();
 const PORT = process.env.PORT || 3007;
+
+
 
 // ================== Middleware ==================
 app.use(cors());
@@ -416,71 +444,45 @@ app.put("/update-profile", requireAuth, async (req, res) => {
   }
 });
 
-/* ======================= BOOKING ROUTES ======================= */
-
 // ✅ Create Booking
-// ✅ Create Booking (FIXED)
-// … other imports remain …
-
 app.post("/booking", async (req, res) => {
   try {
     const { user_id, service, booking_date, booking_time, address, notes, forAssessment } = req.body;
-
-    // Validate required fields
-    if (!user_id || !service || !booking_date || !address) {
+    if (!user_id || !service || !booking_date || !address)
       return res.status(400).json({ success: false, message: "Missing required booking fields." });
-    }
 
-    // Combine date + time into a single timestamp
     let bookingDateTime = booking_date;
-    if (booking_time) {
-      // Combine into ISO string
-      bookingDateTime = new Date(`${booking_date}T${booking_time}`);
-    } else {
-      bookingDateTime = new Date(booking_date);
-    }
+    if (booking_time) bookingDateTime = new Date(`${booking_date}T${booking_time}`);
+    else bookingDateTime = new Date(booking_date);
 
-    const insertQuery = `
-      INSERT INTO bookings
-        (user_id, service, booking_date, address, notes, for_assessment, payment, status, name)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *;
-    `;
+    const result = await pool.query(
+      `INSERT INTO bookings (user_id, service, booking_date, address, notes, for_assessment, payment, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [user_id, service, bookingDateTime, address, notes || "", forAssessment || false, 0, "pending"]
+    );
 
-    const values = [
-      user_id,
-      service,
-      bookingDateTime,
-      address,
-      notes || "",
-      forAssessment || false,
-      0,             // default payment
-      "pending",     // default status
-      null           // name will be set by trigger if needed
-    ];
-
-    const result = await pool.query(insertQuery, values);
+    emitBookingUpdate(); // 🔥 Notify clients of change
     res.status(201).json({ success: true, booking: result.rows[0] });
-
   } catch (err) {
     console.error("❌ Error booking service:", err);
     res.status(500).json({ success: false, message: "Error booking service." });
   }
 });
 
-
-
 // ✅ Update Booking
 app.put("/bookings/:id", async (req, res) => {
-  const { id } = req.params;
-  const { name, address, notes, for_assessment, payment, status } = req.body;
   try {
+    const { id } = req.params;
+    const { name, address, notes, for_assessment, payment, status } = req.body;
     const result = await pool.query(
-      `UPDATE bookings SET name=$1, address=$2, notes=$3, for_assessment=$4, payment=$5, status=$6
+      `UPDATE bookings
+       SET name=$1, address=$2, notes=$3, for_assessment=$4, payment=$5, status=$6
        WHERE booking_id=$7 RETURNING *`,
       [name, address, notes, for_assessment, payment, status, id]
     );
     if (result.rows.length === 0) return res.status(404).send("Booking not found");
+
+    emitBookingUpdate(); // 🔥 Notify clients
     res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error("Error updating booking:", err);
@@ -488,11 +490,25 @@ app.put("/bookings/:id", async (req, res) => {
   }
 });
 
+// ✅ Delete Booking
+app.delete("/bookings/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM bookings WHERE booking_id=$1 RETURNING *", [id]);
+    if (result.rows.length === 0) return res.status(404).send("Booking not found");
+
+    emitBookingUpdate(); // 🔥 Notify clients
+    res.json({ success: true, message: "Booking deleted" });
+  } catch (err) {
+    console.error("Error deleting booking:", err);
+    res.status(500).send("Error deleting booking");
+  }
+});
 
 // ✅ Fetch All Bookings
 app.get("/bookings", async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM bookings ORDER BY created_at DESC`);
+    const result = await pool.query("SELECT * FROM bookings ORDER BY created_at DESC");
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching bookings:", err.message);
@@ -514,6 +530,7 @@ app.get("/bookings/user/:userId", async (req, res) => {
     res.status(500).send("Error fetching user bookings");
   }
 });
+
 
 // ======================= CONTACT FORM =======================
 

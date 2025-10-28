@@ -5,10 +5,9 @@ import "../salesreq.css";
 // ======================== TYPES ========================
 type ReportType = "sales" | "request";
 type ServiceType =
-  | "General Cleaning"
-  | "Pest Control"
-  | "Janitorial"
-  | "Cleaning Services";
+  | "General Maintenance"
+  | "Janitorial and Cleaning Services"
+  | "Pest Control";
 
 interface RecordItem {
   id: string;
@@ -31,7 +30,6 @@ interface Filters {
   search?: string;
 }
 
-// Response types
 interface SaleApiResponse {
   sale_id: string;
   user_id: string;
@@ -63,33 +61,7 @@ export default function SalesAndRequest() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Socket.IO setup
-  useEffect(() => {
-    const socket = io("https://capstone-ni5z.onrender.com");
-
-    socket.on("connect", () =>
-      console.log("✅ Connected to Socket.IO in SalesAndRequest")
-    );
-
-    // When backend emits an update, refetch the table
-    socket.on("updateSales", () => {
-      if (filters.reportType === "sales") fetchData();
-    });
-
-    socket.on("updateRequests", () => {
-      if (filters.reportType === "request") fetchData();
-    });
-
-    socket.on("disconnect", () =>
-      console.log("❌ Disconnected from Socket.IO")
-    );
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [filters.reportType]);
-
-  // ✅ Fetch data function
+  // ✅ Reusable fetch function
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -140,12 +112,37 @@ export default function SalesAndRequest() {
     }
   };
 
-  // ✅ Initial load + when reportType changes
+  // ✅ Initial fetch + type change
   useEffect(() => {
     fetchData();
   }, [filters.reportType]);
 
-  // ✅ Filter rows
+  // ✅ Socket.IO real-time updates
+  useEffect(() => {
+    const socket = io("https://capstone-ni5z.onrender.com");
+
+    socket.on("connect", () =>
+      console.log("✅ Connected to Socket.IO in SalesAndRequest")
+    );
+
+    socket.on("updateSales", () => {
+      if (filters.reportType === "sales") fetchData();
+    });
+
+    socket.on("updateRequests", () => {
+      if (filters.reportType === "request") fetchData();
+    });
+
+    socket.on("disconnect", () =>
+      console.log("❌ Disconnected from Socket.IO")
+    );
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [filters.reportType]);
+
+  // ✅ Filters (case-insensitive)
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
       const serviceMatch =
@@ -258,15 +255,16 @@ export default function SalesAndRequest() {
               }
             >
               <option value="All">All Services</option>
-              <option value="General Cleaning">General Cleaning</option>
-              <option value="Cleaning Services">Cleaning Services</option>
+              <option value="General Maintenance">General Maintenance</option>
+              <option value="Janitorial and Cleaning Services">
+                Janitorial and Cleaning Services
+              </option>
               <option value="Pest Control">Pest Control</option>
-              <option value="Janitorial">Janitorial</option>
             </select>
           </div>
         </section>
 
-        {/* Filter Controls */}
+        {/* Filters */}
         <div className="metrics-grid">
           <div className="metric-card">
             <label>From</label>
@@ -381,52 +379,46 @@ export default function SalesAndRequest() {
                       </td>
                     </tr>
                   ) : filters.reportType === "sales" ? (
-                    filteredRows.map((r) => {
-                      const formattedCompletedAt =
-                        r.completed_at && r.completed_at !== "N/A"
-                          ? new Date(r.completed_at).toLocaleString("en-PH")
-                          : "N/A";
-                      const formattedCreatedAt =
-                        r.created_at && r.created_at !== "N/A"
-                          ? new Date(r.created_at).toLocaleString("en-PH")
-                          : "N/A";
-
-                      return (
-                        <tr key={r.id}>
-                          <td>{r.id}</td>
-                          <td>{r.user_id}</td>
-                          <td>{r.service}</td>
-                          <td>₱{r.payment?.toFixed(2)}</td>
-                          <td>{r.status}</td>
-                          <td>{formattedCompletedAt}</td>
-                          <td>{formattedCreatedAt}</td>
-                        </tr>
-                      );
-                    })
+                    filteredRows.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.user_id}</td>
+                        <td>{r.service}</td>
+                        <td>₱{r.payment?.toFixed(2)}</td>
+                        <td>{r.status}</td>
+                        <td>
+                          {r.completed_at
+                            ? new Date(r.completed_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
                   ) : (
-                    filteredRows.map((r) => {
-                      const formattedCreatedAt =
-                        r.created_at && r.created_at !== "N/A"
-                          ? new Date(r.created_at).toLocaleString("en-PH")
-                          : "N/A";
-                      const formattedBookingDate =
-                        r.booking_date && r.booking_date !== "N/A"
-                          ? new Date(r.booking_date).toLocaleString("en-PH")
-                          : "N/A";
-
-                      return (
-                        <tr key={r.id}>
-                          <td>{r.id}</td>
-                          <td>{r.booking_id}</td>
-                          <td>{r.user_id}</td>
-                          <td>{r.service}</td>
-                          <td>{r.address}</td>
-                          <td>{r.status}</td>
-                          <td>{formattedCreatedAt}</td>
-                          <td>{formattedBookingDate}</td>
-                        </tr>
-                      );
-                    })
+                    filteredRows.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.id}</td>
+                        <td>{r.booking_id}</td>
+                        <td>{r.user_id}</td>
+                        <td>{r.service}</td>
+                        <td>{r.address}</td>
+                        <td>{r.status}</td>
+                        <td>
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {r.booking_date
+                            ? new Date(r.booking_date).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

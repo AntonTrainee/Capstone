@@ -63,7 +63,7 @@ export default function SalesAndRequest() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Fetch sales or requests
+  // ✅ Fetch sales or requests when reportType changes
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -118,25 +118,24 @@ export default function SalesAndRequest() {
     fetchData();
   }, [filters.reportType]);
 
-  // ✅ Filters
+  // ✅ Filters (case-insensitive and robust)
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
-      if (
-        filters.service &&
-        filters.service !== "All" &&
-        r.service !== filters.service
-      )
-        return false;
-      if (filters.from && new Date(r.created_at ?? "") < new Date(filters.from))
-        return false;
-      if (filters.to && new Date(r.created_at ?? "") > new Date(filters.to))
-        return false;
-      if (
-        filters.search &&
-        !r.service.toLowerCase().includes(filters.search.toLowerCase())
-      )
-        return false;
-      return true;
+      const serviceMatch =
+        filters.service === "All" ||
+        r.service?.toLowerCase() === filters.service?.toLowerCase();
+
+      const fromMatch =
+        !filters.from || new Date(r.created_at ?? "") >= new Date(filters.from);
+
+      const toMatch =
+        !filters.to || new Date(r.created_at ?? "") <= new Date(filters.to);
+
+      const searchMatch =
+        !filters.search ||
+        r.service?.toLowerCase().includes(filters.search.toLowerCase());
+
+      return serviceMatch && fromMatch && toMatch && searchMatch;
     });
   }, [data, filters]);
 
@@ -435,9 +434,7 @@ export default function SalesAndRequest() {
         </section>
       </main>
 
-      <footer className="app-footer">
-        © {new Date().getFullYear()} GenClean
-      </footer>
+      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
     </div>
   );
 }

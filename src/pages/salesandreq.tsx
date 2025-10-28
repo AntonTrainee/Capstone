@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
 import "../salesreq.css";
 
 // ======================== TYPES ========================
@@ -30,7 +31,7 @@ interface Filters {
   search?: string;
 }
 
-// Response types from backend
+// Response types
 interface SaleApiResponse {
   sale_id: string;
   user_id: string;
@@ -58,67 +59,93 @@ export default function SalesAndRequest() {
     service: "All",
     search: "",
   });
-
   const [data, setData] = useState<RecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Fetch sales or requests when reportType changes
+  // ✅ Socket.IO setup
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+    const socket = io("https://capstone-ni5z.onrender.com");
 
-      const endpoint =
-        filters.reportType === "sales"
-          ? "https://capstone-ni5z.onrender.com/sales"
-          : "https://capstone-ni5z.onrender.com/requests";
+    socket.on("connect", () =>
+      console.log("✅ Connected to Socket.IO in SalesAndRequest")
+    );
 
-      try {
-        const res = await fetch(endpoint);
-        if (!res.ok)
-          throw new Error(
-            `Failed to fetch ${filters.reportType}: ${res.statusText}`
-          );
+    // When backend emits an update, refetch the table
+    socket.on("updateSales", () => {
+      if (filters.reportType === "sales") fetchData();
+    });
 
-        const rows: SaleApiResponse[] | RequestApiResponse[] = await res.json();
+    socket.on("updateRequests", () => {
+      if (filters.reportType === "request") fetchData();
+    });
 
-        const mapped: RecordItem[] =
-          filters.reportType === "sales"
-            ? (rows as SaleApiResponse[]).map((item) => ({
-                id: item.sale_id ?? "N/A",
-                user_id: item.user_id ?? "N/A",
-                service: item.service ?? "N/A",
-                payment: parseFloat(item.payment ?? "0"),
-                status: item.status ?? "N/A",
-                completed_at: item.completed_at ?? "N/A",
-                created_at: item.created_at ?? "N/A",
-              }))
-            : (rows as RequestApiResponse[]).map((item) => ({
-                id: item.booking_id ?? "N/A",
-                booking_id: item.booking_id ?? "N/A",
-                user_id: item.user_id ?? "N/A",
-                service: item.service ?? "N/A",
-                address: item.address ?? "N/A",
-                status: item.status ?? "N/A",
-                created_at: item.created_at ?? "N/A",
-                booking_date: item.booking_date ?? "N/A",
-              }));
+    socket.on("disconnect", () =>
+      console.log("❌ Disconnected from Socket.IO")
+    );
 
-        setData(mapped);
-      } catch (err) {
-        console.error(`❌ Error fetching ${filters.reportType}:`, err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      socket.disconnect();
     };
+  }, [filters.reportType]);
 
+  // ✅ Fetch data function
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    const endpoint =
+      filters.reportType === "sales"
+        ? "https://capstone-ni5z.onrender.com/sales"
+        : "https://capstone-ni5z.onrender.com/requests";
+
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok)
+        throw new Error(
+          `Failed to fetch ${filters.reportType}: ${res.statusText}`
+        );
+
+      const rows: SaleApiResponse[] | RequestApiResponse[] = await res.json();
+
+      const mapped: RecordItem[] =
+        filters.reportType === "sales"
+          ? (rows as SaleApiResponse[]).map((item) => ({
+              id: item.sale_id ?? "N/A",
+              user_id: item.user_id ?? "N/A",
+              service: item.service ?? "N/A",
+              payment: parseFloat(item.payment ?? "0"),
+              status: item.status ?? "N/A",
+              completed_at: item.completed_at ?? "N/A",
+              created_at: item.created_at ?? "N/A",
+            }))
+          : (rows as RequestApiResponse[]).map((item) => ({
+              id: item.booking_id ?? "N/A",
+              booking_id: item.booking_id ?? "N/A",
+              user_id: item.user_id ?? "N/A",
+              service: item.service ?? "N/A",
+              address: item.address ?? "N/A",
+              status: item.status ?? "N/A",
+              created_at: item.created_at ?? "N/A",
+              booking_date: item.booking_date ?? "N/A",
+            }));
+
+      setData(mapped);
+    } catch (err) {
+      console.error(`❌ Error fetching ${filters.reportType}:`, err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Initial load + when reportType changes
+  useEffect(() => {
     fetchData();
   }, [filters.reportType]);
 
-  // ✅ Filters (case-insensitive and robust)
+  // ✅ Filter rows
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
       const serviceMatch =
@@ -357,24 +384,11 @@ export default function SalesAndRequest() {
                     filteredRows.map((r) => {
                       const formattedCompletedAt =
                         r.completed_at && r.completed_at !== "N/A"
-                          ? new Date(r.completed_at).toLocaleString("en-PH", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(r.completed_at).toLocaleString("en-PH")
                           : "N/A";
-
                       const formattedCreatedAt =
                         r.created_at && r.created_at !== "N/A"
-                          ? new Date(r.created_at).toLocaleString("en-PH", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(r.created_at).toLocaleString("en-PH")
                           : "N/A";
 
                       return (
@@ -393,24 +407,11 @@ export default function SalesAndRequest() {
                     filteredRows.map((r) => {
                       const formattedCreatedAt =
                         r.created_at && r.created_at !== "N/A"
-                          ? new Date(r.created_at).toLocaleString("en-PH", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(r.created_at).toLocaleString("en-PH")
                           : "N/A";
-
                       const formattedBookingDate =
                         r.booking_date && r.booking_date !== "N/A"
-                          ? new Date(r.booking_date).toLocaleString("en-PH", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(r.booking_date).toLocaleString("en-PH")
                           : "N/A";
 
                       return (
@@ -434,7 +435,9 @@ export default function SalesAndRequest() {
         </section>
       </main>
 
-      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
+      <footer className="app-footer">
+        © {new Date().getFullYear()} GenClean
+      </footer>
     </div>
   );
 }

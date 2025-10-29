@@ -83,7 +83,6 @@ export default function ManageBookingsPage(): React.JSX.Element {
       fetchBookings();
     });
 
-    // ✅ Proper cleanup — return void
     return (): void => {
       socket.disconnect();
     };
@@ -163,10 +162,18 @@ export default function ManageBookingsPage(): React.JSX.Element {
     if (!window.confirm("Are you sure you want to save changes?")) return;
 
     try {
+      // Clean numeric value before saving
+      const cleanedData = {
+        ...formData,
+        payment: formData.payment
+          ? Number(formData.payment.replace(/[^\d.]/g, ""))
+          : null,
+      };
+
       const res = await fetch(`${SERVER_URL}/bookings/${editing}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(cleanedData),
       });
 
       if (res.ok) {
@@ -204,7 +211,13 @@ export default function ManageBookingsPage(): React.JSX.Element {
     if (!window.confirm("Are you sure the cleaning is done?")) return;
 
     try {
-      const updatedData = { ...bookingToUpdate, status: "completed" };
+      const updatedData = {
+        ...bookingToUpdate,
+        status: "completed",
+        payment: bookingToUpdate.payment
+          ? Number(bookingToUpdate.payment.replace(/[^\d.]/g, ""))
+          : null,
+      };
 
       const res = await fetch(`${SERVER_URL}/bookings/${booking_id}`, {
         method: "PUT",
@@ -365,7 +378,7 @@ export default function ManageBookingsPage(): React.JSX.Element {
                             placeholder="₱0.00"
                           />
                         ) : b.payment ? (
-                          b.payment
+                          `₱${Number(b.payment).toLocaleString()}`
                         ) : (
                           "—"
                         )}

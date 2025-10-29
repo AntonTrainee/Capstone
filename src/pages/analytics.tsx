@@ -29,28 +29,44 @@ export default function Analytics() {
 
   // Fetch analytics data
   const fetchSummary = async (from?: string, to?: string) => {
-    setLoading(true);
-    try {
-      let url = "https://capstone-ni5z.onrender.com/analytics_summary";
-      if (from && to) {
-        url += `?from=${from}&to=${to}`;
-      }
-
-      const res = await fetch(url);
-      const data = await res.json();
-      setSummary(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error fetching summary:", err);
-      setSummary([]);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    let url = "https://capstone-ni5z.onrender.com/analytics_summary";
+    if (from && to) {
+      url += `?from=${from}&to=${to}`;
     }
-  };
+
+    const res = await fetch(url);
+    const data = await res.json();
+    setSummary(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Error fetching summary:", err);
+    setSummary([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Default fetch on mount (show current data)
   useEffect(() => {
     fetchSummary();
   }, []);
+
+  useEffect(() => {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    .toISOString()
+    .split("T")[0];
+
+  setFromDate(firstDay);
+  setToDate(lastDay);
+  fetchSummary(firstDay, lastDay);
+}, []);
+
 
   // ✅ Real-time updates via Socket.IO
   useEffect(() => {

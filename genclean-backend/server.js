@@ -70,25 +70,13 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    // Check if email exists
-    const existingEmail = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (existingEmail.rows.length > 0) {
+    const existing = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (existing.rows.length > 0) {
       return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check if this hash already exists (same password)
-    const existingPassword = await pool.query("SELECT * FROM users WHERE password = $1", [hashedPassword]);
-    if (existingPassword.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "That password is already used by another user. Please choose a different one.",
-      });
-    }
-
-    // Insert user
     await pool.query(
       `INSERT INTO users (first_name, last_name, phone_number, email, password)
        VALUES ($1, $2, $3, $4, $5)`,

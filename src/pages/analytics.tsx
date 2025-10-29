@@ -10,7 +10,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
 import "../analytics.css";
 
 type Summary = {
@@ -23,10 +22,12 @@ type Summary = {
 export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // For date filter
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
 
-  // === Fetch data by date range ===
+  // Fetch analytics data
   const fetchSummary = async (from?: string, to?: string) => {
     setLoading(true);
     try {
@@ -34,29 +35,24 @@ export default function Analytics() {
       if (from && to) {
         url += `?from=${from}&to=${to}`;
       }
+
       const res = await fetch(url);
       const data = await res.json();
       setSummary(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching summary:", err);
+      setSummary([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load initial summary when component mounts
+  // Default fetch on mount (show current data)
   useEffect(() => {
     fetchSummary();
   }, []);
 
-  // Refetch whenever date filters change
-  useEffect(() => {
-    if (fromDate && toDate) {
-      fetchSummary(fromDate, toDate);
-    }
-  }, [fromDate, toDate]);
-
-  // === Real-time updates via Socket.IO ===
+  // ✅ Real-time updates via Socket.IO
   useEffect(() => {
     const socket = io("https://capstone-ni5z.onrender.com");
 
@@ -64,9 +60,10 @@ export default function Analytics() {
       console.log("✅ Connected to analytics socket");
     });
 
+    // When analytics updates on the server
     socket.on("analytics_update", (updatedData: Summary[]) => {
       console.log("📊 Realtime analytics update received:", updatedData);
-      setSummary(Array.isArray(updatedData) ? updatedData : []);
+      setSummary(updatedData);
     });
 
     socket.on("disconnect", () => {
@@ -77,6 +74,15 @@ export default function Analytics() {
       socket.disconnect();
     };
   }, []);
+
+  // Handle filter
+  const handleApplyFilter = () => {
+    if (!fromDate || !toDate) {
+      alert("Please select both From and To dates before applying the filter.");
+      return;
+    }
+    fetchSummary(fromDate, toDate);
+  };
 
   return (
     <div className="app-container">
@@ -92,36 +98,31 @@ export default function Analytics() {
 
       {/* Main */}
       <main className="app-main">
-        {/* Hero Section */}
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
-            <p>Monitor total bookings and revenue within a date range.</p>
+            <p>
+              Overview of total bookings and revenue per service type.
+            </p>
           </div>
 
           {/* Date Range Filter */}
           <div className="filter-controls">
-            <label htmlFor="from">From: </label>
-            <input
-              id="from"
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
-            <label htmlFor="to">To: </label>
-            <input
-              id="to"
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
-            <button
-              className="refresh-btn"
-              onClick={() => fetchSummary(fromDate, toDate)}
-              disabled={!fromDate || !toDate}
-            >
-              Apply Filter
-            </button>
+            <div className="date-filter-group">
+              <label>From: </label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              <label>To: </label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+              <button onClick={handleApplyFilter}>Apply Filter</button>
+            </div>
           </div>
         </section>
 
@@ -130,8 +131,6 @@ export default function Analytics() {
           <h2>Visualization: Total Bookings & Revenue by Service</h2>
           {loading ? (
             <p>Loading analytics...</p>
-          ) : summary.length === 0 ? (
-            <p>No data available for the selected range.</p>
           ) : (
             <div className="chart-wrapper">
               <ResponsiveContainer width="100%" height="100%">
@@ -141,8 +140,16 @@ export default function Analytics() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="total_bookings" fill="#38bdf8" name="Total Bookings" />
-                  <Bar dataKey="total_amount" fill="#6366f1" name="Total Amount (₱)" />
+                  <Bar
+                    dataKey="total_bookings"
+                    fill="#38bdf8"
+                    name="Total Bookings"
+                  />
+                  <Bar
+                    dataKey="total_amount"
+                    fill="#6366f1"
+                    name="Total Amount (₱)"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -154,8 +161,6 @@ export default function Analytics() {
           <h2>Analytics Summary Table</h2>
           {loading ? (
             <p>Loading table data...</p>
-          ) : summary.length === 0 ? (
-            <p>No summary data available.</p>
           ) : (
             <div className="table-wrapper">
               <table className="analytics-table">
@@ -168,14 +173,26 @@ export default function Analytics() {
                   </tr>
                 </thead>
                 <tbody>
-                  {summary.map((row, idx) => (
-                    <tr key={idx}>
-                      <td>{row.service}</td>
-                      <td>{row.total_bookings}</td>
-                      <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                      <td>{new Date(row.completed_at).toLocaleString()}</td>
+                  {summary.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: "center" }}>
+                        No summary data available
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    summary.map((row, index) => (
+                      <tr key={index}>
+                        <td>{row.service}</td>
+                        <td>{row.total_bookings}</td>
+                        <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                        <td>
+                          {row.completed_at
+                            ? new Date(row.completed_at).toLocaleString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

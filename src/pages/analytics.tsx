@@ -23,19 +23,20 @@ type Summary = {
 export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1
-  );
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
-  // Function to fetch data manually (used for first load and month change)
-  const fetchSummary = async (month: number) => {
+  // === Fetch data by date range ===
+  const fetchSummary = async (from?: string, to?: string) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `https://capstone-ni5z.onrender.com/analytics_summary?month=${month}`
-      );
+      let url = "https://capstone-ni5z.onrender.com/analytics_summary";
+      if (from && to) {
+        url += `?from=${from}&to=${to}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
-      setSummary(data);
+      setSummary(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching summary:", err);
     } finally {
@@ -43,12 +44,19 @@ export default function Analytics() {
     }
   };
 
-  // Load initial summary when component mounts or month changes
+  // Load initial summary when component mounts
   useEffect(() => {
-    fetchSummary(selectedMonth);
-  }, [selectedMonth]);
+    fetchSummary();
+  }, []);
 
-  // ✅ Realtime updates via Socket.IO
+  // Refetch whenever date filters change
+  useEffect(() => {
+    if (fromDate && toDate) {
+      fetchSummary(fromDate, toDate);
+    }
+  }, [fromDate, toDate]);
+
+  // === Real-time updates via Socket.IO ===
   useEffect(() => {
     const socket = io("https://capstone-ni5z.onrender.com");
 
@@ -56,17 +64,15 @@ export default function Analytics() {
       console.log("✅ Connected to analytics socket");
     });
 
-    // Listen for updates pushed by backend
     socket.on("analytics_update", (updatedData: Summary[]) => {
       console.log("📊 Realtime analytics update received:", updatedData);
-      setSummary(updatedData);
+      setSummary(Array.isArray(updatedData) ? updatedData : []);
     });
 
     socket.on("disconnect", () => {
       console.log("❌ Disconnected from analytics socket");
     });
 
-    // Cleanup on unmount
     return () => {
       socket.disconnect();
     };
@@ -86,39 +92,36 @@ export default function Analytics() {
 
       {/* Main */}
       <main className="app-main">
+        {/* Hero Section */}
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
-            <p>Overview of total bookings and revenue per service type.</p>
+            <p>Monitor total bookings and revenue within a date range.</p>
           </div>
 
-          {/* Month Filter */}
+          {/* Date Range Filter */}
           <div className="filter-controls">
-            <label htmlFor="month">Filter by Month: </label>
-            <select
-              id="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            <label htmlFor="from">From: </label>
+            <input
+              id="from"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+            <label htmlFor="to">To: </label>
+            <input
+              id="to"
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+            <button
+              className="refresh-btn"
+              onClick={() => fetchSummary(fromDate, toDate)}
+              disabled={!fromDate || !toDate}
             >
-              {[
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-              ].map((month, index) => (
-                <option key={index + 1} value={index + 1}>
-                  {month}
-                </option>
-              ))}
-            </select>
+              Apply Filter
+            </button>
           </div>
         </section>
 
@@ -127,6 +130,8 @@ export default function Analytics() {
           <h2>Visualization: Total Bookings & Revenue by Service</h2>
           {loading ? (
             <p>Loading analytics...</p>
+          ) : summary.length === 0 ? (
+            <p>No data available for the selected range.</p>
           ) : (
             <div className="chart-wrapper">
               <ResponsiveContainer width="100%" height="100%">
@@ -136,16 +141,8 @@ export default function Analytics() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar
-                    dataKey="total_bookings"
-                    fill="#38bdf8"
-                    name="Total Bookings"
-                  />
-                  <Bar
-                    dataKey="total_amount"
-                    fill="#6366f1"
-                    name="Total Amount (₱)"
-                  />
+                  <Bar dataKey="total_bookings" fill="#38bdf8" name="Total Bookings" />
+                  <Bar dataKey="total_amount" fill="#6366f1" name="Total Amount (₱)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -157,6 +154,8 @@ export default function Analytics() {
           <h2>Analytics Summary Table</h2>
           {loading ? (
             <p>Loading table data...</p>
+          ) : summary.length === 0 ? (
+            <p>No summary data available.</p>
           ) : (
             <div className="table-wrapper">
               <table className="analytics-table">
@@ -169,24 +168,14 @@ export default function Analytics() {
                   </tr>
                 </thead>
                 <tbody>
-                  {summary.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: "center" }}>
-                        No summary data available
-                      </td>
+                  {summary.map((row, idx) => (
+                    <tr key={idx}>
+                      <td>{row.service}</td>
+                      <td>{row.total_bookings}</td>
+                      <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                      <td>{new Date(row.completed_at).toLocaleString()}</td>
                     </tr>
-                  ) : (
-                    summary.map((row) => (
-                      <tr key={row.service + row.completed_at}>
-                        <td>{row.service}</td>
-                        <td>{row.total_bookings}</td>
-                        <td>₱{row.total_amount.toLocaleString()}</td>
-                        <td>
-                          {new Date(row.completed_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -1044,13 +1044,6 @@ const salesChannel = supabase
   process.exit();
 });
 
-// ================== Serve React Frontend ==================
-const frontendPath = path.join(__dirname, "client", "dist"); // adjust if your folder is different
-app.use(express.static(frontendPath));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
 
 
 // ================== Start Server ==================

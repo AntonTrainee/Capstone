@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import "./manageb.css";
 
 interface Booking {
@@ -35,7 +36,9 @@ export default function ManageBookingsPage() {
   const [formData, setFormData] = useState<Partial<Booking>>({});
   const [search, setSearch] = useState("");
 
-  // Fetch all bookings
+  // ---------------------------
+  // 🟦 Fetch Data from API
+  // ---------------------------
   const fetchBookings = () => {
     fetch("https://capstone-ni5z.onrender.com/bookings")
       .then((res) => res.json())
@@ -43,7 +46,6 @@ export default function ManageBookingsPage() {
       .catch((err) => console.error("Error fetching bookings:", err));
   };
 
-  // Fetch all incoming requests
   const fetchIncomingRequests = () => {
     fetch("https://capstone-ni5z.onrender.com/incoming-requests")
       .then((res) => res.json())
@@ -51,57 +53,100 @@ export default function ManageBookingsPage() {
       .catch((err) => console.error("Error fetching incoming requests:", err));
   };
 
+  // ---------------------------
+  // 🟩 SOCKET.IO REAL-TIME UPDATES
+  // ---------------------------
   useEffect(() => {
     fetchBookings();
     fetchIncomingRequests();
+
+    const socket = io("https://capstone-ni5z.onrender.com", {
+      transports: ["websocket"],
+      reconnection: true,
+    });
+
+    // Listen for updates from server
+    socket.on("incoming_requests_update", () => {
+      console.log("🔁 Incoming requests updated — refreshing data");
+      fetchIncomingRequests();
+    });
+
+    socket.on("bookings_update", () => {
+      console.log("🔁 Bookings updated — refreshing data");
+      fetchBookings();
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  // --- Incoming Requests Actions ---
-  // --- Incoming Requests Actions ---
-const approveRequest = async (id: string) => {
-  if (!window.confirm("Approve this request? It will move to bookings and notify the customer.")) return;
+  // ---------------------------
+  // 💰 Format Payment Input
+  // ---------------------------
+  const formatCurrency = (value: string): string => {
+    const numericValue = value.replace(/[^\d]/g, "");
+    if (!numericValue) return "";
+    return "₱" + parseInt(numericValue).toLocaleString();
+  };
 
-  try {
-    const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/approve/${id}`, {
-      method: "POST",
+  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrency(e.target.value);
+    setFormData({
+      ...formData,
+      payment: formatted,
     });
+  };
 
-    if (res.ok) {
-      setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
-      fetchBookings();
-      alert("✅ Request approved and customer notified!");
-    } else {
-      alert("❌ Failed to approve request.");
+  // ---------------------------
+  // 📥 Incoming Request Actions
+  // ---------------------------
+  const approveRequest = async (id: string) => {
+    if (!window.confirm("Approve this request? It will move to bookings and notify the customer.")) return;
+
+    try {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/approve/${id}`, {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
+        fetchBookings();
+        alert("✅ Request approved and customer notified!");
+      } else {
+        alert("❌ Failed to approve request.");
+      }
+    } catch (err) {
+      console.error("Error approving request:", err);
     }
-  } catch (err) {
-    console.error("Error approving request:", err);
-  }
-};
+  };
 
-const rejectRequest = async (id: string) => {
-  const reason = prompt("Enter reason for rejection (optional):", "") || "No reason provided";
-  if (!window.confirm("⚠️ Continue rejection? This cannot be undone.")) return;
+  const rejectRequest = async (id: string) => {
+    const reason = prompt("Enter reason for rejection (optional):", "") || "No reason provided";
+    if (!window.confirm("⚠️ Continue rejection? This cannot be undone.")) return;
 
-  try {
-    const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/${id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason }), // send reason to backend
-    });
+    try {
+      const res = await fetch(`https://capstone-ni5z.onrender.com/incoming-requests/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
 
-    if (res.ok) {
-      setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
-      alert(`🚫 Request rejected and customer notified.\nReason: ${reason}`);
-    } else {
-      alert("❌ Failed to reject request.");
+      if (res.ok) {
+        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
+        alert(`🚫 Request rejected and customer notified.\nReason: ${reason}`);
+      } else {
+        alert("❌ Failed to reject request.");
+      }
+    } catch (err) {
+      console.error("Error rejecting request:", err);
     }
-  } catch (err) {
-    console.error("Error rejecting request:", err);
-  }
-};
+  };
 
-
-  // --- Bookings Actions ---
+  // ---------------------------
+  // 📝 Booking Edit Actions
+  // ---------------------------
   const startEdit = (booking: Booking) => {
     if (booking.status === "completed") return;
     setEditing(booking.booking_id);
@@ -135,13 +180,21 @@ const rejectRequest = async (id: string) => {
     }
   };
 
+  // ---------------------------
+  // ✅ Mark as Completed
+  // ---------------------------
   const markAsCompleted = async (booking_id: string) => {
+    const bookingToUpdate = bookings.find((b) => b.booking_id === booking_id);
+    if (!bookingToUpdate) return;
+
+    if (!bookingToUpdate.payment || bookingToUpdate.payment.trim() === "" || bookingToUpdate.payment === "₱0") {
+      alert("⚠️ Please enter a valid payment amount before marking as completed.");
+      return;
+    }
+
     if (!window.confirm("Are you sure the cleaning is done?")) return;
 
     try {
-      const bookingToUpdate = bookings.find((b) => b.booking_id === booking_id);
-      if (!bookingToUpdate) return;
-
       const updatedData = { ...bookingToUpdate, status: "completed" };
 
       const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${booking_id}`, {
@@ -164,12 +217,18 @@ const rejectRequest = async (id: string) => {
     }
   };
 
+  // ---------------------------
+  // 🔍 Filter Search
+  // ---------------------------
   const filtered = bookings.filter((b) =>
     [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some(
       (v) => v?.toLowerCase().includes(search.toLowerCase())
     )
   );
 
+  // ---------------------------
+  // 🧾 Render Page
+  // ---------------------------
   return (
     <div className="app-container">
       <header className="app-header">
@@ -198,9 +257,9 @@ const rejectRequest = async (id: string) => {
           </div>
         </section>
 
-        {/* ================= INCOMING REQUESTS TABLE ================= */}
+        {/* ================= INCOMING REQUESTS ================= */}
         <section>
-          <h2>Incoming Requests (Pending Approval)</h2>
+          <h2>Incoming Requests</h2>
           <div className="table-wrapper">
             <table className="analytics-table">
               <thead>
@@ -209,19 +268,17 @@ const rejectRequest = async (id: string) => {
                   <th>User ID</th>
                   <th>Name</th>
                   <th>Service</th>
-                  <th>Date & Time</th>
+                  <th>Date</th>
                   <th>Address</th>
-                  <th>Notes</th>
                   <th>Assessment</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {incomingRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: "center" }}>
-                      No incoming requests
-                    </td>
+                    <td colSpan={9} style={{ textAlign: "center" }}>No incoming requests</td>
                   </tr>
                 ) : (
                   incomingRequests.map((r) => (
@@ -232,21 +289,11 @@ const rejectRequest = async (id: string) => {
                       <td>{r.service}</td>
                       <td>{new Date(r.booking_date).toLocaleString()}</td>
                       <td>{r.address}</td>
-                      <td>{r.notes || "—"}</td>
                       <td>{r.for_assessment ? "✅" : "❌"}</td>
-                      <td className="actions">
-                        <button
-                          className="btn btn--save"
-                          onClick={() => approveRequest(r.request_id)}
-                        >
-                          ✅ Approve
-                        </button>
-                        <button
-                          className="btn btn--cancel"
-                          onClick={() => rejectRequest(r.request_id)}
-                        >
-                          🚫 Reject
-                        </button>
+                      <td>{r.status || "pending"}</td>
+                      <td>
+                        <button onClick={() => approveRequest(r.request_id)} className="btn btn--approve">✅ Approve</button>
+                        <button onClick={() => rejectRequest(r.request_id)} className="btn btn--reject">❌ Reject</button>
                       </td>
                     </tr>
                   ))
@@ -279,155 +326,45 @@ const rejectRequest = async (id: string) => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={11} style={{ textAlign: "center" }}>
-                      No bookings found
-                    </td>
+                    <td colSpan={11} style={{ textAlign: "center" }}>No bookings found</td>
                   </tr>
                 ) : (
                   filtered.map((b) => (
                     <tr key={b.booking_id}>
                       <td>{b.booking_id}</td>
                       <td>{b.user_id}</td>
-                      <td>
-                        {editing === b.booking_id ? (
-                          <input
-                            value={formData.name || ""}
-                            onChange={(e) =>
-                              setFormData({ ...formData, name: e.target.value })
-                            }
-                          />
-                        ) : (
-                          b.name || "—"
-                        )}
-                      </td>
-                      <td>
-                        {editing === b.booking_id ? (
-                          <input
-                            value={formData.service || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                service: e.target.value,
-                              })
-                            }
-                          />
-                        ) : (
-                          b.service
-                        )}
-                      </td>
-                      <td>
-                        {editing === b.booking_id ? (
-                          <>
-                            <input
-                              type="date"
-                              value={formData.booking_date?.slice(0, 10) || ""}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  booking_date:
-                                    e.target.value +
-                                    (formData.booking_date?.slice(10) || "T00:00"),
-                                })
-                              }
-                            />
-                            <input
-                              type="time"
-                              value={
-                                formData.booking_date
-                                  ? formData.booking_date.slice(11, 16)
-                                  : "00:00"
-                              }
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  booking_date:
-                                    (formData.booking_date?.slice(0, 10) ||
-                                      "1970-01-01") +
-                                    "T" +
-                                    e.target.value,
-                                })
-                              }
-                            />
-                          </>
-                        ) : (
-                          new Date(b.booking_date).toLocaleString()
-                        )}
-                      </td>
-                      <td>
-                        {editing === b.booking_id ? (
-                          <input
-                            value={formData.address || ""}
-                            onChange={(e) =>
-                              setFormData({ ...formData, address: e.target.value })
-                            }
-                          />
-                        ) : (
-                          b.address
-                        )}
-                      </td>
-                      <td>
-                        {editing === b.booking_id ? (
-                          <textarea
-                            rows={2}
-                            value={formData.notes || ""}
-                            onChange={(e) =>
-                              setFormData({ ...formData, notes: e.target.value })
-                            }
-                          />
-                        ) : (
-                          b.notes || "—"
-                        )}
-                      </td>
+                      <td>{b.name || "—"}</td>
+                      <td>{b.service}</td>
+                      <td>{new Date(b.booking_date).toLocaleString()}</td>
+                      <td>{b.address}</td>
+                      <td>{b.notes || "—"}</td>
                       <td>{b.for_assessment ? "✅" : "❌"}</td>
                       <td>
                         {editing === b.booking_id ? (
                           <input
-                            type="number"
+                            type="text"
                             value={formData.payment || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                payment: e.target.value,
-                              })
-                            }
+                            onChange={handlePaymentChange}
+                            placeholder="₱0.00"
                           />
                         ) : b.payment ? (
-                          `₱${b.payment}`
+                          b.payment
                         ) : (
                           "—"
                         )}
                       </td>
-                      <td>
-                        {b.status === "completed" ? "completed ✅" : "pending ⏳"}
-                      </td>
+                      <td>{b.status === "completed" ? "✅ Completed" : "⏳ Pending"}</td>
                       <td className="actions">
                         {b.status === "pending" ? (
                           editing === b.booking_id ? (
                             <>
-                              <button onClick={saveEdit} className="btn btn--save">
-                                💾 Save
-                              </button>
-                              <button
-                                onClick={() => setEditing(null)}
-                                className="btn btn--cancel"
-                              >
-                                ✖ Cancel
-                              </button>
+                              <button onClick={saveEdit} className="btn btn--save">💾 Save</button>
+                              <button onClick={() => setEditing(null)} className="btn btn--cancel">✖ Cancel</button>
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => startEdit(b)}
-                                className="btn btn--edit"
-                              >
-                                ✏ Edit
-                              </button>
-                              <button
-                                onClick={() => markAsCompleted(b.booking_id)}
-                                className="btn btn--complete"
-                              >
-                                ✅ Complete
-                              </button>
+                              <button onClick={() => startEdit(b)} className="btn btn--edit">✏ Edit</button>
+                              <button onClick={() => markAsCompleted(b.booking_id)} className="btn btn--complete">✅ Complete</button>
                             </>
                           )
                         ) : (

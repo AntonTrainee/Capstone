@@ -2,11 +2,43 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../admin.css";
 
+// ===== Define proper interfaces =====
+interface Booking {
+  booking_id: number;
+  user_id: number;
+  name?: string;
+  service: string;
+  booking_date?: string;
+  address: string;
+  notes?: string;
+  for_assessment?: boolean;
+  created_at?: string;
+  payment?: number;
+  status?: string;
+}
+
+interface Sale {
+  sale_id: number;
+  user_id: number;
+  service: string;
+  payment?: number;
+  status: string;
+  completed_at?: string;
+  created_at?: string;
+}
+
+interface AnalyticsSummary {
+  service: string;
+  total_bookings: number;
+  total_amount: number;
+  completed_at?: string;
+}
+
 function Admindashb() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [sales, setSales] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsSummary[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   const bookingsRef = useRef<HTMLDivElement | null>(null);
@@ -35,13 +67,17 @@ function Admindashb() {
     const fetchAllData = async () => {
       try {
         // Fetch bookings
-        const bookingsRes = await fetch("https://capstone-ni5z.onrender.com/bookings");
-        const bookingsData = await bookingsRes.json();
+        const bookingsRes = await fetch(
+          "https://capstone-ni5z.onrender.com/bookings"
+        );
+        const bookingsData: Booking[] = await bookingsRes.json();
         setBookings(Array.isArray(bookingsData) ? bookingsData : []);
 
         // Fetch sales
-        const salesRes = await fetch("https://capstone-ni5z.onrender.com/sales");
-        const salesData = await salesRes.json();
+        const salesRes = await fetch(
+          "https://capstone-ni5z.onrender.com/sales"
+        );
+        const salesData: Sale[] = await salesRes.json();
         setSales(Array.isArray(salesData) ? salesData : []);
 
         // Fetch analytics summary
@@ -49,7 +85,7 @@ function Admindashb() {
         const analyticsRes = await fetch(
           `https://capstone-ni5z.onrender.com/analytics_summary?month=${new Date().getMonth() + 1}`
         );
-        const analyticsData = await analyticsRes.json();
+        const analyticsData: AnalyticsSummary[] = await analyticsRes.json();
         setAnalytics(Array.isArray(analyticsData) ? analyticsData : []);
       } catch (err) {
         console.error(err);
@@ -88,13 +124,19 @@ function Admindashb() {
         </button>
         <ul className="sidebar-nav">
           <li>
-            <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
+            <button onClick={() => scrollToRef(bookingsRef)}>
+              Manage Bookings
+            </button>
           </li>
           <li>
-            <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
+            <button onClick={() => scrollToRef(salesRef)}>
+              Sales and Request
+            </button>
           </li>
           <li>
-            <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
+            <button onClick={() => scrollToRef(analyticsRef)}>
+              Customer Analytics
+            </button>
           </li>
           <li>
             <Link to="/beforeafter">Before & After</Link>
@@ -240,7 +282,8 @@ function Admindashb() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.filter((b) => b.status !== "completed").length === 0 ? (
+                    {bookings.filter((b) => b.status !== "completed").length ===
+                    0 ? (
                       <tr>
                         <td colSpan={7} style={{ textAlign: "center" }}>
                           No requests found
@@ -255,9 +298,19 @@ function Admindashb() {
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">{r.status || "Pending"}</td>
-                            <td>{r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}</td>
-                            <td>{r.booking_date ? new Date(r.booking_date).toLocaleString() : "N/A"}</td>
+                            <td className="capitalize">
+                              {r.status || "Pending"}
+                            </td>
+                            <td>
+                              {r.created_at
+                                ? new Date(r.created_at).toLocaleString()
+                                : "N/A"}
+                            </td>
+                            <td>
+                              {r.booking_date
+                                ? new Date(r.booking_date).toLocaleString()
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))
                     )}
@@ -301,7 +354,11 @@ function Admindashb() {
                         <td>{row.service}</td>
                         <td>{row.total_bookings}</td>
                         <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                        <td>{row.completed_at ? new Date(row.completed_at).toLocaleString() : "N/A"}</td>
+                        <td>
+                          {row.completed_at
+                            ? new Date(row.completed_at).toLocaleString()
+                            : "N/A"}
+                        </td>
                       </tr>
                     ))
                   )}

@@ -1,5 +1,3 @@
-import Footer from "../components/footer";
-
 export default function PrivacyNotice() {
   return (
     <div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
@@ -8,9 +6,10 @@ export default function PrivacyNotice() {
 
       <h2>1. Introduction</h2>
       <p>
-        GenClean (“we”, “our”, or “us”) respects your privacy. This Privacy Notice
-        explains what personal data we collect, why we collect it, how long we
-        keep it, who we share it with, and your rights regarding that data.
+        GenClean (“we”, “our”, or “us”) respects your privacy. This Privacy
+        Notice explains what personal data we collect, why we collect it, how
+        long we keep it, who we share it with, and your rights regarding that
+        data.
       </p>
 
       <h2>2. Who we are</h2>
@@ -29,7 +28,9 @@ export default function PrivacyNotice() {
           Booking &amp; service details: booking date/time, service address,
           cleaner assigned, photos of service results.
         </li>
-        <li>Support &amp; communications: chat logs, support tickets, emails.</li>
+        <li>
+          Support &amp; communications: chat logs, support tickets, emails.
+        </li>
         <li>
           Device &amp; usage data: IP address, device type, browser, cookies and
           analytics identifiers.
@@ -112,14 +113,14 @@ export default function PrivacyNotice() {
 
       <h2>10. Cookies &amp; tracking</h2>
       <p>
-        We use cookies for site functionality and analytics. Marketing cookies are
-        only set with your consent.
+        We use cookies for site functionality and analytics. Marketing cookies
+        are only set with your consent.
       </p>
 
       <h2>11. Changes</h2>
       <p>
-        We may update this Privacy Notice. If changes are material, we will notify
-        you via the site or email.
+        We may update this Privacy Notice. If changes are material, we will
+        notify you via the site or email.
       </p>
 
       <h2>12. Contact &amp; complaints</h2>
@@ -127,8 +128,6 @@ export default function PrivacyNotice() {
         Contact us at <strong>dataprotection@genclean.com.ph</strong> or call{" "}
         <strong>277385555</strong>.
       </p>
-
-      <Footer />
     </div>
   );
 }

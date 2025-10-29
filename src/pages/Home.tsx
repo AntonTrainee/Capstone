@@ -16,6 +16,7 @@ function Home() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    address: "",
     phone: "",
     message: "",
   });
@@ -61,7 +62,13 @@ function Home() {
 
       if (res.ok) {
         setStatus("Message sent successfully!");
-        setFormData({ name: "", email: "", phone: "", message: "" });
+        setFormData({
+          name: "",
+          email: "",
+          address: "",
+          phone: "",
+          message: "",
+        });
       } else {
         setStatus("Failed to send. Please try again later.");
       }
@@ -203,7 +210,6 @@ function Home() {
 
       <HomeReviews />
 
-
       <section
         id="contact"
         className="contactcontainer"
@@ -247,6 +253,21 @@ function Home() {
                 />
                 <label htmlFor="email">Email address</label>
               </div>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <div className="form-floating">
+              <input
+                type="text"
+                className="form-control"
+                id="address"
+                placeholder="Address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+              <label htmlFor="address">Address</label>
             </div>
           </div>
 
@@ -302,18 +323,24 @@ function Home() {
 
           <div className="col-md-4">
             <div className="info-card h-100 d-flex flex-column justify-content-center">
-              <p className="bold">Business Hours:</p>
-              <p>Monday – Saturday, 9:00 AM – 6:00 PM</p>
+              <p className="bold" style={{ color: "#2a4d57ff" }}>
+                Business Hours:
+              </p>
+              <p style={{ color: "#2a4d57ff" }}>
+                Monday – Saturday, 9:00 AM – 6:00 PM
+              </p>
 
-              <p className="bold mt-3">Address:</p>
-              <p>
+              <p className="bold mt-3" style={{ color: "#2a4d57ff" }}>
+                Address:
+              </p>
+              <p style={{ color: "#2a4d57ff" }}>
                 Unit 114, 2nd Floor, Corinthian Executive Regency,
                 <br />
-                Ortigas Ave., San Antonio, Pasig City
+                Guadalupe Ave., San Antonio, Pasig City
               </p>
             </div>
           </div>
-      </div>
+        </div>
       </section>
 
       <Footer />

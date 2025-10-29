@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
 import "../salesreq.css";
 
+// ======================== TYPES ========================
 type ReportType = "sales" | "request";
 type ServiceType =
-  | "General Cleaning"
-  | "Pest Control"
-  | "Janitorial"
-  | "Cleaning Services";
+  | "General Maintenance"
+  | "Janitorial and Cleaning Services"
+  | "Pest Control";
 
 interface RecordItem {
   id: string;
@@ -29,87 +30,136 @@ interface Filters {
   search?: string;
 }
 
+interface SaleApiResponse {
+  sale_id: string;
+  user_id: string;
+  service: string;
+  payment: string;
+  status: string;
+  completed_at: string;
+  created_at: string;
+}
+
+interface RequestApiResponse {
+  booking_id: string;
+  user_id: string;
+  service: string;
+  address: string;
+  status: string;
+  created_at: string;
+  booking_date: string;
+}
+
+// ======================== COMPONENT ========================
 export default function SalesAndRequest() {
   const [filters, setFilters] = useState<Filters>({
     reportType: "sales",
     service: "All",
     search: "",
   });
-
   const [data, setData] = useState<RecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Fetch sales or requests
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+  // ✅ Reusable fetch function
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
 
-      const endpoint =
+    const endpoint =
+      filters.reportType === "sales"
+        ? "https://capstone-ni5z.onrender.com/sales"
+        : "https://capstone-ni5z.onrender.com/requests";
+
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok)
+        throw new Error(
+          `Failed to fetch ${filters.reportType}: ${res.statusText}`
+        );
+
+      const rows: SaleApiResponse[] | RequestApiResponse[] = await res.json();
+
+      const mapped: RecordItem[] =
         filters.reportType === "sales"
-          ? "https://capstone-ni5z.onrender.com/sales"
-          : "https://capstone-ni5z.onrender.com/requests";
+          ? (rows as SaleApiResponse[]).map((item) => ({
+              id: item.sale_id ?? "N/A",
+              user_id: item.user_id ?? "N/A",
+              service: item.service ?? "N/A",
+              payment: parseFloat(item.payment ?? "0"),
+              status: item.status ?? "N/A",
+              completed_at: item.completed_at ?? "N/A",
+              created_at: item.created_at ?? "N/A",
+            }))
+          : (rows as RequestApiResponse[]).map((item) => ({
+              id: item.booking_id ?? "N/A",
+              booking_id: item.booking_id ?? "N/A",
+              user_id: item.user_id ?? "N/A",
+              service: item.service ?? "N/A",
+              address: item.address ?? "N/A",
+              status: item.status ?? "N/A",
+              created_at: item.created_at ?? "N/A",
+              booking_date: item.booking_date ?? "N/A",
+            }));
 
-      try {
-        const res = await fetch(endpoint);
-        if (!res.ok)
-          throw new Error(
-            `Failed to fetch ${filters.reportType}: ${res.statusText}`
-          );
-        const rows = await res.json();
+      setData(mapped);
+    } catch (err) {
+      console.error(`❌ Error fetching ${filters.reportType}:`, err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const mapped: RecordItem[] =
-          filters.reportType === "sales"
-            ? rows.map((item: any) => ({
-                id: item.sale_id ?? "N/A",
-                user_id: item.user_id ?? "N/A",
-                service: item.service ?? "N/A",
-                payment: parseFloat(item.payment ?? 0),
-                status: item.status ?? "N/A",
-                completed_at: item.completed_at ?? "N/A",
-                created_at: item.created_at ?? "N/A",
-              }))
-            : rows.map((item: any) => ({
-    id: item.booking_id ?? "N/A", // <-- use booking_id here
-    booking_id: item.booking_id ?? "N/A",
-    user_id: item.user_id ?? "N/A",
-    service: item.service ?? "N/A",
-    address: item.address ?? "N/A",
-    status: item.status ?? "N/A",
-    created_at: item.created_at ?? "N/A",
-    booking_date: item.booking_date ?? "N/A",
-}));
-
-
-        setData(mapped);
-      } catch (err: any) {
-        console.error(`❌ Error fetching ${filters.reportType}:`, err);
-        setError(err.message);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  // ✅ Initial fetch + type change
+  useEffect(() => {
     fetchData();
   }, [filters.reportType]);
 
-  // ✅ Filters
+  // ✅ Socket.IO real-time updates
+  useEffect(() => {
+    const socket = io("https://capstone-ni5z.onrender.com");
+
+    socket.on("connect", () =>
+      console.log("✅ Connected to Socket.IO in SalesAndRequest")
+    );
+
+    socket.on("updateSales", () => {
+      if (filters.reportType === "sales") fetchData();
+    });
+
+    socket.on("updateRequests", () => {
+      if (filters.reportType === "request") fetchData();
+    });
+
+    socket.on("disconnect", () =>
+      console.log("❌ Disconnected from Socket.IO")
+    );
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [filters.reportType]);
+
+  // ✅ Filters (case-insensitive)
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
-      if (filters.service && filters.service !== "All" && r.service !== filters.service)
-        return false;
-      if (filters.from && new Date(r.created_at ?? "") < new Date(filters.from))
-        return false;
-      if (filters.to && new Date(r.created_at ?? "") > new Date(filters.to))
-        return false;
-      if (
-        filters.search &&
-        !r.service.toLowerCase().includes(filters.search.toLowerCase())
-      )
-        return false;
-      return true;
+      const serviceMatch =
+        filters.service === "All" ||
+        r.service?.toLowerCase() === filters.service?.toLowerCase();
+
+      const fromMatch =
+        !filters.from || new Date(r.created_at ?? "") >= new Date(filters.from);
+
+      const toMatch =
+        !filters.to || new Date(r.created_at ?? "") <= new Date(filters.to);
+
+      const searchMatch =
+        !filters.search ||
+        r.service?.toLowerCase().includes(filters.search.toLowerCase());
+
+      return serviceMatch && fromMatch && toMatch && searchMatch;
     });
   }, [data, filters]);
 
@@ -119,7 +169,15 @@ export default function SalesAndRequest() {
 
     const headers =
       filters.reportType === "sales"
-        ? ["Sale ID", "User ID", "Service", "Payment", "Status", "Completed At", "Created At"]
+        ? [
+            "Sale ID",
+            "User ID",
+            "Service",
+            "Payment",
+            "Status",
+            "Completed At",
+            "Created At",
+          ]
         : [
             "Request ID",
             "Booking ID",
@@ -166,6 +224,7 @@ export default function SalesAndRequest() {
     document.body.removeChild(a);
   };
 
+  // ======================== RENDER ========================
   return (
     <div className="app-container">
       <header className="app-header">
@@ -189,19 +248,23 @@ export default function SalesAndRequest() {
             <select
               value={filters.service}
               onChange={(e) =>
-                setFilters({ ...filters, service: e.target.value as Filters["service"] })
+                setFilters({
+                  ...filters,
+                  service: e.target.value as Filters["service"],
+                })
               }
             >
               <option value="All">All Services</option>
-              <option value="General Cleaning">General Cleaning</option>
-              <option value="Cleaning Services">Cleaning Services</option>
+              <option value="General Maintenance">General Maintenance</option>
+              <option value="Janitorial and Cleaning Services">
+                Janitorial and Cleaning Services
+              </option>
               <option value="Pest Control">Pest Control</option>
-              <option value="Janitorial">Janitorial</option>
             </select>
           </div>
         </section>
 
-        {/* Filter Controls */}
+        {/* Filters */}
         <div className="metrics-grid">
           <div className="metric-card">
             <label>From</label>
@@ -232,7 +295,9 @@ export default function SalesAndRequest() {
                   name="reportType"
                   value="sales"
                   checked={filters.reportType === "sales"}
-                  onChange={() => setFilters({ ...filters, reportType: "sales" })}
+                  onChange={() =>
+                    setFilters({ ...filters, reportType: "sales" })
+                  }
                 />
                 Sales
               </label>
@@ -242,7 +307,9 @@ export default function SalesAndRequest() {
                   name="reportType"
                   value="request"
                   checked={filters.reportType === "request"}
-                  onChange={() => setFilters({ ...filters, reportType: "request" })}
+                  onChange={() =>
+                    setFilters({ ...filters, reportType: "request" })
+                  }
                 />
                 Requests
               </label>
@@ -319,8 +386,16 @@ export default function SalesAndRequest() {
                         <td>{r.service}</td>
                         <td>₱{r.payment?.toFixed(2)}</td>
                         <td>{r.status}</td>
-                        <td>{r.completed_at}</td>
-                        <td>{r.created_at}</td>
+                        <td>
+                          {r.completed_at
+                            ? new Date(r.completed_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
                       </tr>
                     ))
                   ) : (
@@ -332,8 +407,16 @@ export default function SalesAndRequest() {
                         <td>{r.service}</td>
                         <td>{r.address}</td>
                         <td>{r.status}</td>
-                        <td>{r.created_at}</td>
-                        <td>{r.booking_date}</td>
+                        <td>
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {r.booking_date
+                            ? new Date(r.booking_date).toLocaleString("en-PH")
+                            : "N/A"}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -344,7 +427,9 @@ export default function SalesAndRequest() {
         </section>
       </main>
 
-      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
+      <footer className="app-footer">
+        © {new Date().getFullYear()} GenClean
+      </footer>
     </div>
   );
 }

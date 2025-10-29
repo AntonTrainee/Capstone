@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { ReviewsProvider } from "./pages/ReviewsContext"; 
+import { ReviewsProvider } from "./pages/ReviewsContext";
 
 import OtpPage from "./pages/OtpPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -26,7 +26,6 @@ import PrivacyNotice from "./pages/PrivacyNotice";
 import Cookies from "./pages/cookies";
 import CookieBanner from "./components/CookieBanner";
 
-
 import AdminReviews from "./pages/AdminReviews";
 
 function App() {
@@ -39,7 +38,10 @@ function App() {
         <Route path="/otp" element={<OtpPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/aboutus" element={<About />} />
-        <Route path="/beforeandaftershowcase" element={<BeforeAndAfterShowcase />} />
+        <Route
+          path="/beforeandaftershowcase"
+          element={<BeforeAndAfterShowcase />}
+        />
         <Route path="/privacy-notice" element={<PrivacyNotice />} />
         <Route path="/cookies" element={<Cookies />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />

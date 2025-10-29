@@ -13,13 +13,26 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f0f0f0;
+  background-color: #ffffff;
 }
 
 #root {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: transform 0.2s ease, color 0.2s ease;
+  display: inline-block;
+}
+
+.navbar a:hover {
+  transform: scale(1.1); 
+  color: #ffd700;
 }
 
 .navbar {
@@ -40,7 +53,7 @@ body {
 }
 
 .navbar .nav-item .nav-link {
-  margin-right: 40px;
+  margin-right: 20px;
   color: azure !important;
   font-weight: 500;
   font-size: 18px;
@@ -147,15 +160,49 @@ h2 {
 .review-carousel {
   background-color: #77cce6;
   color: azure;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-carousel:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 .container h2 {
   text-align: center;
 }
 
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .card img {
   height: 200px;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.card:hover img {
+  transform: scale(1.05);
+}
+
+.card .btn {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.card:hover .btn {
+  background-color: #11DBE5;
+  transform: scale(1.05);
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .contactcontainer {
@@ -719,6 +766,13 @@ tr:nth-child(even) {
   z-index: 1050;
 }
 
+.past-date {
+  color: gray !important;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+
 .logout-modal {
   background: white;
   padding: 20px;
@@ -806,6 +860,21 @@ tr:nth-child(even) {
   border-radius: 8px;
   height: fit-content;
 }
+
+.assessment-info-popup {
+  font-size: 0.9rem;
+  color: #333;
+  background-color: #f8f9fa;
+  border-left: 4px solid #289CBF;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
 
 @media (max-width: 768px) {
   .services-page.container.services-container {
@@ -1268,4 +1337,58 @@ footer {
   .navbar {
     padding-inline: 0.5rem;
   }
+}
+
+
+.assessment-icon {
+  position: relative;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.assessment-icon:hover + .form-check-label::after,
+.assessment-icon:focus + .form-check-label::after {
+  display: block;
+}
+
+/* Tooltip styling */
+.assessment-tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background: #f8f9fa;
+  color: #000;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 250px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+/* Hover-based tooltip (for desktops) */
+.assessment-icon:hover ~ .assessment-tooltip {
+  display: block;
+}
+
+.assessment-tooltip {
+  display: none;
+}
+
+.assessment-tooltip.show {
+  display: block;
+}
+
+.card-body {
+  background-color: #fff;
+  color: #142D54; /* dark navy text */
+  text-align: center;
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #142D54; /* ensure visible text */
 }

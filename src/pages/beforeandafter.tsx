@@ -12,7 +12,7 @@ interface BeforeAfter {
 function BeforeAfter() {
   const [posts, setPosts] = useState<BeforeAfter[]>([]);
 
-  // Fetch posts from backend
+  // *** FUNCTIONS REMAIN UNCHANGED ***
   const fetchPosts = () => {
     fetch("https://capstone-ni5z.onrender.com/beforeafter")
       .then((res) => res.json())
@@ -24,14 +24,16 @@ function BeforeAfter() {
     fetchPosts();
   }, []);
 
-  // Delete a post
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      const res = await fetch(`https://capstone-ni5z.onrender.com/beforeafter/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `https://capstone-ni5z.onrender.com/beforeafter/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (res.ok) {
         alert("Post deleted!");
@@ -43,92 +45,100 @@ function BeforeAfter() {
       console.error("Error deleting post:", err);
     }
   };
+  // *** END OF UNCHANGED FUNCTIONS ***
 
   return (
-    <div className="section-container">
-      <h2>Before & After</h2>
+    <div className="app-main-content">
+      <div className="admin-card-container">
+        <div className="card-header-bar">
+          <h2 className="card-title">Before & After Management</h2>
 
-      {/* Add New Button */}
-      <div className="view-more" style={{ marginBottom: "1rem" }}>
-        <Link to="/beforeafter/add">+ Add New</Link>
-      </div>
+          {/* Add New Button - Styled as a primary button */}
+          <Link to="/beforeafter/add" className="btn-primary">
+            + Add New Post
+          </Link>
+        </div>
 
-      {/* Table */}
-      <div className="table-wrapper">
-        <table className="analytics-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Title</th>
-              <th>Before Image</th>
-              <th>After Image</th>
-              <th>Created At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {posts.length === 0 ? (
+        {/* Table Container */}
+        <div className="table-responsive-wrapper">
+          <table className="data-management-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: "center" }}>
-                  No posts yet
-                </td>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Before Image</th>
+                <th>After Image</th>
+                <th>Date Created</th>
+                <th className="action-col">Actions</th>
               </tr>
-            ) : (
-              posts.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.title}</td>
-                  <td>
-                    <a href={p.before_url} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={p.before_url}
-                        alt="Before"
-                        style={{ width: "80px", borderRadius: "6px", cursor: "pointer" }}
-                      />
-                    </a>
-                  </td>
-                  <td>
-                    <a href={p.after_url} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={p.after_url}
-                        alt="After"
-                        style={{ width: "80px", borderRadius: "6px", cursor: "pointer" }}
-                      />
-                    </a>
-                  </td>
-                  <td>
-                    {p.created_at
-                      ? new Date(p.created_at).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-                  <td>
-                    <button
-                      style={{
-                        padding: "4px 8px",
-                        background: "red",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleDelete(p.id)}
-                    >
-                      Delete
-                    </button>
+            </thead>
+            <tbody>
+              {posts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center">
+                    No before & after posts found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                posts.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td>
+                    <td className="post-title-cell">{p.title}</td>
+                    <td className="image-cell">
+                      {/* Using the image-thumbnail class for better sizing */}
+                      <a
+                        href={p.before_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={p.before_url}
+                          alt="Before"
+                          className="image-thumbnail"
+                        />
+                      </a>
+                    </td>
+                    <td className="image-cell">
+                      {/* Using the image-thumbnail class for better sizing */}
+                      <a
+                        href={p.after_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={p.after_url}
+                          alt="After"
+                          className="image-thumbnail"
+                        />
+                      </a>
+                    </td>
+                    <td>
+                      {p.created_at
+                        ? new Date(p.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "N/A"}
+                    </td>
+                    <td className="action-col">
+                      {/* Delete Button - Styled as a danger button */}
+                      <button
+                        className="btn-danger"
+                        onClick={() => handleDelete(p.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 }
 
 export default BeforeAfter;
-
-
-
-
-

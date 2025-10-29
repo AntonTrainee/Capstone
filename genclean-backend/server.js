@@ -9,13 +9,21 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const fs = require("fs");
 const { Pool } = require("pg");
-const { createClient } = require("@supabase/supabase-js"); // ✅ Supabase added
+const { createClient } = require("@supabase/supabase-js");
 
+// ✅ NEW: Add HTTP + Socket.IO for realtime updates
+const http = require("http");
+const { Server } = require("socket.io");
 
 // OTP Controller
 const { sendOTP, verifyOTP } = require("./otpController.js");
 
 const app = express();
+const server = http.createServer(app); // wrap express
+const io = new Server(server, {
+  cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] },
+});
+
 const PORT = process.env.PORT || 3007;
 
 // ================== Middleware ==================
@@ -62,13 +70,25 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    const existing = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (existing.rows.length > 0) {
+    // Check if email exists
+    const existingEmail = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (existingEmail.rows.length > 0) {
       return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Check if this hash already exists (same password)
+    const existingPassword = await pool.query("SELECT * FROM users WHERE password = $1", [hashedPassword]);
+    if (existingPassword.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "That password is already used by another user. Please choose a different one.",
+      });
+    }
+
+    // Insert user
     await pool.query(
       `INSERT INTO users (first_name, last_name, phone_number, email, password)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -82,19 +102,51 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ================== LOGIN ==================
+
+// ================== LOGIN (CHECK BOTH TABLES FULLY) ==================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "User not found" });
+    // 1️⃣ Try Admins first, but only count as valid if password matches
+    const adminResult = await pool.query(`SELECT * FROM "Admins" WHERE email = $1`, [email]);
+
+    if (adminResult.rows.length > 0) {
+      const admin = adminResult.rows[0];
+      const isAdminMatch = await bcrypt.compare(password, admin.password_hash);
+
+      if (isAdminMatch) {
+        const token = jwt.sign(
+          { id: admin.id, email: admin.email, role: "admin" },
+          process.env.JWT_SECRET || "yoursecret",
+          { expiresIn: "1h" }
+        );
+
+        return res.status(200).json({
+          message: "Admin login successful",
+          token,
+          role: "admin",
+          redirect: "/admindashb",
+          user: {
+            id: admin.id,
+            email: admin.email,
+            username: admin.user_name,
+          },
+        });
+      }
     }
 
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+    // 2️⃣ If not a valid admin, check Users table
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: "Account not found" });
+    }
+
+    const user = userResult.rows[0];
+    const isUserMatch = await bcrypt.compare(password, user.password);
+    if (!isUserMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
 
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email, role: "customer" },
@@ -102,9 +154,11 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(200).json({
-      message: "Login successful",
+    return res.status(200).json({
+      message: "Customer login successful",
       token,
+      role: "customer",
+      redirect: "/customerdashb",
       user: {
         id: user.user_id,
         email: user.email,
@@ -118,6 +172,8 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
 
 // ================== PASSWORD RESET ==================
 app.post("/forgot-password", async (req, res) => {
@@ -136,7 +192,7 @@ app.post("/forgot-password", async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    const resetLink = `http://localhost:${PORT}/resetpassword?token=${resetToken}`;
+    const resetLink = `https://genclean.vercel.app/resetpassword?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -243,6 +299,64 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ✅ NEW: Realtime listener for bookings and history
+const setupRealtime = () => {
+  console.log("🔁 Subscribing to Supabase realtime changes...");
+
+  // Existing channels...
+  const bookingsChannel = supabase
+    .channel("bookings-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bookings" },
+      (payload) => {
+        console.log("📢 Realtime: bookings changed", payload);
+        io.emit("bookings_update", payload);
+      }
+    )
+    .subscribe();
+
+  const historyChannel = supabase
+    .channel("history-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "history" },
+      (payload) => {
+        console.log("📢 Realtime: history changed", payload);
+        io.emit("history_update", payload);
+      }
+    )
+    .subscribe();
+
+  // ✅ NEW: Add Incoming Requests realtime updates
+  const incomingRequestsChannel = supabase
+    .channel("incoming-requests-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "incoming_requests" },
+      (payload) => {
+        console.log("📢 Realtime: incoming_requests changed", payload);
+        io.emit("incoming_requests_update", payload);
+      }
+    )
+    .subscribe();
+
+  process.on("SIGINT", async () => {
+    await supabase.removeChannel(bookingsChannel);
+    await supabase.removeChannel(historyChannel);
+    await supabase.removeChannel(incomingRequestsChannel);
+    process.exit();
+  });
+};
+
+setupRealtime();
+
+// ✅ When a client connects to Socket.IO
+io.on("connection", (socket) => {
+  console.log("⚡ Client connected:", socket.id);
+  socket.on("disconnect", () => console.log("❌ Client disconnected:", socket.id));
+});
 
 app.post(
   "/beforeafter",
@@ -484,7 +598,7 @@ app.get("/bookings/user/:userId", async (req, res) => {
 
 
 app.post("/contact", async (req, res) => {
-  const { name, email, phone, message } = req.body;
+  const { name, email, phone, address, message } = req.body;
 
   try {
     const transporter = nodemailer.createTransport({
@@ -496,7 +610,7 @@ app.post("/contact", async (req, res) => {
       from: email,
       to: process.env.EMAIL,
       subject: `New Contact Form Submission from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nAddress: ${address}\nMessage: ${message}`,
     });
 
     res.status(200).json({ success: true, message: "Message sent successfully!" });
@@ -917,11 +1031,33 @@ app.delete("/reviews/:id", async (req, res) => {
   }
 });
 
+app.get("/check-fully-booked", async (req, res) => {
+  const { date } = req.query;
+
+  if (!date) return res.status(400).json({ message: "Date is required" });
+
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM bookings WHERE DATE(booking_date) = $1`,
+      [date]
+    );
+
+    const count = parseInt(result.rows[0].count, 10);
+
+    // Example: Max 5 bookings per day
+    const fullyBooked = count >= 5;
+
+    res.json({ fullyBooked });
+  } catch (err) {
+    console.error("Error checking fully booked:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 
 // ================== Start Server ==================
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Loaded email:", process.env.EMAIL);
   console.log("Loaded email pass:", process.env.EMAIL_PASS ? "✅ exists" : "❌ missing");
   console.log(`🚀 Server running on http://localhost:${PORT}`);

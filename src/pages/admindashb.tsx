@@ -67,13 +67,19 @@ function Admindashb() {
   // === Fetch all data ===
   const fetchAllData = async () => {
     try {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
+
       const [bookingsRes, salesRes, analyticsRes] = await Promise.all([
         fetch("https://capstone-ni5z.onrender.com/bookings"),
         fetch("https://capstone-ni5z.onrender.com/sales"),
         fetch(
-          `https://capstone-ni5z.onrender.com/analytics_summary?month=${
-            new Date().getMonth() + 1
-          }`
+          `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`
         ),
       ]);
 
@@ -346,52 +352,50 @@ function Admindashb() {
         </div>
 
         {/* Customer Analytics */}
-        <div className="section-container" ref={analyticsRef}>
-          <h2>Customer Analytics Summary</h2>
-          {loadingAnalytics ? (
-            <p>Loading table data...</p>
+<div className="section-container" ref={analyticsRef}>
+  <h2>Customer Analytics Summary</h2>
+  {loadingAnalytics ? (
+    <p>Loading table data...</p>
+  ) : (
+    <div className="table-wrapper">
+      <table className="analytics-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Total Bookings</th>
+            <th>Revenue</th>
+            <th>Recent Completion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {analytics.length === 0 ? (
+            <tr>
+              <td colSpan={4} style={{ textAlign: "center" }}>
+                No summary data available
+              </td>
+            </tr>
           ) : (
-            <div className="table-wrapper">
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th>Service</th>
-                    <th>Total Bookings</th>
-                    <th>Total Amount (₱)</th>
-                    <th>Completed At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: "center" }}>
-                        No summary data available
-                      </td>
-                    </tr>
-                  ) : (
-                    analytics.map((row, index) => (
-                      <tr key={index}>
-                        <td>{row.service}</td>
-                        <td>{row.total_bookings}</td>
-                        <td>
-                          ₱{Number(row.total_amount).toLocaleString()}
-                        </td>
-                        <td>
-                          {row.completed_at
-                            ? new Date(row.completed_at).toLocaleString()
-                            : "N/A"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            analytics.map((row, index) => (
+              <tr key={index}>
+                <td>{row.service}</td>
+                <td>{row.total_bookings}</td>
+                <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                <td>
+                  {row.completed_at
+                    ? new Date(row.completed_at).toLocaleString()
+                    : "N/A"}
+                </td>
+              </tr>
+            ))
           )}
-          <div className="view-more">
-            <Link to="/analytics">View More →</Link>
-          </div>
-        </div>
+        </tbody>
+      </table>
+    </div>
+  )}
+  <div className="view-more">
+    <Link to="/analytics">View More →</Link>
+  </div>
+</div>
       </main>
 
       <footer className="app-footer">

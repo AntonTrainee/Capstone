@@ -43,6 +43,7 @@ pool.connect()
   .then(() => console.log("✅ Connected to PostgreSQL"))
   .catch((err) => console.error("❌ Database error:", err.message));
 
+  
 // ================== Auth Middleware ==================
 function requireAuth(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
@@ -639,32 +640,37 @@ app.post("/beforeafter-local", upload.fields([{ name: "before" }, { name: "after
 /** ANALYTICS SUMMARY (READ - FILTER BY MONTH) */
 app.get("/analytics_summary", async (req, res) => {
   try {
-    // Extract month filter from query string (?month=10)
-    const month = parseInt(req.query.month);
+    const { from, to } = req.query;
 
-    // ✅ Validate month (1–12)
-    if (isNaN(month) || month < 1 || month > 12) {
-      return res.status(400).json({ error: "Invalid month value" });
+    // Validate date inputs
+    if (!from || !to) {
+      return res.status(400).json({ error: "Both 'from' and 'to' dates are required" });
     }
 
-    // ✅ Fetch only completed sales within the selected month
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    if (isNaN(fromDate) || isNaN(toDate)) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+
+    // Fetch completed sales within the date range
     const { rows } = await pool.query(
       `
       SELECT 
         service,
         COUNT(*) AS total_bookings,
         SUM(payment) AS total_amount,
-        MAX(completed_at) AS completed_at
+        MAX(completed_at) AS last_completed
       FROM sales
       WHERE status = 'completed'
-        AND EXTRACT(MONTH FROM completed_at) = $1
+        AND completed_at BETWEEN $1 AND $2
       GROUP BY service
       ORDER BY total_amount DESC;
       `,
-      [month]
+      [fromDate, toDate]
     );
 
-    console.log("Fetched Analytics Summary:", rows);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching analytics summary:", err);
@@ -674,27 +680,6 @@ app.get("/analytics_summary", async (req, res) => {
 
 
 
-/** SALES (READ - GET ALL) */
-app.get("/sales", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM sales ORDER BY created_at DESC");
-    console.log("Fetched Sales:", result.rows);
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching sales:", err);
-    res.status(500).send("Error fetching sales");
-  }
-});
-
-/** REQUEST (READ - GET ALL) */
-app.get("/requests", async (req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM bookings WHERE status != 'completed' ORDER BY created_at DESC"
-  );
-  res.json(result.rows);
-});
-
-
 
 /** SALES (READ - GET ALL) */
 app.get("/sales", async (req, res) => {
@@ -715,6 +700,10 @@ app.get("/requests", async (req, res) => {
   );
   res.json(result.rows);
 });
+
+
+
+
 
 
 
@@ -1041,6 +1030,34 @@ app.get("/check-fully-booked", async (req, res) => {
   }
 });
 
+// ✅ NEW: Add realtime updates for sales (analytics summary)
+const salesChannel = supabase
+  .channel("sales-changes")
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "sales" },
+    (payload) => {
+      console.log("📊 Realtime: sales changed", payload);
+      io.emit("sales_update", payload);
+    }
+  )
+  .subscribe();
+
+  process.on("SIGINT", async () => {
+  await supabase.removeChannel(bookingsChannel);
+  await supabase.removeChannel(historyChannel);
+  await supabase.removeChannel(incomingRequestsChannel);
+  await supabase.removeChannel(salesChannel); // added line
+  process.exit();
+});
+
+// ================== Serve React Frontend ==================
+const frontendPath = path.join(__dirname, "client", "dist"); // adjust if your folder is different
+app.use(express.static(frontendPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 
 // ================== Start Server ==================

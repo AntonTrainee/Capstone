@@ -98,6 +98,17 @@ export default function ManageBookingsPage() {
       payment: formatted,
     });
   };
+  
+  // ---------------------------
+  // 🧼 Clean Payment Input for API (NEW FIX)
+  // ---------------------------
+  const cleanCurrency = (formattedValue: string | null | undefined): string | null => {
+    if (!formattedValue) return null;
+    // Remove currency symbol (₱), commas (,), and any spaces
+    const cleaned = formattedValue.replace(/[₱,.\s]/g, "");
+    return cleaned || null;
+  };
+
 
   // ---------------------------
   // 📥 Incoming Request Actions
@@ -156,12 +167,23 @@ export default function ManageBookingsPage() {
   const saveEdit = async () => {
     if (!editing) return;
     if (!window.confirm("Are you sure you want to save changes?")) return;
+    
+    // --- START OF FIX ---
+    // Clean the payment value from currency format before sending it to the server
+    const paymentToSend = cleanCurrency(formData.payment);
+
+    const dataToSend = {
+      ...formData,
+      payment: paymentToSend, 
+    };
+    // --- END OF FIX ---
+
 
     try {
       const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${editing}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend), // Send the cleaned data
       });
 
       if (res.ok) {
@@ -186,16 +208,24 @@ export default function ManageBookingsPage() {
   const markAsCompleted = async (booking_id: string) => {
     const bookingToUpdate = bookings.find((b) => b.booking_id === booking_id);
     if (!bookingToUpdate) return;
-
-    if (!bookingToUpdate.payment || bookingToUpdate.payment.trim() === "" || bookingToUpdate.payment === "₱0") {
+    
+    // --- START OF FIX: Clean payment before checking validity for completion ---
+    const cleanedPayment = cleanCurrency(bookingToUpdate.payment);
+    if (!cleanedPayment || parseInt(cleanedPayment) === 0) {
       alert("⚠️ Please enter a valid payment amount before marking as completed.");
       return;
     }
+    // --- END OF FIX ---
+
 
     if (!window.confirm("Are you sure the cleaning is done?")) return;
 
     try {
-      const updatedData = { ...bookingToUpdate, status: "completed" };
+      const updatedData = { 
+        ...bookingToUpdate, 
+        status: "completed",
+        payment: cleanedPayment // Ensure the server receives the cleaned value
+      };
 
       const res = await fetch(`https://capstone-ni5z.onrender.com/bookings/${booking_id}`, {
         method: "PUT",

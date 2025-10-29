@@ -102,7 +102,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-
 // ================== LOGIN (CHECK BOTH TABLES FULLY) ==================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;

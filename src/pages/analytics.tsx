@@ -23,82 +23,52 @@ export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // For date filter
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  // Fetch analytics data (current month)
+  const fetchSummary = async () => {
+    setLoading(true);
+    try {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
 
-  // Fetch analytics data
-  const fetchSummary = async (from?: string, to?: string) => {
-  setLoading(true);
-  try {
-    let url = "https://capstone-ni5z.onrender.com/analytics_summary";
-    if (from && to) {
-      url += `?from=${from}&to=${to}`;
+      const url = `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      setSummary(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching summary:", err);
+      setSummary([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const res = await fetch(url);
-    const data = await res.json();
-    setSummary(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error("Error fetching summary:", err);
-    setSummary([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  // Default fetch on mount (show current data)
+  // Fetch on mount
   useEffect(() => {
     fetchSummary();
   }, []);
 
-  useEffect(() => {
-  const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-    .toISOString()
-    .split("T")[0];
-
-  setFromDate(firstDay);
-  setToDate(lastDay);
-  fetchSummary(firstDay, lastDay);
-}, []);
-
-
-  // ✅ Real-time updates via Socket.IO
+  // Real-time updates via Socket.IO
   useEffect(() => {
     const socket = io("https://capstone-ni5z.onrender.com");
 
-    socket.on("connect", () => {
-      console.log("✅ Connected to analytics socket");
-    });
+    socket.on("connect", () => console.log("✅ Connected to analytics socket"));
 
-    // When analytics updates on the server
     socket.on("analytics_update", (updatedData: Summary[]) => {
       console.log("📊 Realtime analytics update received:", updatedData);
       setSummary(updatedData);
     });
 
-    socket.on("disconnect", () => {
-      console.log("❌ Disconnected from analytics socket");
-    });
+    socket.on("disconnect", () => console.log("❌ Disconnected from analytics socket"));
 
     return () => {
       socket.disconnect();
     };
   }, []);
-
-  // Handle filter
-  const handleApplyFilter = () => {
-    if (!fromDate || !toDate) {
-      alert("Please select both From and To dates before applying the filter.");
-      return;
-    }
-    fetchSummary(fromDate, toDate);
-  };
 
   return (
     <div className="app-container">
@@ -117,28 +87,7 @@ export default function Analytics() {
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
-            <p>
-              Overview of total bookings and revenue per service type.
-            </p>
-          </div>
-
-          {/* Date Range Filter */}
-          <div className="filter-controls">
-            <div className="date-filter-group">
-              <label>From: </label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-              <label>To: </label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-              />
-              <button onClick={handleApplyFilter}>Apply Filter</button>
-            </div>
+            <p>Overview of total bookings and revenue per service type.</p>
           </div>
         </section>
 
@@ -149,7 +98,7 @@ export default function Analytics() {
             <p>Loading analytics...</p>
           ) : (
             <div className="chart-wrapper">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={summary}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="service" />
@@ -164,7 +113,7 @@ export default function Analytics() {
                   <Bar
                     dataKey="total_amount"
                     fill="#6366f1"
-                    name="Total Amount (₱)"
+                    name="Revenue"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -184,8 +133,8 @@ export default function Analytics() {
                   <tr>
                     <th>Service</th>
                     <th>Total Bookings</th>
-                    <th>Total Amount (₱)</th>
-                    <th>Completed At</th>
+                    <th>Revenue</th>
+                    <th>Recent Completion</th>
                   </tr>
                 </thead>
                 <tbody>

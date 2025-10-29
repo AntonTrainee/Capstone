@@ -67,13 +67,19 @@ function Admindashb() {
   // === Fetch all data ===
   const fetchAllData = async () => {
     try {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
+
       const [bookingsRes, salesRes, analyticsRes] = await Promise.all([
         fetch("https://capstone-ni5z.onrender.com/bookings"),
         fetch("https://capstone-ni5z.onrender.com/sales"),
         fetch(
-          `https://capstone-ni5z.onrender.com/analytics_summary?month=${
-            new Date().getMonth() + 1
-          }`
+          `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`
         ),
       ]);
 

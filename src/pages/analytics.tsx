@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import { useEffect, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
 import {
   BarChart,
   Bar,
@@ -23,19 +23,24 @@ export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // For date filter
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  // Get first & last day of current month
+  const getCurrentMonthRange = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+    return { firstDay, lastDay };
+  };
 
   // Fetch analytics data
-  const fetchSummary = async (from?: string, to?: string) => {
+  const fetchSummary = useCallback(async () => {
     setLoading(true);
     try {
-      let url = "https://capstone-ni5z.onrender.com/analytics_summary";
-      if (from && to) {
-        url += `?from=${from}&to=${to}`;
-      }
-
+      const { firstDay, lastDay } = getCurrentMonthRange();
+      const url = `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`;
       const res = await fetch(url);
       const data = await res.json();
       setSummary(Array.isArray(data) ? data : []);
@@ -45,54 +50,39 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Default fetch on mount (current month)
-  useEffect(() => {
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-      .toISOString()
-      .split("T")[0];
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0];
-
-    setFromDate(firstDay);
-    setToDate(lastDay);
-    fetchSummary(firstDay, lastDay);
   }, []);
 
-  // ✅ Real-time updates via Socket.IO
+  // Fetch on mount
   useEffect(() => {
-    const socket = io("https://capstone-ni5z.onrender.com");
+    fetchSummary();
+  }, [fetchSummary]);
+
+  // Real-time updates via Socket.IO
+  useEffect(() => {
+    const socket: Socket = io("https://capstone-ni5z.onrender.com");
 
     socket.on("connect", () => console.log("✅ Connected to analytics socket"));
 
-    // Listen for analytics updates
     socket.on("analytics_update", (updatedData: Summary[]) => {
-      console.log("📊 Realtime analytics update received:", updatedData);
-      setSummary(updatedData);
+      const { firstDay, lastDay } = getCurrentMonthRange();
+      const filtered = updatedData.filter((row) => {
+        const completed = new Date(row.completed_at).toISOString().split("T")[0];
+        return completed >= firstDay && completed <= lastDay;
+      });
+      setSummary(filtered);
+      setLoading(false);
+      console.log("📊 Realtime update applied:", filtered);
     });
 
     socket.on("disconnect", () => console.log("❌ Disconnected from analytics socket"));
 
     return () => {
-      socket.disconnect();
+      socket.disconnect(); // Proper cleanup
     };
   }, []);
 
-  // Handle manual date filter
-  const handleApplyFilter = () => {
-    if (!fromDate || !toDate) {
-      alert("Please select both From and To dates before applying the filter.");
-      return;
-    }
-    fetchSummary(fromDate, toDate);
-  };
-
   return (
     <div className="app-container">
-      {/* Header */}
       <header className="app-header">
         <div className="header-inner">
           <div className="logo">
@@ -102,36 +92,14 @@ export default function Analytics() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="app-main">
-        {/* Hero */}
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
             <p>Overview of total bookings and revenue per service type.</p>
           </div>
-
-          {/* Optional Date Filter */}
-          <div className="filter-controls">
-            <div className="date-filter-group">
-              <label>From: </label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-              />
-              <label>To: </label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-              />
-              <button onClick={handleApplyFilter}>Apply Filter</button>
-            </div>
-          </div>
         </section>
 
-        {/* Chart */}
         <section>
           <h2>Visualization: Total Bookings & Revenue by Service</h2>
           {loading ? (
@@ -153,7 +121,6 @@ export default function Analytics() {
           )}
         </section>
 
-        {/* Table */}
         <section>
           <h2>Analytics Summary Table</h2>
           {loading ? (
@@ -197,9 +164,7 @@ export default function Analytics() {
         </section>
       </main>
 
-      <footer className="app-footer">
-        © {new Date().getFullYear()} GenClean
-      </footer>
+      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
     </div>
   );
 }

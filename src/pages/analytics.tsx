@@ -23,19 +23,19 @@ export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch analytics data (current month)
-  const fetchSummary = async () => {
+  // For date filter
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
+  // Fetch analytics data
+  const fetchSummary = async (from?: string, to?: string) => {
     setLoading(true);
     try {
-      const today = new Date();
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
+      let url = "https://capstone-ni5z.onrender.com/analytics_summary";
+      if (from && to) {
+        url += `?from=${from}&to=${to}`;
+      }
 
-      const url = `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`;
       const res = await fetch(url);
       const data = await res.json();
       setSummary(Array.isArray(data) ? data : []);
@@ -47,17 +47,28 @@ export default function Analytics() {
     }
   };
 
-  // Fetch on mount
+  // Default fetch on mount (current month)
   useEffect(() => {
-    fetchSummary();
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+
+    setFromDate(firstDay);
+    setToDate(lastDay);
+    fetchSummary(firstDay, lastDay);
   }, []);
 
-  // Real-time updates via Socket.IO
+  // ✅ Real-time updates via Socket.IO
   useEffect(() => {
     const socket = io("https://capstone-ni5z.onrender.com");
 
     socket.on("connect", () => console.log("✅ Connected to analytics socket"));
 
+    // Listen for analytics updates
     socket.on("analytics_update", (updatedData: Summary[]) => {
       console.log("📊 Realtime analytics update received:", updatedData);
       setSummary(updatedData);
@@ -69,6 +80,15 @@ export default function Analytics() {
       socket.disconnect();
     };
   }, []);
+
+  // Handle manual date filter
+  const handleApplyFilter = () => {
+    if (!fromDate || !toDate) {
+      alert("Please select both From and To dates before applying the filter.");
+      return;
+    }
+    fetchSummary(fromDate, toDate);
+  };
 
   return (
     <div className="app-container">
@@ -84,10 +104,30 @@ export default function Analytics() {
 
       {/* Main */}
       <main className="app-main">
+        {/* Hero */}
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
             <p>Overview of total bookings and revenue per service type.</p>
+          </div>
+
+          {/* Optional Date Filter */}
+          <div className="filter-controls">
+            <div className="date-filter-group">
+              <label>From: </label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              <label>To: </label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+              <button onClick={handleApplyFilter}>Apply Filter</button>
+            </div>
           </div>
         </section>
 
@@ -105,16 +145,8 @@ export default function Analytics() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar
-                    dataKey="total_bookings"
-                    fill="#38bdf8"
-                    name="Total Bookings"
-                  />
-                  <Bar
-                    dataKey="total_amount"
-                    fill="#6366f1"
-                    name="Revenue"
-                  />
+                  <Bar dataKey="total_bookings" fill="#38bdf8" name="Total Bookings" />
+                  <Bar dataKey="total_amount" fill="#6366f1" name="Revenue" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -639,15 +639,14 @@ app.post("/beforeafter-local", upload.fields([{ name: "before" }, { name: "after
 /** ANALYTICS SUMMARY (READ - FILTER BY MONTH) */
 app.get("/analytics_summary", async (req, res) => {
   try {
-    // Extract month filter from query string (?month=10)
-    const month = parseInt(req.query.month);
+    const from = req.query.from; // e.g., "2025-10-01"
+    const to = req.query.to;     // e.g., "2025-10-31"
 
-    // ✅ Validate month (1–12)
-    if (isNaN(month) || month < 1 || month > 12) {
-      return res.status(400).json({ error: "Invalid month value" });
+    // Validate dates
+    if (!from || !to || isNaN(new Date(from).getTime()) || isNaN(new Date(to).getTime())) {
+      return res.status(400).json({ error: "Please provide valid 'from' and 'to' dates." });
     }
 
-    // ✅ Fetch only completed sales within the selected month
     const { rows } = await pool.query(
       `
       SELECT 
@@ -657,11 +656,11 @@ app.get("/analytics_summary", async (req, res) => {
         MAX(completed_at) AS completed_at
       FROM sales
       WHERE status = 'completed'
-        AND EXTRACT(MONTH FROM completed_at) = $1
+        AND completed_at BETWEEN $1 AND $2
       GROUP BY service
       ORDER BY total_amount DESC;
       `,
-      [month]
+      [from, to]
     );
 
     console.log("Fetched Analytics Summary:", rows);
@@ -671,6 +670,8 @@ app.get("/analytics_summary", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 
 

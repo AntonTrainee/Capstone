@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import {
   BarChart,
   Bar,
@@ -7,7 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
 
 import "../analytics.css";
@@ -16,7 +17,7 @@ type Summary = {
   service: string;
   total_bookings: number;
   total_amount: number;
-  completed_at: string; // new column
+  completed_at: string;
 };
 
 export default function Analytics() {
@@ -24,21 +25,52 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth() + 1
-  ); // default: current month
+  );
 
-  useEffect(() => {
+  // Function to fetch data manually (used for first load and month change)
+  const fetchSummary = async (month: number) => {
     setLoading(true);
-    fetch(`https://capstone-ni5z.onrender.com/analytics_summary?month=${selectedMonth}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setSummary(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching summary:", err);
-        setLoading(false);
-      });
+    try {
+      const res = await fetch(
+        `https://capstone-ni5z.onrender.com/analytics_summary?month=${month}`
+      );
+      const data = await res.json();
+      setSummary(data);
+    } catch (err) {
+      console.error("Error fetching summary:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load initial summary when component mounts or month changes
+  useEffect(() => {
+    fetchSummary(selectedMonth);
   }, [selectedMonth]);
+
+  // ✅ Realtime updates via Socket.IO
+  useEffect(() => {
+    const socket = io("https://capstone-ni5z.onrender.com");
+
+    socket.on("connect", () => {
+      console.log("✅ Connected to analytics socket");
+    });
+
+    // Listen for updates pushed by backend
+    socket.on("analytics_update", (updatedData: Summary[]) => {
+      console.log("📊 Realtime analytics update received:", updatedData);
+      setSummary(updatedData);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Disconnected from analytics socket");
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <div className="app-container">
@@ -80,7 +112,7 @@ export default function Analytics() {
                 "September",
                 "October",
                 "November",
-                "December"
+                "December",
               ].map((month, index) => (
                 <option key={index + 1} value={index + 1}>
                   {month}
@@ -149,7 +181,9 @@ export default function Analytics() {
                         <td>{row.service}</td>
                         <td>{row.total_bookings}</td>
                         <td>₱{row.total_amount.toLocaleString()}</td>
-                        <td>{new Date(row.completed_at).toLocaleDateString()}</td>
+                        <td>
+                          {new Date(row.completed_at).toLocaleDateString()}
+                        </td>
                       </tr>
                     ))
                   )}

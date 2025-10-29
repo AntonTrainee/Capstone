@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import "../admin.css";
 
 // ===== Define proper interfaces =====
@@ -64,6 +65,8 @@ function Admindashb() {
   };
 
   useEffect(() => {
+    const socket = io("https://capstone-ni5z.onrender.com");
+
     const fetchAllData = async () => {
       try {
         const bookingsRes = await fetch("https://capstone-ni5z.onrender.com/bookings");
@@ -91,8 +94,27 @@ function Admindashb() {
     };
 
     fetchAllData();
-    const interval = setInterval(fetchAllData, 5000);
-    return () => clearInterval(interval);
+
+    // Listen for real-time updates for analytics
+    socket.on("analytics_updated", (updatedData: AnalyticsSummary[]) => {
+      console.log("Received real-time analytics update (admin dashboard)");
+      setAnalytics(updatedData);
+    });
+
+    // Optionally listen for new bookings or sales (if backend emits them)
+    socket.on("bookings_updated", (updatedBookings: Booking[]) => {
+      console.log("Received real-time bookings update");
+      setBookings(updatedBookings);
+    });
+
+    socket.on("sales_updated", (updatedSales: Sale[]) => {
+      console.log("Received real-time sales update");
+      setSales(updatedSales);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (

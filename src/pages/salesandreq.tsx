@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import "../salesreq.css";
 
-// ======================== TYPES ========================
 type ReportType = "sales" | "request";
 type ServiceType =
   | "General Maintenance"
@@ -50,7 +49,6 @@ interface RequestApiResponse {
   booking_date: string;
 }
 
-// ======================== COMPONENT ========================
 export default function SalesAndRequest() {
   const [filters, setFilters] = useState<Filters>({
     reportType: "sales",
@@ -61,8 +59,8 @@ export default function SalesAndRequest() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Reusable fetch function
-  const fetchData = async () => {
+  // ✅ Wrapped in useCallback to fix ESLint dependency warning
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -73,56 +71,53 @@ export default function SalesAndRequest() {
 
     try {
       const res = await fetch(endpoint);
-      if (!res.ok)
-        throw new Error(
-          `Failed to fetch ${filters.reportType}: ${res.statusText}`
-        );
+      if (!res.ok) throw new Error(`Failed to fetch ${filters.reportType}`);
 
       const rows: SaleApiResponse[] | RequestApiResponse[] = await res.json();
 
       const mapped: RecordItem[] =
         filters.reportType === "sales"
           ? (rows as SaleApiResponse[]).map((item) => ({
-              id: item.sale_id ?? "N/A",
-              user_id: item.user_id ?? "N/A",
-              service: item.service ?? "N/A",
+              id: item.sale_id,
+              user_id: item.user_id,
+              service: item.service,
               payment: parseFloat(item.payment ?? "0"),
-              status: item.status ?? "N/A",
-              completed_at: item.completed_at ?? "N/A",
-              created_at: item.created_at ?? "N/A",
+              status: item.status,
+              completed_at: item.completed_at,
+              created_at: item.created_at,
             }))
           : (rows as RequestApiResponse[]).map((item) => ({
-              id: item.booking_id ?? "N/A",
-              booking_id: item.booking_id ?? "N/A",
-              user_id: item.user_id ?? "N/A",
-              service: item.service ?? "N/A",
-              address: item.address ?? "N/A",
-              status: item.status ?? "N/A",
-              created_at: item.created_at ?? "N/A",
-              booking_date: item.booking_date ?? "N/A",
+              id: item.booking_id,
+              booking_id: item.booking_id,
+              user_id: item.user_id,
+              service: item.service,
+              address: item.address,
+              status: item.status,
+              created_at: item.created_at,
+              booking_date: item.booking_date,
             }));
 
       setData(mapped);
     } catch (err) {
-      console.error(`❌ Error fetching ${filters.reportType}:`, err);
+      console.error(`Error fetching ${filters.reportType}:`, err);
       setError(err instanceof Error ? err.message : "Unknown error");
       setData([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.reportType]); // ✅ dependency is only reportType
 
-  // ✅ Initial fetch + type change
+  // Fetch data when reportType changes
   useEffect(() => {
     fetchData();
-  }, [filters.reportType]);
+  }, [fetchData]); // ✅ ESLint-safe
 
-  // ✅ Socket.IO real-time updates
+  // Real-time updates via Socket.IO
   useEffect(() => {
     const socket = io("https://capstone-ni5z.onrender.com");
 
     socket.on("connect", () =>
-      console.log("✅ Connected to Socket.IO in SalesAndRequest")
+      console.log("Connected to Socket.IO in SalesAndRequest")
     );
 
     socket.on("updateSales", () => {
@@ -134,15 +129,14 @@ export default function SalesAndRequest() {
     });
 
     socket.on("disconnect", () =>
-      console.log("❌ Disconnected from Socket.IO")
+      console.log("Disconnected from Socket.IO in SalesAndRequest")
     );
 
     return () => {
       socket.disconnect();
     };
-  }, [filters.reportType]);
+  }, [filters.reportType, fetchData]); // ✅ includes fetchData
 
-  // ✅ Filters (case-insensitive)
   const filteredRows = useMemo(() => {
     return data.filter((r) => {
       const serviceMatch =
@@ -163,7 +157,6 @@ export default function SalesAndRequest() {
     });
   }, [data, filters]);
 
-  // ✅ CSV Download
   const handleDownload = () => {
     if (filteredRows.length === 0) return alert("No data to download");
 
@@ -218,20 +211,19 @@ export default function SalesAndRequest() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.setAttribute("download", `${filters.reportType}_full_report.csv`);
+    a.setAttribute("download", `${filters.reportType}_report.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  // ======================== RENDER ========================
   return (
     <div className="app-container">
       <header className="app-header">
         <div className="header-inner">
           <div className="logo">
             <span className="logo-main">GenClean</span>
-            <span className="logo-sub">Sales & Request</span>
+            <span className="logo-sub">Sales & Requests</span>
           </div>
         </div>
       </header>
@@ -240,8 +232,8 @@ export default function SalesAndRequest() {
         <section className="analytics-hero">
           <div>
             <h1>Sales and Request Reports</h1>
-            <p>Switch between reports using the options below.</p>
-            {error && <p style={{ color: "red" }}>Error: {error}</p>}
+            <p>Filter and download complete records easily.</p>
+            {error && <p className="error-text">Error: {error}</p>}
           </div>
 
           <div className="filter-controls">
@@ -333,16 +325,16 @@ export default function SalesAndRequest() {
           <div className="table-header">
             <h2>
               {filters.reportType === "sales"
-                ? "Sales Report (All Columns)"
-                : "Requests Report (All Columns)"}
+                ? "Sales Report"
+                : "Requests Report"}
             </h2>
             <button className="download-btn" onClick={handleDownload}>
-              ⬇ Download Report
+              Download Report
             </button>
           </div>
 
           {loading ? (
-            <p>Loading...</p>
+            <p>Loading data...</p>
           ) : (
             <div className="table-wrapper">
               <table className="salesreq-table">
@@ -384,7 +376,14 @@ export default function SalesAndRequest() {
                         <td>{r.id}</td>
                         <td>{r.user_id}</td>
                         <td>{r.service}</td>
-                        <td>₱{r.payment?.toFixed(2)}</td>
+                        <td>
+                          ₱
+                          {r.payment
+                            ? r.payment.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              })
+                            : "0.00"}
+                        </td>
                         <td>{r.status}</td>
                         <td>
                           {r.completed_at

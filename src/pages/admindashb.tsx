@@ -66,21 +66,14 @@ function Admindashb() {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        // Fetch bookings
-        const bookingsRes = await fetch(
-          "https://capstone-ni5z.onrender.com/bookings"
-        );
+        const bookingsRes = await fetch("https://capstone-ni5z.onrender.com/bookings");
         const bookingsData: Booking[] = await bookingsRes.json();
         setBookings(Array.isArray(bookingsData) ? bookingsData : []);
 
-        // Fetch sales
-        const salesRes = await fetch(
-          "https://capstone-ni5z.onrender.com/sales"
-        );
+        const salesRes = await fetch("https://capstone-ni5z.onrender.com/sales");
         const salesData: Sale[] = await salesRes.json();
         setSales(Array.isArray(salesData) ? salesData : []);
 
-        // Fetch analytics summary
         setLoadingAnalytics(true);
         const analyticsRes = await fetch(
           `https://capstone-ni5z.onrender.com/analytics_summary?month=${new Date().getMonth() + 1}`
@@ -123,32 +116,12 @@ function Admindashb() {
           &times;
         </button>
         <ul className="sidebar-nav">
-          <li>
-            <button onClick={() => scrollToRef(bookingsRef)}>
-              Manage Bookings
-            </button>
-          </li>
-          <li>
-            <button onClick={() => scrollToRef(salesRef)}>
-              Sales and Request
-            </button>
-          </li>
-          <li>
-            <button onClick={() => scrollToRef(analyticsRef)}>
-              Customer Analytics
-            </button>
-          </li>
-          <li>
-            <Link to="/beforeafter">Before & After</Link>
-          </li>
-          <li>
-            <Link to="/admin-reviews">Change Reviews</Link>
-          </li>
-          <li>
-            <button className="btn-logout" onClick={handleSignOut}>
-              Sign out
-            </button>
-          </li>
+          <li><button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button></li>
+          <li><button onClick={() => scrollToRef(salesRef)}>Sales and Request</button></li>
+          <li><button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button></li>
+          <li><Link to="/beforeafter">Before & After</Link></li>
+          <li><Link to="/admin-reviews">Change Reviews</Link></li>
+          <li><button className="btn-logout" onClick={handleSignOut}>Sign out</button></li>
         </ul>
       </div>
 
@@ -188,20 +161,12 @@ function Admindashb() {
                       <td>{b.user_id}</td>
                       <td>{b.name || "—"}</td>
                       <td>{b.service}</td>
-                      <td>
-                        {b.booking_date
-                          ? new Date(b.booking_date).toLocaleString()
-                          : "N/A"}
-                      </td>
+                      <td>{b.booking_date ? new Date(b.booking_date).toLocaleString() : "N/A"}</td>
                       <td>{b.address}</td>
                       <td>{b.notes || "—"}</td>
-                      <td>{b.for_assessment ? "✅" : "❌"}</td>
-                      <td>
-                        {b.created_at
-                          ? new Date(b.created_at).toLocaleString()
-                          : "N/A"}
-                      </td>
-                      <td>{b.payment ? `₱${b.payment}` : "—"}</td>
+                      <td>{b.for_assessment ? "Yes" : "No"}</td>
+                      <td>{b.created_at ? new Date(b.created_at).toLocaleString() : "N/A"}</td>
+                      <td>{b.payment ? `₱${Number(b.payment).toLocaleString()}` : "—"}</td>
                       <td>{b.status || "Pending"}</td>
                     </tr>
                   ))
@@ -218,6 +183,7 @@ function Admindashb() {
         <div className="section-container" ref={salesRef}>
           <h2>Sales and Request</h2>
           <div className="dual-table-container">
+            {/* Sales Table */}
             <div className="table-box">
               <h3>Sales</h3>
               <div className="table-wrapper">
@@ -236,9 +202,7 @@ function Admindashb() {
                   <tbody>
                     {sales.length === 0 ? (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: "center" }}>
-                          No sales data yet
-                        </td>
+                        <td colSpan={7} style={{ textAlign: "center" }}>No sales data yet</td>
                       </tr>
                     ) : (
                       sales.map((s) => (
@@ -246,18 +210,10 @@ function Admindashb() {
                           <td>{s.sale_id}</td>
                           <td>{s.user_id}</td>
                           <td>{s.service}</td>
-                          <td>{s.payment ? `₱${s.payment}` : "—"}</td>
+                          <td>{s.payment ? `₱${Number(s.payment).toLocaleString()}` : "—"}</td>
                           <td className="capitalize">{s.status}</td>
-                          <td>
-                            {s.completed_at
-                              ? new Date(s.completed_at).toLocaleString()
-                              : "N/A"}
-                          </td>
-                          <td>
-                            {s.created_at
-                              ? new Date(s.created_at).toLocaleString()
-                              : "N/A"}
-                          </td>
+                          <td>{s.completed_at ? new Date(s.completed_at).toLocaleString() : "N/A"}</td>
+                          <td>{s.created_at ? new Date(s.created_at).toLocaleString() : "N/A"}</td>
                         </tr>
                       ))
                     )}
@@ -266,6 +222,7 @@ function Admindashb() {
               </div>
             </div>
 
+            {/* Requests Table */}
             <div className="table-box">
               <h3>Requests</h3>
               <div className="table-wrapper">
@@ -282,12 +239,9 @@ function Admindashb() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.filter((b) => b.status !== "completed").length ===
-                    0 ? (
+                    {bookings.filter((b) => b.status !== "completed").length === 0 ? (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: "center" }}>
-                          No requests found
-                        </td>
+                        <td colSpan={7} style={{ textAlign: "center" }}>No requests found</td>
                       </tr>
                     ) : (
                       bookings
@@ -298,19 +252,9 @@ function Admindashb() {
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">
-                              {r.status || "Pending"}
-                            </td>
-                            <td>
-                              {r.created_at
-                                ? new Date(r.created_at).toLocaleString()
-                                : "N/A"}
-                            </td>
-                            <td>
-                              {r.booking_date
-                                ? new Date(r.booking_date).toLocaleString()
-                                : "N/A"}
-                            </td>
+                            <td className="capitalize">{r.status || "Pending"}</td>
+                            <td>{r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}</td>
+                            <td>{r.booking_date ? new Date(r.booking_date).toLocaleString() : "N/A"}</td>
                           </tr>
                         ))
                     )}
@@ -319,7 +263,6 @@ function Admindashb() {
               </div>
             </div>
           </div>
-
           <div className="view-more">
             <Link to="/salesandreq">View More →</Link>
           </div>
@@ -344,9 +287,7 @@ function Admindashb() {
                 <tbody>
                   {analytics.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: "center" }}>
-                        No summary data available
-                      </td>
+                      <td colSpan={4} style={{ textAlign: "center" }}>No summary data available</td>
                     </tr>
                   ) : (
                     analytics.map((row, index) => (
@@ -354,11 +295,7 @@ function Admindashb() {
                         <td>{row.service}</td>
                         <td>{row.total_bookings}</td>
                         <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                        <td>
-                          {row.completed_at
-                            ? new Date(row.completed_at).toLocaleString()
-                            : "N/A"}
-                        </td>
+                        <td>{row.completed_at ? new Date(row.completed_at).toLocaleString() : "N/A"}</td>
                       </tr>
                     ))
                   )}

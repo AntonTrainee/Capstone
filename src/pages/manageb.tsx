@@ -218,11 +218,17 @@ export default function ManageBookingsPage(): React.JSX.Element {
   };
 
   // Filtered results
-  const filtered = bookings.filter((b) =>
-    [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some(
-      (v) => v?.toLowerCase().includes(search.toLowerCase())
-    )
-  );
+  // Filter both bookings and incoming requests
+const filteredBookings = bookings.filter((b) =>
+  [b.booking_id, b.user_id, b.service, b.address, b.name, b.status]
+    .some((v) => v?.toLowerCase().includes(search.toLowerCase()))
+);
+
+const filteredRequests = incomingRequests.filter((r) =>
+  [r.request_id, r.user_id, r.service, r.address, r.name, r.status]
+    .some((v) => v?.toLowerCase().includes(search.toLowerCase()))
+);
+
 
   return (
     <div className="app-container">
@@ -278,7 +284,8 @@ export default function ManageBookingsPage(): React.JSX.Element {
                     </td>
                   </tr>
                 ) : (
-                  incomingRequests.map((r) => (
+                  filteredRequests.map((r) => (
+
                     <tr key={r.request_id}>
                       <td>{r.request_id}</td>
                       <td>{r.user_id}</td>
@@ -331,14 +338,16 @@ export default function ManageBookingsPage(): React.JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {filteredBookings.length === 0 ? (
+
                   <tr>
                     <td colSpan={11} style={{ textAlign: "center" }}>
                       No bookings found
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((b) => (
+                  filteredBookings.map((b) => (
+
                     <tr key={b.booking_id}>
                       <td>{b.booking_id}</td>
                       <td>{b.user_id}</td>

@@ -32,15 +32,22 @@ interface IncomingRequest {
 export default function ManageBookingsPage(): React.JSX.Element {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>([]);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Booking>>({});
   const [search, setSearch] = useState("");
+
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
+  const [modalPayment, setModalPayment] = useState("");
+
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
+
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const SERVER_URL = "https://capstone-ni5z.onrender.com";
 
-  // ---------------------------
-  // 🟦 Fetch Data from API
-  // ---------------------------
+  // Fetch Bookings
   const fetchBookings = async (): Promise<void> => {
     try {
       const res = await fetch(`${SERVER_URL}/bookings`);
@@ -51,6 +58,7 @@ export default function ManageBookingsPage(): React.JSX.Element {
     }
   };
 
+  // Fetch Incoming Requests
   const fetchIncomingRequests = async (): Promise<void> => {
     try {
       const res = await fetch(`${SERVER_URL}/incoming-requests`);
@@ -61,9 +69,7 @@ export default function ManageBookingsPage(): React.JSX.Element {
     }
   };
 
-  // ---------------------------
-  // 🟩 SOCKET.IO REAL-TIME UPDATES
-  // ---------------------------
+  // Real-time updates
   useEffect(() => {
     fetchBookings();
     fetchIncomingRequests();
@@ -73,153 +79,124 @@ export default function ManageBookingsPage(): React.JSX.Element {
       reconnection: true,
     });
 
-    socket.on("incoming_requests_update", () => {
-      console.log("🔁 Incoming requests updated — refreshing data");
-      fetchIncomingRequests();
-    });
-
-    socket.on("bookings_update", () => {
-      console.log("🔁 Bookings updated — refreshing data");
-      fetchBookings();
-    });
+    socket.on("incoming_requests_update", fetchIncomingRequests);
+    socket.on("bookings_update", fetchBookings);
 
     return (): void => {
       socket.disconnect();
     };
   }, []);
 
-  // ---------------------------
-  // 💰 Format Payment Input
-  // ---------------------------
+  // Format currency
   const formatCurrency = (value: string): string => {
     const numericValue = value.replace(/[^\d]/g, "");
     if (!numericValue) return "";
     return "₱" + parseInt(numericValue).toLocaleString();
   };
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleModalPaymentChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const formatted = formatCurrency(e.target.value);
-    setFormData((prev) => ({
-      ...prev,
-      payment: formatted,
-    }));
+    setModalPayment(formatted);
   };
 
-  // ---------------------------
-  // 📥 Incoming Request Actions
-  // ---------------------------
-  const approveRequest = async (id: string): Promise<void> => {
-    if (!window.confirm("Approve this request? It will move to bookings and notify the customer.")) return;
+  // Approve / Reject Logic
+  const openApproveModal = (id: string): void => {
+    setApprovingRequestId(id);
+    setShowApproveModal(true);
+  };
 
+  const openRejectModal = (id: string): void => {
+    setRejectingRequestId(id);
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
+
+  const closeApproveModal = (): void => {
+    setApprovingRequestId(null);
+    setShowApproveModal(false);
+  };
+
+  const closeRejectModal = (): void => {
+    setRejectingRequestId(null);
+    setShowRejectModal(false);
+  };
+
+  const confirmApprove = async (): Promise<void> => {
+    if (!approvingRequestId) return;
     try {
-      const res = await fetch(`${SERVER_URL}/incoming-requests/approve/${id}`, { method: "POST" });
-
+      const res = await fetch(`${SERVER_URL}/incoming-requests/approve/${approvingRequestId}`, {
+        method: "POST",
+      });
       if (res.ok) {
-        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
+        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== approvingRequestId));
         fetchBookings();
-        alert("✅ Request approved and customer notified!");
+        closeApproveModal();
+        alert("Request approved and customer notified!");
       } else {
-        alert("❌ Failed to approve request.");
+        alert("Failed to approve request.");
       }
     } catch (err) {
       console.error("Error approving request:", err);
     }
   };
 
-  const rejectRequest = async (id: string): Promise<void> => {
-    const reason = prompt("Enter reason for rejection (optional):", "") || "No reason provided";
-    if (!window.confirm("⚠️ Continue rejection? This cannot be undone.")) return;
-
+  const confirmReject = async (): Promise<void> => {
+    if (!rejectingRequestId) return;
+    const reason = rejectReason.trim() || "No reason provided";
     try {
-      const res = await fetch(`${SERVER_URL}/incoming-requests/${id}`, {
+      const res = await fetch(`${SERVER_URL}/incoming-requests/${rejectingRequestId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
       });
 
       if (res.ok) {
-        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== id));
-        alert(`🚫 Request rejected and customer notified.\nReason: ${reason}`);
+        setIncomingRequests((prev) => prev.filter((r) => r.request_id !== rejectingRequestId));
+        closeRejectModal();
+        alert(`Request rejected and customer notified.\nReason: ${reason}`);
       } else {
-        alert("❌ Failed to reject request.");
+        alert("Failed to reject request.");
       }
     } catch (err) {
       console.error("Error rejecting request:", err);
     }
   };
 
-  // ---------------------------
-  // 📝 Booking Edit Actions
-  // ---------------------------
-  const startEdit = (booking: Booking): void => {
-    if (booking.status === "completed") return;
-    setEditing(booking.booking_id);
-    setFormData(booking);
+  // Completion Logic
+  const openCompleteModal = (booking_id: string): void => {
+    const booking = bookings.find((b) => b.booking_id === booking_id);
+    if (!booking) return;
+    setCompletingBookingId(booking_id);
+    setModalPayment(booking.payment ? `₱${Number(booking.payment).toLocaleString()}` : "");
+    setShowCompleteModal(true);
   };
 
-  const saveEdit = async (): Promise<void> => {
-    if (!editing) return;
-    if (!window.confirm("Are you sure you want to save changes?")) return;
-
-    try {
-      // Clean numeric value before saving
-      const cleanedData = {
-        ...formData,
-        payment: formData.payment
-          ? Number(formData.payment.replace(/[^\d.]/g, ""))
-          : null,
-      };
-
-      const res = await fetch(`${SERVER_URL}/bookings/${editing}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedData),
-      });
-
-      if (res.ok) {
-        const updated: Booking = await res.json();
-        setBookings((prev) =>
-          prev.map((b) => (b.booking_id === editing ? updated : b))
-        );
-        setEditing(null);
-        setFormData({});
-        alert("✅ Booking updated successfully!");
-      } else {
-        alert("❌ Failed to update booking.");
-      }
-    } catch (err) {
-      console.error("Error updating booking:", err);
-    }
+  const closeCompleteModal = (): void => {
+    setShowCompleteModal(false);
+    setCompletingBookingId(null);
+    setModalPayment("");
   };
 
-  // ---------------------------
-  // ✅ Mark as Completed
-  // ---------------------------
-  const markAsCompleted = async (booking_id: string): Promise<void> => {
-    const bookingToUpdate = bookings.find((b) => b.booking_id === booking_id);
-    if (!bookingToUpdate) return;
+  const confirmComplete = async (): Promise<void> => {
+    if (!completingBookingId) return;
 
-    if (
-      !bookingToUpdate.payment ||
-      bookingToUpdate.payment.trim() === "" ||
-      bookingToUpdate.payment === "₱0"
-    ) {
-      alert("⚠️ Please enter a valid payment amount before marking as completed.");
+    const cleanedPayment = modalPayment.replace(/[^\d.]/g, "");
+    if (!cleanedPayment || Number(cleanedPayment) === 0) {
+      alert("Please enter a valid payment amount.");
       return;
     }
 
-    if (!window.confirm("Are you sure the cleaning is done?")) return;
+    const bookingToUpdate = bookings.find((b) => b.booking_id === completingBookingId);
+    if (!bookingToUpdate) return;
 
     try {
       const updatedData = {
         ...bookingToUpdate,
         status: "completed",
-        payment: bookingToUpdate.payment
-          ? Number(bookingToUpdate.payment.replace(/[^\d.]/g, ""))
-          : null,
+        payment: Number(cleanedPayment),
       };
 
-      const res = await fetch(`${SERVER_URL}/bookings/${booking_id}`, {
+      const res = await fetch(`${SERVER_URL}/bookings/${completingBookingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -228,36 +205,32 @@ export default function ManageBookingsPage(): React.JSX.Element {
       if (res.ok) {
         const updatedBooking: Booking = await res.json();
         setBookings((prev) =>
-          prev.map((b) => (b.booking_id === booking_id ? updatedBooking : b))
+          prev.map((b) => (b.booking_id === completingBookingId ? updatedBooking : b))
         );
-        alert("✅ Booking marked as completed!");
+        alert("Booking marked as completed!");
+        closeCompleteModal();
       } else {
-        alert("❌ Failed to complete booking.");
+        alert("Failed to complete booking.");
       }
     } catch (err) {
       console.error("Error completing booking:", err);
     }
   };
 
-  // ---------------------------
-  // 🔍 Filter Search
-  // ---------------------------
+  // Filtered results
   const filtered = bookings.filter((b) =>
     [b.booking_id, b.user_id, b.service, b.address, b.name, b.status].some(
       (v) => v?.toLowerCase().includes(search.toLowerCase())
     )
   );
 
-  // ---------------------------
-  // 🧾 Render Page
-  // ---------------------------
   return (
     <div className="app-container">
       <header className="app-header">
         <div className="header-inner">
           <div className="logo">
             <span className="logo-main">GenClean</span>
-            <span className="logo-sub">Manage Bookings</span>
+            <span className="logo-sub">| Manage Bookings</span>
           </div>
         </div>
       </header>
@@ -266,12 +239,12 @@ export default function ManageBookingsPage(): React.JSX.Element {
         <section className="analytics-hero">
           <div>
             <h1>Manage Bookings</h1>
-            <p>View, edit, and manage all booking records.</p>
+            <p>View, approve, reject, and complete bookings.</p>
           </div>
           <div className="filter-controls">
             <input
               type="text"
-              placeholder="🔍 Search bookings..."
+              placeholder="Search bookings..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="search-input"
@@ -279,7 +252,7 @@ export default function ManageBookingsPage(): React.JSX.Element {
           </div>
         </section>
 
-        {/* ================= INCOMING REQUESTS ================= */}
+        {/* Incoming Requests */}
         <section>
           <h2>Incoming Requests</h2>
           <div className="table-wrapper">
@@ -313,14 +286,20 @@ export default function ManageBookingsPage(): React.JSX.Element {
                       <td>{r.service}</td>
                       <td>{new Date(r.booking_date).toLocaleString()}</td>
                       <td>{r.address}</td>
-                      <td>{r.for_assessment ? "✅" : "❌"}</td>
-                      <td>{r.status || "pending"}</td>
-                      <td>
-                        <button onClick={() => approveRequest(r.request_id)} className="btn btn--approve">
-                          ✅ Approve
+                      <td>{r.for_assessment ? "Yes" : "No"}</td>
+                      <td>{r.status || "Pending"}</td>
+                      <td className="actions">
+                        <button
+                          onClick={() => openApproveModal(r.request_id)}
+                          className="btn btn--approve"
+                        >
+                          Approve
                         </button>
-                        <button onClick={() => rejectRequest(r.request_id)} className="btn btn--reject">
-                          ❌ Reject
+                        <button
+                          onClick={() => openRejectModal(r.request_id)}
+                          className="btn btn--reject"
+                        >
+                          Reject
                         </button>
                       </td>
                     </tr>
@@ -331,7 +310,7 @@ export default function ManageBookingsPage(): React.JSX.Element {
           </div>
         </section>
 
-        {/* ================= BOOKINGS TABLE ================= */}
+        {/* Bookings */}
         <section>
           <h2>Bookings Table</h2>
           <div className="table-wrapper">
@@ -368,45 +347,25 @@ export default function ManageBookingsPage(): React.JSX.Element {
                       <td>{new Date(b.booking_date).toLocaleString()}</td>
                       <td>{b.address}</td>
                       <td>{b.notes || "—"}</td>
-                      <td>{b.for_assessment ? "✅" : "❌"}</td>
+                      <td>{b.for_assessment ? "Yes" : "No"}</td>
+                      <td>{b.payment ? `₱${Number(b.payment).toLocaleString()}` : "—"}</td>
                       <td>
-                        {editing === b.booking_id ? (
-                          <input
-                            type="text"
-                            value={formData.payment || ""}
-                            onChange={handlePaymentChange}
-                            placeholder="₱0.00"
-                          />
-                        ) : b.payment ? (
-                          `₱${Number(b.payment).toLocaleString()}`
+                        {b.status === "completed" ? (
+                          <span className="status-badge completed">Completed</span>
                         ) : (
-                          "—"
+                          <span className="status-badge pending">Pending</span>
                         )}
                       </td>
-                      <td>{b.status === "completed" ? "✅ Completed" : "⏳ Pending"}</td>
                       <td className="actions">
                         {b.status === "pending" ? (
-                          editing === b.booking_id ? (
-                            <>
-                              <button onClick={saveEdit} className="btn btn--save">
-                                💾 Save
-                              </button>
-                              <button onClick={() => setEditing(null)} className="btn btn--cancel">
-                                ✖ Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => startEdit(b)} className="btn btn--edit">
-                                ✏ Edit
-                              </button>
-                              <button onClick={() => markAsCompleted(b.booking_id)} className="btn btn--complete">
-                                ✅ Complete
-                              </button>
-                            </>
-                          )
+                          <button
+                            onClick={() => openCompleteModal(b.booking_id)}
+                            className="btn btn--complete"
+                          >
+                            Mark as Complete
+                          </button>
                         ) : (
-                          "—"
+                          <span style={{ color: "#94a3b8", fontStyle: "italic" }}>Completed</span>
                         )}
                       </td>
                     </tr>
@@ -418,7 +377,104 @@ export default function ManageBookingsPage(): React.JSX.Element {
         </section>
       </main>
 
-      <footer className="app-footer">© {new Date().getFullYear()} GenClean</footer>
+      <footer className="app-footer">
+        © {new Date().getFullYear()} GenClean. All rights reserved.
+      </footer>
+
+      {/* Completion Modal */}
+      {showCompleteModal && (
+        <Modal
+          title="Complete Booking"
+          message="Once marked as completed, this booking cannot be edited."
+          confirmText="Confirm Completion"
+          cancelText="Cancel"
+          onConfirm={confirmComplete}
+          onCancel={closeCompleteModal}
+        >
+          <label htmlFor="modal-payment">Payment Amount *</label>
+          <input
+            id="modal-payment"
+            type="text"
+            className="modal-input"
+            value={modalPayment}
+            onChange={handleModalPaymentChange}
+            placeholder="₱0.00"
+            autoFocus
+          />
+        </Modal>
+      )}
+
+      {/* Approval Modal */}
+      {showApproveModal && (
+        <Modal
+          title="Approve Request"
+          message="Are you sure you want to approve this request? It will move to Bookings and notify the customer."
+          confirmText="Confirm Approve"
+          cancelText="Cancel"
+          onConfirm={confirmApprove}
+          onCancel={closeApproveModal}
+        />
+      )}
+
+      {/* Rejection Modal */}
+      {showRejectModal && (
+        <Modal
+          title="Reject Request"
+          message="Please provide a reason (optional). This action cannot be undone."
+          confirmText="Confirm Reject"
+          cancelText="Cancel"
+          onConfirm={confirmReject}
+          onCancel={closeRejectModal}
+        >
+          <textarea
+            className="modal-textarea"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Enter reason..."
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// Reusable Modal
+function Modal({
+  title,
+  message,
+  confirmText,
+  cancelText,
+  onConfirm,
+  onCancel,
+  children,
+}: {
+  title: string;
+  message?: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+        </div>
+        <div className="modal-body">
+          {message && <p>{message}</p>}
+          {children}
+        </div>
+        <div className="modal-actions">
+          <button onClick={onCancel} className="btn btn--cancel">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="btn btn--complete">
+            {confirmText}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

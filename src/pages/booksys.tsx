@@ -11,6 +11,7 @@ interface User {
 }
 
 function Booksys() {
+  const [showAssessmentInfo, setShowAssessmentInfo] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [service, setService] = useState("");
   const [bookingDate, setBookingDate] = useState("");
@@ -507,14 +508,13 @@ function Booksys() {
                 </div>
 
                 {/* For Assessment */}
-                <div className="form-check mb-4 d-flex align-items-center">
+                {/* For Assessment (clickable tooltip on mobile) */}
+                <div className="form-check mb-4 d-flex align-items-center position-relative">
                   <i
-                    className="bi bi-question-diamond-fill text-primary ms-1 me-1"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="right"
-                    title="Selecting this means our team will first assess your location or service area before giving a final quotation."
-                    style={{ cursor: "pointer", fontSize: "1rem" }}
+                    className="bi bi-question-diamond-fill text-primary ms-1 me-1 assessment-icon"
+                    onClick={() => setShowAssessmentInfo((prev) => !prev)}
                   ></i>
+
                   <label className="form-check-label me-2">
                     For Assessment:
                   </label>
@@ -524,6 +524,14 @@ function Booksys() {
                     checked={forAssessment}
                     onChange={(e) => setForAssessment(e.target.checked)}
                   />
+
+                  {/* Tooltip that works on hover AND click */}
+                  {(showAssessmentInfo || undefined) && (
+                    <div className="assessment-tooltip">
+                      Selecting this means our team will first assess your
+                      location or service area before giving a final quotation.
+                    </div>
+                  )}
                 </div>
               </div>
 

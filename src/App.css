@@ -861,6 +861,21 @@ tr:nth-child(even) {
   height: fit-content;
 }
 
+.assessment-info-popup {
+  font-size: 0.9rem;
+  color: #333;
+  background-color: #f8f9fa;
+  border-left: 4px solid #289CBF;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
 @media (max-width: 768px) {
   .services-page.container.services-container {
     display: flex !important;
@@ -1322,4 +1337,58 @@ footer {
   .navbar {
     padding-inline: 0.5rem;
   }
+}
+
+
+.assessment-icon {
+  position: relative;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.assessment-icon:hover + .form-check-label::after,
+.assessment-icon:focus + .form-check-label::after {
+  display: block;
+}
+
+/* Tooltip styling */
+.assessment-tooltip {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background: #f8f9fa;
+  color: #000;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 250px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+/* Hover-based tooltip (for desktops) */
+.assessment-icon:hover ~ .assessment-tooltip {
+  display: block;
+}
+
+.assessment-tooltip {
+  display: none;
+}
+
+.assessment-tooltip.show {
+  display: block;
+}
+
+.card-body {
+  background-color: #fff;
+  color: #142D54; /* dark navy text */
+  text-align: center;
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #142D54; /* ensure visible text */
 }

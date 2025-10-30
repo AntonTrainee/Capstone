@@ -107,24 +107,20 @@ function Admindashb() {
   // Initial fetch
   fetchAllData();
 
-  // Realtime updates
   socket.on("connect", () => console.log("⚡ Connected to Socket.IO"));
 
-  socket.on("analytics_update", (updatedData: AnalyticsSummary[]) => {
-    console.log("📊 Realtime analytics update received:", updatedData);
-    setAnalytics(updatedData);
-  });
-
+  // Whenever sales update happens, refresh all data (including analytics)
   socket.on("sales_update", () => {
-    console.log("📦 Sales updated — refreshing all data");
+    console.log("📦 Sales updated — refreshing analytics");
     fetchAllData();
   });
 
-  // ✅ Cleanup: disconnect the socket when component unmounts
+  // Cleanup
   return () => {
     socket.disconnect();
   };
 }, []);
+
 
 
   return (

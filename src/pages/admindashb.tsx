@@ -35,6 +35,14 @@ interface AnalyticsSummary {
   completed_at?: string;
 }
 
+// Type for backend response (avoid `any`)
+interface AnalyticsBackendRow {
+  service: string;
+  total_bookings: number;
+  total_amount: number;
+  completed_at?: string | null;
+}
+
 function Admindashb() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -85,11 +93,20 @@ function Admindashb() {
 
       const bookingsData: Booking[] = await bookingsRes.json();
       const salesData: Sale[] = await salesRes.json();
-      const analyticsData: AnalyticsSummary[] = await analyticsRes.json();
+      const analyticsData: AnalyticsBackendRow[] = await analyticsRes.json();
 
       setBookings(Array.isArray(bookingsData) ? bookingsData : []);
       setSales(Array.isArray(salesData) ? salesData : []);
-      setAnalytics(Array.isArray(analyticsData) ? analyticsData : []);
+      setAnalytics(
+        Array.isArray(analyticsData)
+          ? analyticsData.map((row) => ({
+              service: row.service,
+              total_bookings: row.total_bookings,
+              total_amount: row.total_amount,
+              completed_at: row.completed_at || undefined,
+            }))
+          : []
+      );
     } catch (err) {
       console.error("Error fetching data:", err);
       setBookings([]);
@@ -101,27 +118,29 @@ function Admindashb() {
   };
 
   // === Initialize realtime updates ===
- useEffect(() => {
-  const socket: Socket = io("https://capstone-ni5z.onrender.com");
+  useEffect(() => {
+    const socket: Socket = io("https://capstone-ni5z.onrender.com");
 
-  // Initial fetch
-  fetchAllData();
-
-  socket.on("connect", () => console.log("⚡ Connected to Socket.IO"));
-
-  // Whenever sales update happens, refresh all data (including analytics)
-  socket.on("sales_update", () => {
-    console.log("📦 Sales updated — refreshing analytics");
     fetchAllData();
-  });
 
-  // Cleanup
-  return () => {
-    socket.disconnect();
-  };
-}, []);
+    socket.on("connect", () => {
+      console.log("⚡ Connected to Socket.IO for admin dashboard");
+    });
 
+    socket.on("sales_update", () => {
+      console.log("📊 Real-time sales update received — refreshing analytics");
+      fetchAllData();
+    });
 
+    socket.on("bookings_update", () => {
+      console.log("📦 Real-time bookings update received");
+      fetchAllData();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <div className="app-container">
@@ -350,50 +369,50 @@ function Admindashb() {
         </div>
 
         {/* Customer Analytics */}
-<div className="section-container" ref={analyticsRef}>
-  <h2>Customer Analytics Summary</h2>
-  {loadingAnalytics ? (
-    <p>Loading table data...</p>
-  ) : (
-    <div className="table-wrapper">
-      <table className="analytics-table">
-        <thead>
-          <tr>
-            <th>Service</th>
-            <th>Total Bookings</th>
-            <th>Revenue</th>
-            <th>Recent Completion</th>
-          </tr>
-        </thead>
-        <tbody>
-          {analytics.length === 0 ? (
-            <tr>
-              <td colSpan={4} style={{ textAlign: "center" }}>
-                No summary data available
-              </td>
-            </tr>
+        <div className="section-container" ref={analyticsRef}>
+          <h2>Customer Analytics Summary</h2>
+          {loadingAnalytics ? (
+            <p>Loading table data...</p>
           ) : (
-            analytics.map((row, index) => (
-              <tr key={index}>
-                <td>{row.service}</td>
-                <td>{row.total_bookings}</td>
-                <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                <td>
-                  {row.completed_at
-                    ? new Date(row.completed_at).toLocaleString()
-                    : "N/A"}
-                </td>
-              </tr>
-            ))
+            <div className="table-wrapper">
+              <table className="analytics-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Total Bookings</th>
+                    <th>Revenue</th>
+                    <th>Recent Completion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analytics.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: "center" }}>
+                        No summary data available
+                      </td>
+                    </tr>
+                  ) : (
+                    analytics.map((row, index) => (
+                      <tr key={index}>
+                        <td>{row.service}</td>
+                        <td>{row.total_bookings}</td>
+                        <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                        <td>
+                          {row.completed_at
+                            ? new Date(row.completed_at).toLocaleString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
-        </tbody>
-      </table>
-    </div>
-  )}
-  <div className="view-more">
-    <Link to="/analytics">View More →</Link>
-  </div>
-</div>
+          <div className="view-more">
+            <Link to="/analytics">View More →</Link>
+          </div>
+        </div>
       </main>
 
       <footer className="app-footer">

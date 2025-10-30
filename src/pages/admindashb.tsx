@@ -101,29 +101,31 @@ function Admindashb() {
   };
 
   // === Initialize realtime updates ===
-  useEffect(() => {
-    const socket: Socket = io("https://capstone-ni5z.onrender.com");
+ useEffect(() => {
+  const socket: Socket = io("https://capstone-ni5z.onrender.com");
 
+  // Initial fetch
+  fetchAllData();
+
+  // Realtime updates
+  socket.on("connect", () => console.log("⚡ Connected to Socket.IO"));
+
+  socket.on("analytics_update", (updatedData: AnalyticsSummary[]) => {
+    console.log("📊 Realtime analytics update received:", updatedData);
+    setAnalytics(updatedData);
+  });
+
+  socket.on("sales_update", () => {
+    console.log("📦 Sales updated — refreshing all data");
     fetchAllData();
+  });
 
-    socket.on("connect", () => {
-      console.log("⚡ Connected to Socket.IO for admin dashboard");
-    });
+  // ✅ Cleanup: disconnect the socket when component unmounts
+  return () => {
+    socket.disconnect();
+  };
+}, []);
 
-    socket.on("sales_update", () => {
-      console.log("📊 Real-time sales update received — refreshing analytics");
-      fetchAllData(); // Refresh all sections for accuracy
-    });
-
-    socket.on("bookings_update", () => {
-      console.log("📦 Real-time bookings update received");
-      fetchAllData();
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   return (
     <div className="app-container">

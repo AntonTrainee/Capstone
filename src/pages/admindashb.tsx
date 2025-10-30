@@ -35,7 +35,7 @@ interface AnalyticsSummary {
   completed_at?: string;
 }
 
-// Type for backend response (avoid `any`)
+// Type for backend response
 interface AnalyticsBackendRow {
   service: string;
   total_bookings: number;
@@ -222,24 +222,12 @@ function Admindashb() {
                       <td>{b.user_id}</td>
                       <td>{b.name || "—"}</td>
                       <td>{b.service}</td>
-                      <td>
-                        {b.booking_date
-                          ? new Date(b.booking_date).toLocaleString()
-                          : "N/A"}
-                      </td>
+                      <td>{b.booking_date ? new Date(b.booking_date).toLocaleString() : "N/A"}</td>
                       <td>{b.address}</td>
                       <td>{b.notes || "—"}</td>
                       <td>{b.for_assessment ? "Yes" : "No"}</td>
-                      <td>
-                        {b.created_at
-                          ? new Date(b.created_at).toLocaleString()
-                          : "N/A"}
-                      </td>
-                      <td>
-                        {b.payment
-                          ? `₱${Number(b.payment).toLocaleString()}`
-                          : "—"}
-                      </td>
+                      <td>{b.created_at ? new Date(b.created_at).toLocaleString() : "N/A"}</td>
+                      <td>{b.payment ? `₱${Number(b.payment).toLocaleString()}` : "—"}</td>
                       <td>{b.status || "Pending"}</td>
                     </tr>
                   ))
@@ -285,22 +273,10 @@ function Admindashb() {
                           <td>{s.sale_id}</td>
                           <td>{s.user_id}</td>
                           <td>{s.service}</td>
-                          <td>
-                            {s.payment
-                              ? `₱${Number(s.payment).toLocaleString()}`
-                              : "—"}
-                          </td>
+                          <td>{s.payment ? `₱${Number(s.payment).toLocaleString()}` : "—"}</td>
                           <td className="capitalize">{s.status}</td>
-                          <td>
-                            {s.completed_at
-                              ? new Date(s.completed_at).toLocaleString()
-                              : "N/A"}
-                          </td>
-                          <td>
-                            {s.created_at
-                              ? new Date(s.created_at).toLocaleString()
-                              : "N/A"}
-                          </td>
+                          <td>{s.completed_at ? new Date(s.completed_at).toLocaleString() : "N/A"}</td>
+                          <td>{s.created_at ? new Date(s.created_at).toLocaleString() : "N/A"}</td>
                         </tr>
                       ))
                     )}
@@ -326,8 +302,7 @@ function Admindashb() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.filter((b) => b.status !== "completed").length ===
-                    0 ? (
+                    {bookings.filter((b) => b.status !== "completed").length === 0 ? (
                       <tr>
                         <td colSpan={7} style={{ textAlign: "center" }}>
                           No requests found
@@ -342,19 +317,9 @@ function Admindashb() {
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">
-                              {r.status || "Pending"}
-                            </td>
-                            <td>
-                              {r.created_at
-                                ? new Date(r.created_at).toLocaleString()
-                                : "N/A"}
-                            </td>
-                            <td>
-                              {r.booking_date
-                                ? new Date(r.booking_date).toLocaleString()
-                                : "N/A"}
-                            </td>
+                            <td className="capitalize">{r.status || "Pending"}</td>
+                            <td>{r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}</td>
+                            <td>{r.booking_date ? new Date(r.booking_date).toLocaleString() : "N/A"}</td>
                           </tr>
                         ))
                     )}
@@ -380,8 +345,8 @@ function Admindashb() {
                   <tr>
                     <th>Service</th>
                     <th>Total Bookings</th>
-                    <th>Revenue</th>
-                    <th>Recent Completion</th>
+                    <th>Total Amount</th>
+                    <th>Completed At</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,14 +359,10 @@ function Admindashb() {
                   ) : (
                     analytics.map((row, index) => (
                       <tr key={index}>
-                        <td>{row.service}</td>
-                        <td>{row.total_bookings}</td>
-                        <td>₱{Number(row.total_amount).toLocaleString()}</td>
-                        <td>
-                          {row.completed_at
-                            ? new Date(row.completed_at).toLocaleString()
-                            : "N/A"}
-                        </td>
+                        <td>{row.service || "—"}</td>
+                        <td>{row.total_bookings ?? 0}</td>
+                        <td>₱{row.total_amount ? Number(row.total_amount).toLocaleString() : "0"}</td>
+                        <td>{row.completed_at ? new Date(row.completed_at).toLocaleString() : "N/A"}</td>
                       </tr>
                     ))
                   )}

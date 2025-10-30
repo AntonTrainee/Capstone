@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import "../analytics.css";
+// Assuming "analytics.css" contains necessary styles
 
 type Summary = {
   service: string;
@@ -20,25 +20,37 @@ type Summary = {
   completed_at?: string;
 };
 
+// Helper function to format currency
+const formatCurrency = (amount: number) =>
+  `₱${Number(amount).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
 export default function Analytics() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1
-  );
 
-  const fetchSummary = async (month: number) => {
+  // Function to fetch summary data for the CURRENT month
+  const fetchSummary = async () => {
     setLoading(true);
     try {
-      const year = new Date().getFullYear();
+      // Calculate the date range for the current month
+      const today = new Date();
+      const year = today.getFullYear();
+      // month is 1-indexed (e.g., 9 for September)
+      const month = today.getMonth() + 1; 
+
+      // First day of the current month
       const firstDay = new Date(year, month - 1, 1)
         .toISOString()
         .split("T")[0];
+      // Last day of the current month (day 0 of the next month)
       const lastDay = new Date(year, month, 0)
         .toISOString()
         .split("T")[0];
 
-      console.log("📅 Fetching data for:", { firstDay, lastDay, month, year });
+      console.log("📅 Fetching data for current month:", { firstDay, lastDay, month, year });
 
       const res = await fetch(
         `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`
@@ -61,9 +73,10 @@ export default function Analytics() {
   };
 
   useEffect(() => {
-    fetchSummary(selectedMonth);
+    // Fetch data for the current month immediately on load
+    fetchSummary();
 
-    // Socket.IO real-time updates - only for current month
+    // Socket.IO real-time updates - now dedicated to the current month's data
     const socket: Socket = io("https://capstone-ni5z.onrender.com");
     
     socket.on("connect", () => {
@@ -73,20 +86,17 @@ export default function Analytics() {
     socket.on("analytics_update", (rows: Summary[]) => {
       console.log("📈 Real-time analytics update received:", rows);
       
-      // Only update if we're viewing the current month
-      const currentMonth = new Date().getMonth() + 1;
-      if (selectedMonth === currentMonth) {
-        setSummary(
-          Array.isArray(rows)
-            ? rows.map((row) => ({
-                service: row.service,
-                total_bookings: row.total_bookings,
-                total_amount: row.total_amount,
-                completed_at: row.completed_at || undefined,
-              }))
-            : []
-        );
-      }
+      // Update the summary directly, as this component now only displays the current month.
+      setSummary(
+        Array.isArray(rows)
+          ? rows.map((row) => ({
+              service: row.service,
+              total_bookings: row.total_bookings,
+              total_amount: row.total_amount,
+              completed_at: row.completed_at || undefined,
+            }))
+          : []
+      );
     });
 
     socket.on("disconnect", () => {
@@ -97,10 +107,14 @@ export default function Analytics() {
       console.error("🔴 Socket connection error:", error);
     });
 
+    // Clean up the socket connection on component unmount
     return () => {
       socket.disconnect();
     };
-  }, [selectedMonth]);
+  }, []); // Empty dependency array means this runs only once on mount
+
+  // Determine the current month name for the header (for display purposes)
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
     <div className="app-container">
@@ -108,7 +122,7 @@ export default function Analytics() {
         <div className="header-inner">
           <div className="logo">
             <span className="logo-main">GenClean</span>
-            <span className="logo-sub">Analytics Summary</span>
+            <span className="logo-sub">Analytics Summary - {currentMonthName}</span>
           </div>
         </div>
       </header>
@@ -117,37 +131,9 @@ export default function Analytics() {
         <section className="analytics-hero">
           <div>
             <h1>Service Analytics</h1>
-            <p>Overview of total bookings and revenue per service type.</p>
+            <p>Overview of total bookings and revenue per service type for the current month.</p>
           </div>
-
-          {/* Month Filter */}
-          <div className="filter-controls">
-            <label htmlFor="month">Filter by Month: </label>
-            <select
-              id="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            >
-              {[
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-              ].map((month, index) => (
-                <option key={index + 1} value={index + 1}>
-                  {month}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* The Month Filter UI has been safely removed here */}
         </section>
 
         {/* Chart */}
@@ -157,7 +143,7 @@ export default function Analytics() {
             <p>Loading analytics...</p>
           ) : summary.length === 0 ? (
             <div style={{ padding: "2rem", textAlign: "center", color: "#666" }}>
-              <p>No data available for the selected month.</p>
+              <p>No data available for the current month ({currentMonthName}).</p>
               <p style={{ fontSize: "0.9rem", marginTop: "0.5rem" }}>
                 Make sure you have completed bookings in the sales table.
               </p>
@@ -169,7 +155,7 @@ export default function Analytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="service" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value, name) => [name === 'Total Amount (₱)' ? formatCurrency(Number(value)) : value, name]}/>
                   <Legend />
                   <Bar
                     dataKey="total_bookings"
@@ -215,7 +201,7 @@ export default function Analytics() {
                       <tr key={`${row.service}-${index}`}>
                         <td>{row.service}</td>
                         <td>{row.total_bookings}</td>
-                        <td>₱{Number(row.total_amount).toLocaleString()}</td>
+                        <td>{formatCurrency(row.total_amount)}</td>
                         <td>
                           {row.completed_at
                             ? new Date(row.completed_at).toLocaleDateString()

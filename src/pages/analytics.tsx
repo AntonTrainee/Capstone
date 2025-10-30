@@ -58,28 +58,45 @@ export default function Analytics() {
   }, [fetchSummary]);
 
   // Real-time updates via Socket.IO
-  useEffect(() => {
-    const socket: Socket = io("https://capstone-ni5z.onrender.com");
+  // Real-time updates via Socket.IO
+useEffect(() => {
+  const socket: Socket = io("https://capstone-ni5z.onrender.com");
 
-    socket.on("connect", () => console.log("✅ Connected to analytics socket"));
+  // Initial connection
+  socket.on("connect", () => console.log("✅ Connected to analytics socket"));
 
-    socket.on("analytics_update", (updatedData: Summary[]) => {
-      const { firstDay, lastDay } = getCurrentMonthRange();
-      const filtered = updatedData.filter((row) => {
-        const completed = new Date(row.completed_at).toISOString().split("T")[0];
-        return completed >= firstDay && completed <= lastDay;
-      });
-      setSummary(filtered);
-      setLoading(false);
-      console.log("📊 Realtime update applied:", filtered);
+  // Realtime analytics update
+  socket.on("analytics_update", (updatedData: Summary[]) => {
+    if (!Array.isArray(updatedData)) return;
+
+    // Filter for current month
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+
+    const filtered = updatedData.filter((row) => {
+      if (!row.completed_at) return false;
+      const date = row.completed_at.split("T")[0];
+      return date >= firstDay && date <= lastDay;
     });
 
-    socket.on("disconnect", () => console.log("❌ Disconnected from analytics socket"));
+    setSummary(filtered);
+    setLoading(false);
+    console.log("📊 Realtime analytics update applied:", filtered);
+  });
 
-    return () => {
-      socket.disconnect(); // Proper cleanup
-    };
-  }, []);
+  socket.on("disconnect", () => console.log("❌ Disconnected from analytics socket"));
+
+  // Cleanup on unmount
+  return () => {
+    socket.disconnect();
+  };
+}, []);
+
 
   return (
     <div className="app-container">

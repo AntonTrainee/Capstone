@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 import "../admin.css";
 
+// ===== Define proper interfaces =====
 interface Booking {
   booking_id: number;
   user_id: number;
@@ -34,6 +35,14 @@ interface AnalyticsSummary {
   completed_at?: string;
 }
 
+// Type for backend response (avoid `any`)
+interface AnalyticsBackendRow {
+  service: string;
+  total_bookings: number;
+  total_amount: number;
+  completed_at?: string | null;
+}
+
 function Admindashb() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -53,7 +62,8 @@ function Admindashb() {
   };
 
   const handleSignOut = () => {
-    if (window.confirm("Are you sure you want to sign out?")) {
+    const confirmSignOut = window.confirm("Are you sure you want to sign out?");
+    if (confirmSignOut) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("auth_token");
@@ -62,70 +72,34 @@ function Admindashb() {
     }
   };
 
-  useEffect(() => {
-    // --- Initial fetch ---
-    const fetchInitialData = async () => {
-      try {
-        const [bookingsRes, salesRes] = await Promise.all([
-          fetch("https://capstone-ni5z.onrender.com/bookings"),
-          fetch("https://capstone-ni5z.onrender.com/sales"),
-        ]);
+  // === Fetch all data ===
+  const fetchAllData = async () => {
+    try {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
 
-        const bookingsData: Booking[] = await bookingsRes.json();
-        const salesData: Sale[] = await salesRes.json();
-        setBookings(Array.isArray(bookingsData) ? bookingsData : []);
-        setSales(Array.isArray(salesData) ? salesData : []);
-
-        // Analytics summary for current month
-        setLoadingAnalytics(true);
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
-
-        const analyticsRes = await fetch(
+      const [bookingsRes, salesRes, analyticsRes] = await Promise.all([
+        fetch("https://capstone-ni5z.onrender.com/bookings"),
+        fetch("https://capstone-ni5z.onrender.com/sales"),
+        fetch(
           `https://capstone-ni5z.onrender.com/analytics_summary?from=${firstDay}&to=${lastDay}`
-        );
-        const analyticsData: AnalyticsSummary[] = await analyticsRes.json();
-        setAnalytics(Array.isArray(analyticsData) ? analyticsData : []);
-      } catch (err) {
-        console.error(err);
-        setBookings([]);
-        setSales([]);
-        setAnalytics([]);
-      } finally {
-        setLoadingAnalytics(false);
-      }
-    };
+        ),
+      ]);
 
-    fetchInitialData();
+      const bookingsData: Booking[] = await bookingsRes.json();
+      const salesData: Sale[] = await salesRes.json();
+      const analyticsData: AnalyticsBackendRow[] = await analyticsRes.json();
 
-    // --- Socket.IO real-time updates ---
-    const socket: Socket = io("https://capstone-ni5z.onrender.com");
-
-    socket.on("connect", () => console.log("⚡ Connected to Socket.IO"));
-
-    // Update bookings table
-    socket.on("bookings_update", (rows: Booking[]) => {
-      console.log("📌 Bookings updated:", rows);
-      setBookings(Array.isArray(rows) ? rows : []);
-    });
-
-    // Update sales table
-    socket.on("sales_update", (rows: Sale[]) => {
-      console.log("💰 Sales updated:", rows);
-      setSales(Array.isArray(rows) ? rows : []);
-    });
-
-    // Update analytics summary table
-    socket.on("analytics_update", (rows: AnalyticsSummary[]) => {
-      console.log("📊 Analytics updated:", rows);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setSales(Array.isArray(salesData) ? salesData : []);
       setAnalytics(
-        Array.isArray(rows)
-          ? rows.map((row) => ({
+        Array.isArray(analyticsData)
+          ? analyticsData.map((row) => ({
               service: row.service,
               total_bookings: row.total_bookings,
               total_amount: row.total_amount,
@@ -133,13 +107,58 @@ function Admindashb() {
             }))
           : []
       );
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setBookings([]);
+      setSales([]);
+      setAnalytics([]);
+    } finally {
       setLoadingAnalytics(false);
-    });
+    }
+  };
 
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  // === Initialize realtime updates ===
+  useEffect(() => {
+  const socket: Socket = io("https://capstone-ni5z.onrender.com");
+
+  // Initial fetch
+  fetchAllData();
+
+  socket.on("connect", () => {
+    console.log("⚡ Connected to Socket.IO for admin dashboard");
+  });
+
+  socket.on("sales_update", () => {
+    console.log("📊 Real-time sales update received — refreshing analytics");
+    fetchAllData();
+  });
+
+  socket.on("bookings_update", () => {
+    console.log("📦 Real-time bookings update received");
+    fetchAllData();
+  });
+
+  // ✅ Listen for analytics summary updates
+  socket.on("analytics_update", (rows: AnalyticsBackendRow[]) => {
+    console.log("📈 Real-time analytics summary received:", rows);
+    setAnalytics(
+      Array.isArray(rows)
+        ? rows.map((row) => ({
+            service: row.service,
+            total_bookings: row.total_bookings,
+            total_amount: row.total_amount,
+            completed_at: row.completed_at || undefined,
+          }))
+        : []
+    );
+    setLoadingAnalytics(false);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, []);
+
 
   return (
     <div className="app-container">
@@ -163,17 +182,13 @@ function Admindashb() {
         </button>
         <ul className="sidebar-nav">
           <li>
-            <button onClick={() => scrollToRef(bookingsRef)}>
-              Manage Bookings
-            </button>
+            <button onClick={() => scrollToRef(bookingsRef)}>Manage Bookings</button>
           </li>
           <li>
             <button onClick={() => scrollToRef(salesRef)}>Sales and Request</button>
           </li>
           <li>
-            <button onClick={() => scrollToRef(analyticsRef)}>
-              Customer Analytics
-            </button>
+            <button onClick={() => scrollToRef(analyticsRef)}>Customer Analytics</button>
           </li>
           <li>
             <Link to="/beforeafter">Before & After</Link>
@@ -232,13 +247,17 @@ function Admindashb() {
                       </td>
                       <td>{b.address}</td>
                       <td>{b.notes || "—"}</td>
-                      <td>{b.for_assessment ? "✅" : "❌"}</td>
+                      <td>{b.for_assessment ? "Yes" : "No"}</td>
                       <td>
                         {b.created_at
                           ? new Date(b.created_at).toLocaleString()
                           : "N/A"}
                       </td>
-                      <td>{b.payment ? `₱${b.payment}` : "—"}</td>
+                      <td>
+                        {b.payment
+                          ? `₱${Number(b.payment).toLocaleString()}`
+                          : "—"}
+                      </td>
                       <td>{b.status || "Pending"}</td>
                     </tr>
                   ))
@@ -255,6 +274,7 @@ function Admindashb() {
         <div className="section-container" ref={salesRef}>
           <h2>Sales and Request</h2>
           <div className="dual-table-container">
+            {/* Sales Table */}
             <div className="table-box">
               <h3>Sales</h3>
               <div className="table-wrapper">
@@ -283,7 +303,11 @@ function Admindashb() {
                           <td>{s.sale_id}</td>
                           <td>{s.user_id}</td>
                           <td>{s.service}</td>
-                          <td>{s.payment ? `₱${s.payment}` : "—"}</td>
+                          <td>
+                            {s.payment
+                              ? `₱${Number(s.payment).toLocaleString()}`
+                              : "—"}
+                          </td>
                           <td className="capitalize">{s.status}</td>
                           <td>
                             {s.completed_at
@@ -303,6 +327,7 @@ function Admindashb() {
               </div>
             </div>
 
+            {/* Requests Table */}
             <div className="table-box">
               <h3>Requests</h3>
               <div className="table-wrapper">
@@ -319,7 +344,8 @@ function Admindashb() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.filter((b) => b.status !== "completed").length === 0 ? (
+                    {bookings.filter((b) => b.status !== "completed").length ===
+                    0 ? (
                       <tr>
                         <td colSpan={7} style={{ textAlign: "center" }}>
                           No requests found
@@ -334,7 +360,9 @@ function Admindashb() {
                             <td>{r.user_id}</td>
                             <td>{r.service}</td>
                             <td>{r.address}</td>
-                            <td className="capitalize">{r.status || "Pending"}</td>
+                            <td className="capitalize">
+                              {r.status || "Pending"}
+                            </td>
                             <td>
                               {r.created_at
                                 ? new Date(r.created_at).toLocaleString()
@@ -370,8 +398,8 @@ function Admindashb() {
                   <tr>
                     <th>Service</th>
                     <th>Total Bookings</th>
-                    <th>Total Amount (₱)</th>
-                    <th>Completed At</th>
+                    <th>Revenue</th>
+                    <th>Recent Completion</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -636,16 +636,29 @@ app.post("/beforeafter-local", upload.fields([{ name: "before" }, { name: "after
 
 // ================== Serve Frontend ==================
 
-/** ANALYTICS SUMMARY (READ - FILTER BY MONTH) */
+/** ANALYTICS SUMMARY (READ - FILTER BY MONTH) - FIXED */
 app.get("/analytics_summary", async (req, res) => {
   try {
-    const from = req.query.from; // e.g., "2025-10-01"
-    const to = req.query.to;     // e.g., "2025-10-31"
+    const from = req.query.from; // e.g., "2025-01-01"
+    const to = req.query.to;     // e.g., "2025-01-31"
 
     // Validate dates
-    if (!from || !to || isNaN(new Date(from).getTime()) || isNaN(new Date(to).getTime())) {
-      return res.status(400).json({ error: "Please provide valid 'from' and 'to' dates." });
+    if (!from || !to) {
+      return res.status(400).json({ error: "Please provide both 'from' and 'to' dates." });
     }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD." });
+    }
+
+    // Add one day to include the entire last day
+    toDate.setDate(toDate.getDate() + 1);
+    const toInclusive = toDate.toISOString().split('T')[0];
+
+    console.log("📅 Analytics query range:", { from, to, toInclusive });
 
     const { rows } = await pool.query(
       `
@@ -656,20 +669,60 @@ app.get("/analytics_summary", async (req, res) => {
         MAX(completed_at) AS completed_at
       FROM sales
       WHERE status = 'completed'
-        AND completed_at BETWEEN $1 AND $2
+        AND completed_at >= $1::date
+        AND completed_at < $2::date
       GROUP BY service
       ORDER BY total_amount DESC;
       `,
-      [from, to]
+      [from, toInclusive]
     );
 
-    console.log("Fetched Analytics Summary:", rows);
+    console.log("📊 Fetched Analytics Summary:", rows.length, "services");
+    
+    // If no data, return empty array with helpful message
+    if (rows.length === 0) {
+      console.log("⚠️ No completed sales found in this date range");
+    }
+
     res.json(rows);
   } catch (err) {
-    console.error("Error fetching analytics summary:", err);
+    console.error("❌ Error fetching analytics summary:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
+// Add this debug endpoint to check your data
+app.get("/analytics_debug", async (req, res) => {
+  try {
+    const allSales = await pool.query(
+      "SELECT * FROM sales ORDER BY completed_at DESC LIMIT 10"
+    );
+    
+    const completedCount = await pool.query(
+      "SELECT COUNT(*) FROM sales WHERE status = 'completed'"
+    );
+    
+    const statusBreakdown = await pool.query(
+      "SELECT status, COUNT(*) as count FROM sales GROUP BY status"
+    );
+
+    res.json({
+      totalRecords: allSales.rows.length,
+      completedCount: completedCount.rows[0].count,
+      statusBreakdown: statusBreakdown.rows,
+      latestSales: allSales.rows.map(row => ({
+        service: row.service,
+        status: row.status,
+        payment: row.payment,
+        completed_at: row.completed_at
+      }))
+    });
+  } catch (err) {
+    console.error("Error in debug endpoint:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 
@@ -1030,9 +1083,36 @@ const salesChannel = supabase
   .on(
     "postgres_changes",
     { event: "*", schema: "public", table: "sales" },
-    (payload) => {
-      console.log("📊 Realtime: sales changed", payload);
-      io.emit("sales_update", payload);
+    async () => {
+      console.log("📊 Realtime: sales changed");
+
+      // Fetch updated analytics summary
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .split("T")[0];
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        .toISOString()
+        .split("T")[0];
+
+      const { rows } = await pool.query(
+        `
+        SELECT 
+          service,
+          COUNT(*) AS total_bookings,
+          SUM(payment) AS total_amount,
+          MAX(completed_at) AS completed_at
+        FROM sales
+        WHERE status = 'completed'
+          AND completed_at BETWEEN $1 AND $2
+        GROUP BY service
+        ORDER BY total_amount DESC;
+        `,
+        [firstDay, lastDay]
+      );
+
+      // Emit analytics_update for AdminDashb / CustomerDashb
+      io.emit("analytics_update", rows);
     }
   )
   .subscribe();
